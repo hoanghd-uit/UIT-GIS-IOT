@@ -29,6 +29,10 @@ namespace UITCampus.CameraControl
         [SerializeField] private float initialYaw = 45f;
         [SerializeField] private float initialPitch = 45f;
         [SerializeField] private float framingMargin = 1.15f;
+        [Tooltip("If enabled, starts at customInitialDistance instead of whole-campus overview distance.")]
+        [SerializeField] private bool useCustomInitialDistance = false;
+        [Tooltip("Custom initial camera distance in meters when useCustomInitialDistance is enabled.")]
+        [SerializeField] private float customInitialDistance = 55f;
 
         [Header("Orbit Limits & Sensitivity")]
         [SerializeField] private float minPitch = 20f;
@@ -184,8 +188,15 @@ namespace UITCampus.CameraControl
             float hFovRad = 2f * Mathf.Atan(Mathf.Tan(vFovRad * 0.5f) * aspect);
             float minFovRad = Mathf.Min(vFovRad, hFovRad);
 
-            _overviewDistance = (radius * framingMargin) / Mathf.Sin(minFovRad * 0.5f);
-            _overviewDistance = Mathf.Clamp(_overviewDistance, _minDistance, _maxDistance);
+            if (useCustomInitialDistance)
+            {
+                _overviewDistance = Mathf.Clamp(customInitialDistance, _minDistance, _maxDistance);
+            }
+            else
+            {
+                _overviewDistance = (radius * framingMargin) / Mathf.Sin(minFovRad * 0.5f);
+                _overviewDistance = Mathf.Clamp(_overviewDistance, _minDistance, _maxDistance);
+            }
 
             _targetFocusPoint = _overviewFocusPoint;
             _targetYaw = _overviewYaw;
