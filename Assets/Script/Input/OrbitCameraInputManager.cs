@@ -1,6 +1,8 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
+using UnityEngine.UI;
 using UITCampus.Core.Signals;
 
 namespace UITCampus.Input
@@ -160,7 +162,42 @@ namespace UITCampus.Input
 
         private bool IsPointerOverUI()
         {
-            return EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
+            if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
+            {
+                return true;
+            }
+
+            var mouse = Mouse.current;
+            if (mouse == null) return false;
+
+            Vector2 mousePos = mouse.position.ReadValue();
+            if (mousePos.x < 0 || mousePos.x > Screen.width || mousePos.y < 0 || mousePos.y > Screen.height)
+            {
+                return false;
+            }
+
+            var eventData = new PointerEventData(EventSystem.current)
+            {
+                position = mousePos
+            };
+
+            var results = new List<RaycastResult>();
+            var raycasters = FindObjectsByType<GraphicRaycaster>(FindObjectsSortMode.None);
+            for (int i = 0; i < raycasters.Length; i++)
+            {
+                var gr = raycasters[i];
+                if (gr != null && gr.isActiveAndEnabled && gr.gameObject.activeInHierarchy)
+                {
+                    results.Clear();
+                    gr.Raycast(eventData, results);
+                    if (results.Count > 0)
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
         }
 
         private void ResetDragState()

@@ -1,5 +1,11 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
+#if ENABLE_INPUT_SYSTEM
+using UnityEngine.InputSystem;
+#endif
 using UITCampus.Core.Signals;
 
 namespace UITCampus.CameraControl
@@ -53,6 +59,13 @@ namespace UITCampus.CameraControl
 
         [Header("Smoothing")]
         [SerializeField] private float dampingTime = 0.15f;
+
+        [Header("UI Interaction")]
+        [Tooltip("If enabled, camera orbit/pan/zoom is ignored when pointer is over UI elements.")]
+        [SerializeField] private bool ignoreInputOverUI = true;
+
+        private bool _pointerDownOverUI;
+        private bool _pointerDownIn3D;
 
         // Target state (driven by input signals)
         private Vector3 _targetFocusPoint;
@@ -126,6 +139,56 @@ namespace UITCampus.CameraControl
             OrbitCameraSignals.PanDelta -= HandlePan;
             OrbitCameraSignals.ZoomDelta -= HandleZoom;
             OrbitCameraSignals.ResetRequested -= HandleReset;
+        }
+
+        private void Awake()
+        {
+            EnsureEventSystem();
+        }
+
+        private void EnsureEventSystem()
+        {
+            if (EventSystem.current == null && FindAnyObjectByType<EventSystem>() == null)
+            {
+                var eventSystemGo = new GameObject("EventSystem");
+                eventSystemGo.AddComponent<EventSystem>();
+#if ENABLE_INPUT_SYSTEM
+                eventSystemGo.AddComponent<UnityEngine.InputSystem.UI.InputSystemUIInputModule>();
+#else
+                eventSystemGo.AddComponent<StandaloneInputModule>();
+#endif
+                Debug.Log("[CampusOrbitCameraController] Automatically initialized missing EventSystem.");
+            }
+        }
+
+        private void Update()
+        {
+            UpdatePointerState();
+        }
+
+        private void UpdatePointerState()
+        {
+#if ENABLE_INPUT_SYSTEM
+            var mouse = Mouse.current;
+            if (mouse == null) return;
+
+            bool anyDown = mouse.leftButton.wasPressedThisFrame || mouse.rightButton.wasPressedThisFrame || mouse.middleButton.wasPressedThisFrame;
+            bool anyPressed = mouse.leftButton.isPressed || mouse.rightButton.isPressed || mouse.middleButton.isPressed;
+#else
+            bool anyDown = Input.GetMouseButtonDown(0) || Input.GetMouseButtonDown(1) || Input.GetMouseButtonDown(2);
+            bool anyPressed = Input.GetMouseButton(0) || Input.GetMouseButton(1) || Input.GetMouseButton(2);
+#endif
+
+            if (anyDown)
+            {
+                _pointerDownOverUI = IsPointerOverUI();
+                _pointerDownIn3D = !_pointerDownOverUI;
+            }
+            else if (!anyPressed)
+            {
+                _pointerDownOverUI = false;
+                _pointerDownIn3D = false;
+            }
         }
 
         private void Start()
@@ -219,6 +282,11 @@ namespace UITCampus.CameraControl
 
         private void HandleOrbit(Vector2 delta)
         {
+            if (ignoreInputOverUI && (_pointerDownOverUI || (!_pointerDownIn3D && IsPointerOverUI())))
+            {
+                return;
+            }
+
             _targetYaw += delta.x * orbitSensitivity;
             _targetPitch -= delta.y * orbitSensitivity;
             _targetPitch = Mathf.Clamp(_targetPitch, minPitch, maxPitch);
@@ -227,6 +295,10 @@ namespace UITCampus.CameraControl
         private void HandlePan(Vector2 delta)
         {
             if (targetCamera == null) return;
+            if (ignoreInputOverUI && (_pointerDownOverUI || (!_pointerDownIn3D && IsPointerOverUI())))
+            {
+                return;
+            }
 
             // Pan axes projected onto XZ plane
             Vector3 camRight = targetCamera.transform.right;
@@ -265,9 +337,68 @@ namespace UITCampus.CameraControl
 
         private void HandleZoom(float delta)
         {
+            if (ignoreInputOverUI && IsPointerOverUI())
+            {
+                return;
+            }
+
             // Multiplicative zoom
             _targetDistance *= Mathf.Exp(-delta * zoomSensitivity);
             _targetDistance = Mathf.Clamp(_targetDistance, _minDistance, _maxDistance);
+        }
+
+        /// <summary>
+        /// Checks whether the mouse cursor is currently over any active UI element.
+        /// </summary>
+        public bool IsPointerOverUI()
+        {
+            if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
+            {
+                return true;
+            }
+
+            return CheckGraphicRaycast();
+        }
+
+        private bool CheckGraphicRaycast()
+        {
+            Vector2 mousePos = Vector2.zero;
+#if ENABLE_INPUT_SYSTEM
+            if (Mouse.current != null)
+            {
+                mousePos = Mouse.current.position.ReadValue();
+            }
+#else
+            mousePos = Input.mousePosition;
+#endif
+
+            if (mousePos.x < 0 || mousePos.x > Screen.width || mousePos.y < 0 || mousePos.y > Screen.height)
+            {
+                return false;
+            }
+
+            var eventData = new PointerEventData(EventSystem.current)
+            {
+                position = mousePos
+            };
+
+            var results = new List<RaycastResult>();
+            var raycasters = FindObjectsByType<GraphicRaycaster>(FindObjectsSortMode.None);
+            for (int i = 0; i < raycasters.Length; i++)
+            {
+                var gr = raycasters[i];
+                if (gr != null && gr.isActiveAndEnabled && gr.gameObject.activeInHierarchy)
+                {
+                    results.Clear();
+                    gr.Raycast(eventData, results);
+                    if (results.Count > 0)
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
         }
 
         private void HandleReset()
