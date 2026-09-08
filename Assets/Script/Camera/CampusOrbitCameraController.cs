@@ -347,14 +347,46 @@ namespace UITCampus.CameraControl
             _targetDistance = Mathf.Clamp(_targetDistance, _minDistance, _maxDistance);
         }
 
+        private static readonly List<RaycastResult> s_RaycastResults = new List<RaycastResult>();
+
         /// <summary>
         /// Checks whether the mouse cursor is currently over any active UI element.
         /// </summary>
         public bool IsPointerOverUI()
         {
-            if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
+            Vector2 mousePos = Vector2.zero;
+#if ENABLE_INPUT_SYSTEM
+            if (Mouse.current != null)
             {
-                return true;
+                mousePos = Mouse.current.position.ReadValue();
+            }
+#else
+            mousePos = Input.mousePosition;
+#endif
+
+            if (mousePos.x < 0 || mousePos.x > Screen.width || mousePos.y < 0 || mousePos.y > Screen.height)
+            {
+                return false;
+            }
+
+            if (EventSystem.current != null)
+            {
+                var eventData = new PointerEventData(EventSystem.current)
+                {
+                    position = mousePos
+                };
+
+                s_RaycastResults.Clear();
+                EventSystem.current.RaycastAll(eventData, s_RaycastResults);
+                for (int i = 0; i < s_RaycastResults.Count; i++)
+                {
+                    var res = s_RaycastResults[i];
+                    if (res.module is GraphicRaycaster || (res.gameObject != null && res.gameObject.layer == 5))
+                    {
+                        return true;
+                    }
+                }
+                return false;
             }
 
             return CheckGraphicRaycast();
@@ -382,16 +414,15 @@ namespace UITCampus.CameraControl
                 position = mousePos
             };
 
-            var results = new List<RaycastResult>();
             var raycasters = FindObjectsByType<GraphicRaycaster>(FindObjectsSortMode.None);
             for (int i = 0; i < raycasters.Length; i++)
             {
                 var gr = raycasters[i];
                 if (gr != null && gr.isActiveAndEnabled && gr.gameObject.activeInHierarchy)
                 {
-                    results.Clear();
-                    gr.Raycast(eventData, results);
-                    if (results.Count > 0)
+                    s_RaycastResults.Clear();
+                    gr.Raycast(eventData, s_RaycastResults);
+                    if (s_RaycastResults.Count > 0)
                     {
                         return true;
                     }

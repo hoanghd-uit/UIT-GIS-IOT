@@ -160,13 +160,10 @@ namespace UITCampus.Input
             }
         }
 
+        private static readonly List<RaycastResult> s_RaycastResults = new List<RaycastResult>();
+
         private bool IsPointerOverUI()
         {
-            if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
-            {
-                return true;
-            }
-
             var mouse = Mouse.current;
             if (mouse == null) return false;
 
@@ -181,16 +178,30 @@ namespace UITCampus.Input
                 position = mousePos
             };
 
-            var results = new List<RaycastResult>();
+            if (EventSystem.current != null)
+            {
+                s_RaycastResults.Clear();
+                EventSystem.current.RaycastAll(eventData, s_RaycastResults);
+                for (int i = 0; i < s_RaycastResults.Count; i++)
+                {
+                    var res = s_RaycastResults[i];
+                    if (res.module is GraphicRaycaster || (res.gameObject != null && res.gameObject.layer == 5))
+                    {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
             var raycasters = FindObjectsByType<GraphicRaycaster>(FindObjectsSortMode.None);
             for (int i = 0; i < raycasters.Length; i++)
             {
                 var gr = raycasters[i];
                 if (gr != null && gr.isActiveAndEnabled && gr.gameObject.activeInHierarchy)
                 {
-                    results.Clear();
-                    gr.Raycast(eventData, results);
-                    if (results.Count > 0)
+                    s_RaycastResults.Clear();
+                    gr.Raycast(eventData, s_RaycastResults);
+                    if (s_RaycastResults.Count > 0)
                     {
                         return true;
                     }
