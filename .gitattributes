@@ -1,0 +1,1 @@
+Assets/Model/*.fbx filter=lfs diff=lfs merge=lfs -text
