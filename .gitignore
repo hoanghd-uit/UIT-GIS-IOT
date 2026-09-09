@@ -6,6 +6,7 @@
 # See: https://github.com/github/gitignore/tree/main/Global
 #
 .utmp/
+/UnityContent/Library/
 /[Ll]ibrary/
 /[Tt]emp/
 /[Oo]bj/
@@ -109,3 +110,4 @@ InitTestScene*.unity*
 .vscode/
 UnityContent/Library/
 UnityContent/Temp/
+web/eslint.config.mjs

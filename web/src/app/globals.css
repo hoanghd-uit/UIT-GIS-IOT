@@ -1,0 +1,26 @@
+@import "tailwindcss";
+
+:root {
+  --app-bg: #061525;
+  --panel-bg: #0b2238;
+  --panel-elevated: #102b47;
+  --canvas-bg: #020a12;
+  --primary: #168bff;
+  --accent-cyan: #22c7e8;
+  --text-primary: #f4f8fc;
+  --text-muted: #8fa8bd;
+  --border: rgba(78, 163, 225, 0.25);
+  --success: #2ecf7f;
+  --danger: #ff646f;
+}
+
+body {
+  background-color: var(--app-bg);
+  color: var(--text-primary);
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  height: 100dvh;
+  width: 100vw;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
