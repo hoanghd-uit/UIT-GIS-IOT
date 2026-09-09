@@ -107,3 +107,5 @@ InitTestScene*.unity*
 
 # Visual Studio Code
 .vscode/
+UnityContent/Library/
+UnityContent/Temp/
