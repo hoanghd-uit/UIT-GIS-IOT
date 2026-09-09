@@ -1,3 +1,4 @@
+#if UNITY_EDITOR
 using NUnit.Framework;
 using UITCampus.Campus.Buildings;
 
@@ -28,4 +29,5 @@ namespace UITCampus.Tests.EditMode
         }
     }
 }
+#endif
 
