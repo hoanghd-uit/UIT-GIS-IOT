@@ -8,6 +8,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scene/Campus.unity
     guid: 5a348b582a728034b9d2b0907e76a653
+  - enabled: 1
+    path: Assets/Scene/FloorDetail.unity
+    guid: 4ca04e75a9fb4e440888552c4ef5aaa5
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   m_UseUCBPForAssetBundles: 0

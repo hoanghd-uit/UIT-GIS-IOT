@@ -1,6 +1,8 @@
 import React from "react";
 import { ViewerShell } from "@/components/layout/ViewerShell";
-import { CampusUnityCanvasLoader } from "@/components/unity/CampusUnityCanvasLoader.client";
+import { UnityViewerRuntime } from "@/components/unity/UnityViewerRuntime.client";
+import { UnityViewerCanvas } from "@/components/unity/UnityViewerCanvas.client";
+import { UnityRouteSynchronizer } from "@/components/unity/UnityRouteSynchronizer.client";
 
 export default function ViewerLayout({
   children,
@@ -8,9 +10,12 @@ export default function ViewerLayout({
   children: React.ReactNode;
 }) {
   return (
-    <ViewerShell unityCanvasSlot={<CampusUnityCanvasLoader />}>
-      {children}
-    </ViewerShell>
+    <UnityViewerRuntime>
+      <UnityRouteSynchronizer />
+      <ViewerShell unityCanvasSlot={<UnityViewerCanvas />}>
+        {children}
+      </ViewerShell>
+    </UnityViewerRuntime>
   );
 }
 

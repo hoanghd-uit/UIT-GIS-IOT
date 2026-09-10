@@ -26,6 +26,10 @@ namespace UITCampus.Input
         private bool _panDownOverUI;
         private bool _isPanDragging;
 
+        private bool _ignoreDragUntilAllButtonsReleased;
+
+        public bool IsDragSuppressed => _ignoreDragUntilAllButtonsReleased;
+
         private void Start()
         {
             // Invariant: Do not lock or hide cursor on orbit branch
@@ -36,9 +40,27 @@ namespace UITCampus.Input
         private void Update()
         {
             PollReset();
+            UpdateDragSuppression();
             PollOrbit();
             PollPan();
             PollZoom();
+        }
+
+        private void UpdateDragSuppression()
+        {
+            if (!_ignoreDragUntilAllButtonsReleased) return;
+
+            var mouse = Mouse.current;
+            if (mouse == null) return;
+
+            bool anyButtonPressed = mouse.leftButton.isPressed ||
+                                    mouse.rightButton.isPressed ||
+                                    mouse.middleButton.isPressed;
+
+            if (!anyButtonPressed)
+            {
+                _ignoreDragUntilAllButtonsReleased = false;
+            }
         }
 
         private void PollReset()
@@ -54,6 +76,8 @@ namespace UITCampus.Input
 
         private void PollOrbit()
         {
+            if (_ignoreDragUntilAllButtonsReleased) return;
+
             var mouse = Mouse.current;
             if (mouse == null) return;
 
@@ -92,6 +116,8 @@ namespace UITCampus.Input
 
         private void PollPan()
         {
+            if (_ignoreDragUntilAllButtonsReleased) return;
+
             var mouse = Mouse.current;
             if (mouse == null) return;
 
@@ -217,6 +243,7 @@ namespace UITCampus.Input
             _leftDownOverUI = false;
             _isPanDragging = false;
             _panDownOverUI = false;
+            _ignoreDragUntilAllButtonsReleased = true;
         }
 
         private void OnApplicationFocus(bool hasFocus)

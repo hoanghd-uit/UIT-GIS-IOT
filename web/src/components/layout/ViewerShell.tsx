@@ -1,4 +1,10 @@
+"use client";
+
 import React from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { parseViewerRoute } from "@/lib/viewer-routes";
+import { BUILDING_E_NAME, formatFloorLabel } from "@/config/buildings";
 
 interface ViewerShellProps {
   children?: React.ReactNode;
@@ -6,6 +12,10 @@ interface ViewerShellProps {
 }
 
 export function ViewerShell({ children, unityCanvasSlot }: ViewerShellProps) {
+  const pathname = usePathname();
+  const route = parseViewerRoute(pathname);
+  const isCampus = !route || route.view === "campus";
+
   return (
     <div
       className="flex h-screen w-screen overflow-hidden select-none"
@@ -38,15 +48,15 @@ export function ViewerShell({ children, unityCanvasSlot }: ViewerShellProps) {
 
           {/* Navigation Items */}
           <nav className="flex flex-col items-center gap-3">
-            <button
-              type="button"
+            <Link
+              href="/viewer/campus"
               className="group flex h-10 w-10 items-center justify-center rounded-lg transition-colors"
               style={{
-                backgroundColor: "var(--panel-elevated)",
-                border: "1px solid var(--primary)",
+                backgroundColor: isCampus ? "var(--panel-elevated)" : "transparent",
+                border: `1px solid ${isCampus ? "var(--primary)" : "transparent"}`,
                 color: "var(--text-primary)",
               }}
-              title="Campus View (Active)"
+              title="Campus View"
             >
               <svg
                 className="h-5 w-5"
@@ -61,7 +71,7 @@ export function ViewerShell({ children, unityCanvasSlot }: ViewerShellProps) {
                   d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
                 />
               </svg>
-            </button>
+            </Link>
           </nav>
         </div>
 
@@ -89,10 +99,20 @@ export function ViewerShell({ children, unityCanvasSlot }: ViewerShellProps) {
               Digital Twin - Tòa nhà E, UIT
             </h1>
             <span style={{ color: "var(--text-muted)" }}>/</span>
-            <div className="flex items-center gap-1.5 text-xs font-medium" style={{ color: "var(--accent-cyan)" }}>
-              <span className="inline-block h-2 w-2 rounded-full bg-cyan-400 animate-pulse" />
-              Campus
-            </div>
+            {route?.view === "floor-detail" ? (
+              <div className="flex items-center gap-2 text-xs font-medium">
+                <span style={{ color: "var(--text-muted)" }}>{BUILDING_E_NAME}</span>
+                <span style={{ color: "var(--text-muted)" }}>/</span>
+                <span style={{ color: "var(--text-muted)" }}>{formatFloorLabel(route.floorId)}</span>
+                <span style={{ color: "var(--text-muted)" }}>/</span>
+                <span style={{ color: "var(--accent-cyan)" }}>Chi tiết tầng</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5 text-xs font-medium" style={{ color: "var(--accent-cyan)" }}>
+                <span className="inline-block h-2 w-2 rounded-full bg-cyan-400 animate-pulse" />
+                Campus
+              </div>
+            )}
           </div>
 
           <div className="flex items-center gap-3">
@@ -106,7 +126,9 @@ export function ViewerShell({ children, unityCanvasSlot }: ViewerShellProps) {
               }}
             >
               <span>View:</span>
-              <span style={{ color: "var(--text-primary)" }}>3D Overview</span>
+              <span style={{ color: "var(--text-primary)" }}>
+                {route?.view === "floor-detail" ? "Chi tiết tầng" : "3D Overview"}
+              </span>
             </div>
           </div>
         </header>

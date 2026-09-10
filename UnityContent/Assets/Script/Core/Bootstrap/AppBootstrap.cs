@@ -11,6 +11,9 @@ namespace UITCampus.Core.Bootstrap
     {
         private static AppBootstrap _instance;
 
+        public static AppBootstrap Instance => _instance;
+        public bool IsPrimary => _instance == this;
+
         private void Awake()
         {
             if (_instance != null && _instance != this)

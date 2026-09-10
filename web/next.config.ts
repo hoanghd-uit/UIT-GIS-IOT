@@ -4,21 +4,21 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        source: "/unity/campus/Build/UIT-GIS-0909_2.data.br",
+        source: "/unity/campus/Build/UIT-GIS-0910_1.data.br",
         headers: [
           { key: "Content-Encoding", value: "br" },
           { key: "Content-Type", value: "application/octet-stream" },
         ],
       },
       {
-        source: "/unity/campus/Build/UIT-GIS-0909_2.framework.js.br",
+        source: "/unity/campus/Build/UIT-GIS-0910_1.framework.js.br",
         headers: [
           { key: "Content-Encoding", value: "br" },
           { key: "Content-Type", value: "application/javascript" },
         ],
       },
       {
-        source: "/unity/campus/Build/UIT-GIS-0909_2.wasm.br",
+        source: "/unity/campus/Build/UIT-GIS-0910_1.wasm.br",
         headers: [
           { key: "Content-Encoding", value: "br" },
           { key: "Content-Type", value: "application/wasm" },
