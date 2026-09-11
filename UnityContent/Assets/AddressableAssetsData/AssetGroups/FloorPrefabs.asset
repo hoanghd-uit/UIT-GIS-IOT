@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: FloorPrefabs
+  m_EditorClassIdentifier: 
+  m_GroupName: FloorPrefabs
+  m_GUID: bed25d8b5d968ab44bc4846533253524
+  m_SerializeEntries:
+  - m_GUID: 3db90c1b0c326bd43997897f0202613b
+    m_Address: floors/E/4
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - floor-content
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6d4acb63bbbd24943878534c3728ede0
+    m_Address: floors/E/6
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - floor-content
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: 7c682447e8098ac479a68565240ba4c9, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: 911b11b65076e284dafbd058652d8e10, type: 2}
+    - {fileID: 11400000, guid: 2c7d2be83520544409c4dc59bb1523fe, type: 2}

@@ -12,10 +12,27 @@ namespace UITCampus.CameraControl
         [Tooltip("The root transform containing visual campus renderers.")]
         [SerializeField] private Transform campusVisualRoot;
 
+        [Header("Initialization")]
+        [Tooltip("Whether to calculate bounds immediately in Awake (true for static scenes like Campus, false for dynamic scenes like FloorDetail).")]
+        [SerializeField] private bool calculateOnAwake = true;
+
         public Transform CampusVisualRoot
         {
             get => campusVisualRoot;
-            set => campusVisualRoot = value;
+            set
+            {
+                if (campusVisualRoot != value)
+                {
+                    campusVisualRoot = value;
+                    InvalidateBounds();
+                }
+            }
+        }
+
+        public bool CalculateOnAwake
+        {
+            get => calculateOnAwake;
+            set => calculateOnAwake = value;
         }
 
         public Bounds CachedBounds { get; private set; }
@@ -24,7 +41,17 @@ namespace UITCampus.CameraControl
 
         private void Awake()
         {
-            CalculateBounds();
+            if (calculateOnAwake)
+            {
+                CalculateBounds();
+            }
+        }
+
+        public void InvalidateBounds()
+        {
+            HasValidBounds = false;
+            CachedBounds = default;
+            BoundingRadius = 0f;
         }
 
         /// <summary>
@@ -34,16 +61,14 @@ namespace UITCampus.CameraControl
         {
             if (campusVisualRoot == null)
             {
-                Debug.LogError("[CampusViewBounds] campusVisualRoot is not assigned!", this);
-                HasValidBounds = false;
+                InvalidateBounds();
                 return false;
             }
 
             var renderers = campusVisualRoot.GetComponentsInChildren<Renderer>(true);
             if (renderers == null || renderers.Length == 0)
             {
-                Debug.LogError("[CampusViewBounds] No Renderers found under campusVisualRoot!", this);
-                HasValidBounds = false;
+                InvalidateBounds();
                 return false;
             }
 
@@ -51,6 +76,13 @@ namespace UITCampus.CameraControl
             for (int i = 1; i < renderers.Length; i++)
             {
                 combined.Encapsulate(renderers[i].bounds);
+            }
+
+            if (!float.IsFinite(combined.center.x) || !float.IsFinite(combined.center.y) || !float.IsFinite(combined.center.z) ||
+                !float.IsFinite(combined.extents.x) || !float.IsFinite(combined.extents.y) || !float.IsFinite(combined.extents.z))
+            {
+                InvalidateBounds();
+                return false;
             }
 
             CachedBounds = combined;

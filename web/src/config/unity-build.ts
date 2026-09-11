@@ -3,5 +3,7 @@ export const campusUnityBuild = {
   dataUrl: "/unity/campus/Build/UIT-GIS-0910_1.data.br",
   frameworkUrl: "/unity/campus/Build/UIT-GIS-0910_1.framework.js.br",
   codeUrl: "/unity/campus/Build/UIT-GIS-0910_1.wasm.br",
+  streamingAssetsUrl: "/unity/campus/StreamingAssets",
 } as const;
+
 

@@ -50,6 +50,20 @@ namespace UITCampus.Tests.EditMode
         }
 
         [Test]
+        public void ViewerRouteRequest_WithRequestId_ParsesSuccessfully()
+        {
+            string json = "{\"schemaVersion\":1,\"requestId\":\"viewer-test:1\",\"view\":\"floor-detail\",\"buildingId\":\"E\",\"floorId\":\"4\"}";
+            var request = JsonUtility.FromJson<ViewerSceneFlowController.ViewerRouteRequest>(json);
+
+            Assert.IsNotNull(request);
+            Assert.AreEqual(1, request.schemaVersion);
+            Assert.AreEqual("viewer-test:1", request.requestId);
+            Assert.AreEqual("floor-detail", request.view);
+            Assert.AreEqual("E", request.buildingId);
+            Assert.AreEqual("4", request.floorId);
+        }
+
+        [Test]
         public void ViewerRouteRequest_InvalidJson_ThrowsOrProducesNull()
         {
             string json = "not a valid json";

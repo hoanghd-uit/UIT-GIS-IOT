@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UITCampus.Bridge;
 using UITCampus.Core.Bootstrap;
+using UITCampus.FloorContent;
 
 namespace UITCampus.Navigation
 {
@@ -23,6 +24,7 @@ namespace UITCampus.Navigation
         public class ViewerRouteRequest
         {
             public int schemaVersion;
+            public string requestId;
             public string view;
             public string buildingId;
             public string floorId;
@@ -32,6 +34,7 @@ namespace UITCampus.Navigation
         private class CampusAckPayload
         {
             public int schemaVersion = 1;
+            public string requestId;
             public string view = "campus";
             public string sceneName = CampusSceneName;
         }
@@ -40,6 +43,7 @@ namespace UITCampus.Navigation
         private class FloorDetailAckPayload
         {
             public int schemaVersion = 1;
+            public string requestId;
             public string view = "floor-detail";
             public string sceneName = FloorDetailSceneName;
             public string buildingId = "E";
@@ -47,6 +51,7 @@ namespace UITCampus.Navigation
         }
 
         private WebViewerBridge _bridge;
+        private FloorContentLoader _contentLoader;
         private bool _isLoadingScene;
         private ViewerRouteRequest _pendingRequest;
         private string _currentBuildingId;
@@ -59,6 +64,7 @@ namespace UITCampus.Navigation
         private void Awake()
         {
             _bridge = GetComponent<WebViewerBridge>();
+            _contentLoader = GetComponent<FloorContentLoader>();
         }
 
         /// <summary>
@@ -67,7 +73,8 @@ namespace UITCampus.Navigation
         /// </summary>
         public void ApplyViewerRoute(string payloadJson)
         {
-            if (AppBootstrap.Instance != null && !AppBootstrap.Instance.IsPrimary)
+            var bootstrap = GetComponent<AppBootstrap>();
+            if (bootstrap != null && !bootstrap.IsPrimary)
             {
                 // Ignore commands directed to duplicate instance scheduled for destruction
                 return;
@@ -141,14 +148,16 @@ namespace UITCampus.Navigation
                 {
                     _currentBuildingId = null;
                     _currentFloorId = null;
-                    AcknowledgeCampusState();
+                    GetContentLoader()?.UnloadCurrentContent();
+                    AcknowledgeCampusState(request.requestId);
                 }
                 else
                 {
                     // Floor-only transition: update selection without reloading FloorDetail scene
                     _currentBuildingId = request.buildingId;
                     _currentFloorId = request.floorId;
-                    AcknowledgeFloorDetailState(_currentBuildingId, _currentFloorId);
+                    AcknowledgeFloorDetailState(_currentBuildingId, _currentFloorId, request.requestId);
+                    GetContentLoader()?.LoadFloor(_currentBuildingId, _currentFloorId, request.requestId);
                 }
                 return;
             }
@@ -198,27 +207,42 @@ namespace UITCampus.Navigation
             {
                 _currentBuildingId = null;
                 _currentFloorId = null;
-                AcknowledgeCampusState();
+                GetContentLoader()?.UnloadCurrentContent();
+                AcknowledgeCampusState(request.requestId);
             }
             else
             {
                 _currentBuildingId = request.buildingId;
                 _currentFloorId = request.floorId;
-                AcknowledgeFloorDetailState(_currentBuildingId, _currentFloorId);
+                AcknowledgeFloorDetailState(_currentBuildingId, _currentFloorId, request.requestId);
+                GetContentLoader()?.LoadFloor(_currentBuildingId, _currentFloorId, request.requestId);
             }
         }
 
-        private void AcknowledgeCampusState()
+        private FloorContentLoader GetContentLoader()
         {
-            var ack = new CampusAckPayload();
+            if (_contentLoader == null)
+            {
+                _contentLoader = GetComponent<FloorContentLoader>() ?? FloorContentLoader.Instance;
+            }
+            return _contentLoader;
+        }
+
+        private void AcknowledgeCampusState(string requestId = null)
+        {
+            var ack = new CampusAckPayload
+            {
+                requestId = requestId
+            };
             string json = JsonUtility.ToJson(ack);
             _bridge?.EmitViewerStateChanged(json);
         }
 
-        private void AcknowledgeFloorDetailState(string buildingId, string floorId)
+        private void AcknowledgeFloorDetailState(string buildingId, string floorId, string requestId = null)
         {
             var ack = new FloorDetailAckPayload
             {
+                requestId = requestId,
                 buildingId = buildingId,
                 floorId = floorId
             };

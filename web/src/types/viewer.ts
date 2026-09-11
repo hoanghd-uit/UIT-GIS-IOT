@@ -29,10 +29,12 @@ export interface FloorClickedPayload {
 export type ViewerRoute =
   | {
       schemaVersion: 1;
+      requestId?: string;
       view: "campus";
     }
   | {
       schemaVersion: 1;
+      requestId?: string;
       view: "floor-detail";
       buildingId: BuildingId;
       floorId: FloorId;
@@ -41,11 +43,13 @@ export type ViewerRoute =
 export type ViewerStateChangedPayload =
   | {
       schemaVersion: 1;
+      requestId?: string;
       view: "campus";
       sceneName: "Campus";
     }
   | {
       schemaVersion: 1;
+      requestId?: string;
       view: "floor-detail";
       sceneName: "FloorDetail";
       buildingId: BuildingId;
@@ -58,10 +62,36 @@ export interface ViewerErrorPayload {
   message: string;
 }
 
+export type FloorContentStatus = "loading" | "ready" | "unavailable" | "error";
+
+export interface FloorContentStateChangedPayload {
+  schemaVersion: 1;
+  requestId?: string;
+  buildingId: BuildingId;
+  floorId: FloorId;
+  status: FloorContentStatus;
+  contentVersion?: number;
+  coordinateFrameId?: string;
+  coordinateFrameVersion?: number;
+  calibrationStatus?: string;
+  errorCode?: string;
+  errorMessage?: string;
+}
+
+export interface ActiveFloorMetadata {
+  buildingId: BuildingId;
+  floorId: FloorId;
+  contentVersion: number;
+  coordinateFrameId: string;
+  coordinateFrameVersion: number;
+  calibrationStatus: string;
+}
+
 export type ViewerRuntimeStatus =
   | "initial-loading"
   | "campus-ready"
   | "loading-floor"
   | "floor-ready"
+  | "floor-unavailable"
   | "error";
 

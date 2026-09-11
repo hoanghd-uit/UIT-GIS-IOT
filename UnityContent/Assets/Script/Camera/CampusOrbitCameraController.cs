@@ -31,6 +31,10 @@ namespace UITCampus.CameraControl
         [Tooltip("Scene reference to CampusViewBounds for framing and clamping.")]
         [SerializeField] private CampusViewBounds campusViewBounds;
 
+        [Header("Initialization")]
+        [Tooltip("Whether to initialize from bounds in Start (true for static scenes like Campus, false for dynamic scenes like FloorDetail).")]
+        [SerializeField] private bool initializeOnStart = true;
+
         [Header("Initial Composition")]
         [SerializeField] private float initialYaw = 45f;
         [SerializeField] private float initialPitch = 45f;
@@ -107,6 +111,12 @@ namespace UITCampus.CameraControl
         public float MinDistance => _minDistance;
         public float MaxDistance => _maxDistance;
         public Camera TargetCamera => targetCamera;
+        public bool InitializeOnStart
+        {
+            get => initializeOnStart;
+            set => initializeOnStart = value;
+        }
+        public bool IsInitialized { get; private set; }
         public CampusViewBounds CampusViewBounds
         {
             get => campusViewBounds;
@@ -193,6 +203,22 @@ namespace UITCampus.CameraControl
 
         private void Start()
         {
+            EnsureCameraSetup();
+
+            if (!initializeOnStart)
+            {
+                SuspendUntilContentReady();
+                return;
+            }
+
+            if (!TryInitializeFromBounds(immediate: true))
+            {
+                Debug.LogError("[CampusOrbitCameraController] Failed to calculate campus bounds! Disabling controller.", this);
+            }
+        }
+
+        private void EnsureCameraSetup()
+        {
             if (targetCamera == null)
             {
                 targetCamera = GetComponentInChildren<Camera>();
@@ -204,12 +230,21 @@ namespace UITCampus.CameraControl
                 targetCamera.nearClipPlane = 0.1f;
                 targetCamera.farClipPlane = 1000f;
             }
+        }
+
+        /// <summary>
+        /// Validates bounds, recomputes zoom limits, frames overview, and enables controller.
+        /// Can be called before or after Start().
+        /// </summary>
+        public bool TryInitializeFromBounds(bool immediate = true)
+        {
+            EnsureCameraSetup();
 
             if (campusViewBounds == null)
             {
                 Debug.LogError("[CampusOrbitCameraController] campusViewBounds reference is missing! Disabling controller.", this);
-                enabled = false;
-                return;
+                SuspendUntilContentReady();
+                return false;
             }
 
             if (!campusViewBounds.HasValidBounds)
@@ -219,13 +254,46 @@ namespace UITCampus.CameraControl
 
             if (!campusViewBounds.HasValidBounds)
             {
-                Debug.LogError("[CampusOrbitCameraController] Failed to calculate campus bounds! Disabling controller.", this);
-                enabled = false;
-                return;
+                SuspendUntilContentReady();
+                return false;
             }
 
             ComputeZoomLimits();
-            FitCampusOverview(immediate: true);
+            FitCampusOverview(immediate);
+
+            _focusVelocity = Vector3.zero;
+            _yawVelocity = 0f;
+            _pitchVelocity = 0f;
+            _distanceVelocity = 0f;
+
+            if (immediate)
+            {
+                _currentFocusPoint = _targetFocusPoint;
+                _currentYaw = _targetYaw;
+                _currentPitch = _targetPitch;
+                _currentDistance = _targetDistance;
+                ApplyTransforms();
+            }
+
+            IsInitialized = true;
+            enabled = true;
+            return true;
+        }
+
+        /// <summary>
+        /// Suspends the camera controller until dynamic content is loaded and ready.
+        /// Resets velocity and pointer state; camera continues rendering background without processing input.
+        /// </summary>
+        public void SuspendUntilContentReady()
+        {
+            IsInitialized = false;
+            enabled = false;
+            _focusVelocity = Vector3.zero;
+            _yawVelocity = 0f;
+            _pitchVelocity = 0f;
+            _distanceVelocity = 0f;
+            _pointerDownOverUI = false;
+            _pointerDownIn3D = false;
         }
 
         private void ComputeZoomLimits()
@@ -282,6 +350,7 @@ namespace UITCampus.CameraControl
 
         private void HandleOrbit(Vector2 delta)
         {
+            if (!IsInitialized) return;
             if (ignoreInputOverUI && (_pointerDownOverUI || (!_pointerDownIn3D && IsPointerOverUI())))
             {
                 return;
@@ -294,7 +363,7 @@ namespace UITCampus.CameraControl
 
         private void HandlePan(Vector2 delta)
         {
-            if (targetCamera == null) return;
+            if (!IsInitialized || targetCamera == null) return;
             if (ignoreInputOverUI && (_pointerDownOverUI || (!_pointerDownIn3D && IsPointerOverUI())))
             {
                 return;
@@ -337,6 +406,7 @@ namespace UITCampus.CameraControl
 
         private void HandleZoom(float delta)
         {
+            if (!IsInitialized) return;
             if (ignoreInputOverUI && IsPointerOverUI())
             {
                 return;
@@ -434,6 +504,7 @@ namespace UITCampus.CameraControl
 
         private void HandleReset()
         {
+            if (!IsInitialized) return;
             ResetOverview();
         }
 
@@ -442,6 +513,7 @@ namespace UITCampus.CameraControl
         /// </summary>
         public void FocusOnBounds(Bounds targetBounds)
         {
+            if (!IsInitialized) return;
             _targetFocusPoint = targetBounds.center;
             ClampFocusTarget();
 
@@ -463,6 +535,7 @@ namespace UITCampus.CameraControl
         /// </summary>
         public void ResetOverview()
         {
+            if (!IsInitialized) return;
             _targetFocusPoint = _overviewFocusPoint;
             _targetYaw = _overviewYaw;
             _targetPitch = _overviewPitch;
@@ -471,6 +544,7 @@ namespace UITCampus.CameraControl
 
         private void LateUpdate()
         {
+            if (!IsInitialized) return;
             float dt = Time.unscaledDeltaTime;
             if (dt <= 0f) return;
 

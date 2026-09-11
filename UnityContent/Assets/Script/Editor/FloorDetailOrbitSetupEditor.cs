@@ -464,23 +464,31 @@ namespace UITCampus.Editor
             }
 
             // 6. ViewBounds target check
-            var contextGo = GameObject.Find("FloorDetailCameraContext");
-            if (contextGo == null)
+            var dynamicHost = UnityEngine.Object.FindAnyObjectByType<UITCampus.FloorContent.FloorDetailContentHost>();
+            if (dynamicHost != null)
             {
-                Debug.LogError("[FloorDetailOrbitSetupEditor] Invariant violation: 'FloorDetailCameraContext' root object not found!");
-                allPassed = false;
+                Debug.Log("[FloorDetailOrbitSetupEditor] [PASS] Phase 03 FloorDetailContentHost detected; bounds are dynamically managed.");
             }
             else
             {
-                var vb = contextGo.GetComponent<CampusViewBounds>();
-                if (vb == null || vb.CampusVisualRoot == null || vb.CampusVisualRoot.name != "MainOffice")
+                var contextGo = GameObject.Find("FloorDetailCameraContext");
+                if (contextGo == null)
                 {
-                    Debug.LogError("[FloorDetailOrbitSetupEditor] Invariant violation: CampusViewBounds is not targeting 'MainOffice'!");
+                    Debug.LogError("[FloorDetailOrbitSetupEditor] Invariant violation: 'FloorDetailCameraContext' root object not found!");
                     allPassed = false;
                 }
                 else
                 {
-                    Debug.Log($"[FloorDetailOrbitSetupEditor] [PASS] CampusViewBounds targets '{vb.CampusVisualRoot.name}' at {vb.CampusVisualRoot.position}.");
+                    var vb = contextGo.GetComponent<CampusViewBounds>();
+                    if (vb == null || vb.CampusVisualRoot == null || vb.CampusVisualRoot.name != "MainOffice")
+                    {
+                        Debug.LogError("[FloorDetailOrbitSetupEditor] Invariant violation: CampusViewBounds is not targeting 'MainOffice'!");
+                        allPassed = false;
+                    }
+                    else
+                    {
+                        Debug.Log($"[FloorDetailOrbitSetupEditor] [PASS] CampusViewBounds targets '{vb.CampusVisualRoot.name}' at {vb.CampusVisualRoot.position}.");
+                    }
                 }
             }
 

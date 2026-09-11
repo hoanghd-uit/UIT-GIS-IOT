@@ -1,6 +1,14 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  async rewrites() {
+    return [
+      {
+        source: "/unity/content/ContentRelease/:path*",
+        destination: "/unity/content/p03-r001/:path*",
+      },
+    ];
+  },
   async headers() {
     return [
       {

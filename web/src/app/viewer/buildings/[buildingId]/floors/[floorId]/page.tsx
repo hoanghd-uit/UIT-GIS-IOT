@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import { isValidBuildingId, isValidFloorId } from "@/config/buildings";
 import { FloorNavigationPanel } from "@/components/floor/FloorNavigationPanel";
+import { FloorContentStatusOverlay } from "@/components/floor/FloorContentStatusOverlay";
+import { FloorId } from "@/types/viewer";
 
 interface FloorDetailPageProps {
   params: Promise<{
@@ -17,9 +19,12 @@ export default async function FloorDetailPage({ params }: FloorDetailPageProps) 
   }
 
   return (
-    <div className="absolute top-4 right-4">
-      <FloorNavigationPanel buildingId={buildingId} currentFloorId={floorId} />
-    </div>
+    <>
+      <FloorContentStatusOverlay floorId={floorId as FloorId} />
+      <div className="absolute top-4 right-4">
+        <FloorNavigationPanel buildingId={buildingId} currentFloorId={floorId} />
+      </div>
+    </>
   );
 }
 

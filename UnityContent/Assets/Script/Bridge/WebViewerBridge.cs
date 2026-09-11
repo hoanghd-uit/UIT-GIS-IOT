@@ -44,7 +44,8 @@ namespace UITCampus.Bridge
         private void OnEnable()
         {
             // Do not subscribe on duplicate _InitManager instances slated for destruction
-            if (AppBootstrap.Instance != null && !AppBootstrap.Instance.IsPrimary)
+            var bootstrap = GetComponent<AppBootstrap>();
+            if (bootstrap != null && !bootstrap.IsPrimary)
             {
                 return;
             }
@@ -114,6 +115,14 @@ namespace UITCampus.Bridge
         public void EmitViewerStateChanged(string payloadJson)
         {
             DispatchEvent("ViewerStateChanged", payloadJson);
+        }
+
+        /// <summary>
+        /// Emits a FloorContentStateChanged event payload.
+        /// </summary>
+        public void EmitFloorContentStateChanged(string payloadJson)
+        {
+            DispatchEvent("FloorContentStateChanged", payloadJson);
         }
 
         /// <summary>
