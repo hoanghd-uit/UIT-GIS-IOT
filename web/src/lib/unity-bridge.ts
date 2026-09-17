@@ -126,3 +126,30 @@ export function parseViewerErrorPayload(raw: unknown): ViewerErrorPayload | null
   };
 }
 
+export interface DeviceMarkerClickedPayload {
+  schemaVersion: 1;
+  buildingId: string;
+  floorId: string;
+  deviceId: string;
+  externalId: string;
+}
+
+export function parseDeviceMarkerClickedPayload(
+  raw: unknown,
+): DeviceMarkerClickedPayload | null {
+  const obj = toObject(raw);
+  if (!obj) return null;
+
+  if (obj.schemaVersion !== 1) return null;
+  if (typeof obj.deviceId !== "string" || !obj.deviceId) return null;
+
+  return {
+    schemaVersion: 1,
+    buildingId: String(obj.buildingId),
+    floorId: String(obj.floorId),
+    deviceId: obj.deviceId,
+    externalId: String(obj.externalId || ""),
+  };
+}
+
+

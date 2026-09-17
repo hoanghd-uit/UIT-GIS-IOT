@@ -111,3 +111,12 @@ InitTestScene*.unity*
 UnityContent/Library/
 UnityContent/Temp/
 web/eslint.config.mjs
+
+# Phase 04 local secrets, backend artifacts & database dumps
+.env.phase04.local
+.env.*.local
+*.dump
+*.sql.gz
+backend/dist/
+backend/node_modules/
+

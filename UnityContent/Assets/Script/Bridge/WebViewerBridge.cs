@@ -141,6 +141,62 @@ namespace UITCampus.Bridge
             DispatchEvent("ViewerError", json);
         }
 
+        /// <summary>
+        /// Emits a DeviceMarkerClicked event payload.
+        /// </summary>
+        public void EmitDeviceMarkerClicked(string payloadJson)
+        {
+            DispatchEvent("DeviceMarkerClicked", payloadJson);
+        }
+
+        /// <summary>
+        /// Applies floor markers in Unity WebGL.
+        /// Inbound command from React: sendMessage("_InitManager", "ApplyFloorMarkers", json)
+        /// </summary>
+        public void ApplyFloorMarkers(string payloadJson)
+        {
+            if (UITCampus.Devices.DeviceMarkerManager.Instance != null)
+            {
+                UITCampus.Devices.DeviceMarkerManager.Instance.ApplyFloorMarkers(payloadJson);
+            }
+            else
+            {
+                var mgr = FindFirstObjectByType<UITCampus.Devices.DeviceMarkerManager>();
+                if (mgr != null)
+                {
+                    mgr.ApplyFloorMarkers(payloadJson);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Previews temporary position for selected marker.
+        /// Inbound command from React: sendMessage("_InitManager", "PreviewMarkerPosition", json)
+        /// </summary>
+        public void PreviewMarkerPosition(string payloadJson)
+        {
+            UITCampus.Devices.DeviceMarkerManager.Instance?.PreviewMarkerPosition(payloadJson);
+        }
+
+        /// <summary>
+        /// Selects a marker in Unity.
+        /// Inbound command from React: sendMessage("_InitManager", "SelectFloorMarker", deviceId)
+        /// </summary>
+        public void SelectFloorMarker(string deviceId)
+        {
+            UITCampus.Devices.DeviceMarkerManager.Instance?.SelectMarker(deviceId);
+        }
+
+        /// <summary>
+        /// Clears all markers from the floor.
+        /// Inbound command from React: sendMessage("_InitManager", "ClearFloorMarkers", "")
+        /// </summary>
+        public void ClearFloorMarkers()
+        {
+            UITCampus.Devices.DeviceMarkerManager.Instance?.ClearMarkers();
+        }
+
+
         public static bool IsValidFloorId(string floorId)
         {
             if (string.IsNullOrEmpty(floorId)) return false;

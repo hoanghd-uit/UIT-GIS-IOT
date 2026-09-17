@@ -1,0 +1,289 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/health/live": {
+      "get": {
+        "operationId": "HealthController_getLive",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Application process is live"
+          }
+        },
+        "summary": "Process liveness check",
+        "tags": [
+          "Health"
+        ]
+      }
+    },
+    "/health/ready": {
+      "get": {
+        "operationId": "HealthController_getReady",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Application is ready to serve requests"
+          },
+          "503": {
+            "description": "Database or dependencies not ready"
+          }
+        },
+        "summary": "Application and database readiness check",
+        "tags": [
+          "Health"
+        ]
+      }
+    },
+    "/api/v1/buildings/{buildingId}/floors/{floorId}/devices": {
+      "get": {
+        "operationId": "DevicesController_getFloorDevices",
+        "parameters": [
+          {
+            "name": "buildingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": "E",
+              "type": "string"
+            }
+          },
+          {
+            "name": "floorId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": "4",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Devices catalogue returned successfully"
+          },
+          "404": {
+            "description": "Floor not found"
+          }
+        },
+        "summary": "Get catalogue and effective marker positions for a floor",
+        "tags": [
+          "Devices"
+        ]
+      }
+    },
+    "/api/v1/devices/{deviceId}": {
+      "get": {
+        "operationId": "DevicesController_getDevice",
+        "parameters": [
+          {
+            "name": "deviceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": "d0ba7a2a-f40d-4b39-885b-6dc79815a104",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Device details returned successfully"
+          },
+          "404": {
+            "description": "Device not found"
+          }
+        },
+        "summary": "Get device metadata and placement detail",
+        "tags": [
+          "Devices"
+        ]
+      }
+    },
+    "/api/v1/devices/{deviceId}/display-position": {
+      "put": {
+        "operationId": "DevicesController_updateDisplayPosition",
+        "parameters": [
+          {
+            "name": "deviceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-expected-placement-revision",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Expected-Placement-Revision",
+            "in": "header",
+            "description": "Current known revision number to prevent stale writes",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDisplayPositionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Position override saved successfully"
+          },
+          "409": {
+            "description": "Revision conflict or floor context changed"
+          }
+        },
+        "summary": "Create or update display position override",
+        "tags": [
+          "Devices"
+        ]
+      },
+      "delete": {
+        "operationId": "DevicesController_resetDisplayPosition",
+        "parameters": [
+          {
+            "name": "deviceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-expected-placement-revision",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "buildingId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "floorId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Expected-Placement-Revision",
+            "in": "header",
+            "description": "Current known revision number to prevent stale writes",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Position override reset successfully"
+          },
+          "409": {
+            "description": "Revision conflict"
+          }
+        },
+        "summary": "Reset display position override back to original",
+        "tags": [
+          "Devices"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "GIS-UIT Building E Digital Twin - Backend API",
+    "description": "Internal API for device catalogue, marker positions, and persistence in Building E.",
+    "version": "1.0.0",
+    "contact": {}
+  },
+  "tags": [
+    {
+      "name": "Health",
+      "description": ""
+    },
+    {
+      "name": "Devices",
+      "description": ""
+    }
+  ],
+  "servers": [],
+  "components": {
+    "schemas": {
+      "Coordinate3DDto": {
+        "type": "object",
+        "properties": {
+          "x": {
+            "type": "number",
+            "example": 1.5
+          },
+          "y": {
+            "type": "number",
+            "example": 0
+          },
+          "z": {
+            "type": "number",
+            "example": -2
+          }
+        },
+        "required": [
+          "x",
+          "y",
+          "z"
+        ]
+      },
+      "UpdateDisplayPositionDto": {
+        "type": "object",
+        "properties": {
+          "buildingId": {
+            "type": "string",
+            "example": "E"
+          },
+          "floorId": {
+            "type": "string",
+            "example": "4"
+          },
+          "frameId": {
+            "type": "string",
+            "example": "E/4/floor-local"
+          },
+          "frameVersion": {
+            "type": "number",
+            "example": 1
+          },
+          "position": {
+            "$ref": "#/components/schemas/Coordinate3DDto"
+          }
+        },
+        "required": [
+          "buildingId",
+          "floorId",
+          "frameId",
+          "frameVersion",
+          "position"
+        ]
+      }
+    }
+  }
+}
