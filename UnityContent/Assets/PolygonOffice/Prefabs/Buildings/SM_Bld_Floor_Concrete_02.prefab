@@ -1,68 +1,36 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &3112877283003280562
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 3796637069943724565}
-  m_Layer: 0
-  m_Name: SM_Bld_Floor_Concrete_02
-  m_TagString: Floor
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &3796637069943724565
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3112877283003280562}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 2705834035301564963}
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1001 &2452127282239808968
+--- !u!1001 &8545134615537507599
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 3796637069943724565}
+    m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 5a40334711ce1a7489c9e54554d15738, type: 3}
       propertyPath: m_LocalScale.x
-      value: 0.789972
+      value: 0.78997207
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 5a40334711ce1a7489c9e54554d15738, type: 3}
       propertyPath: m_LocalScale.y
-      value: 0.789972
+      value: 0.78997207
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 5a40334711ce1a7489c9e54554d15738, type: 3}
       propertyPath: m_LocalScale.z
-      value: 0.789972
+      value: 0.78997207
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 5a40334711ce1a7489c9e54554d15738, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -3.6783836
+      value: -0.13953048
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 5a40334711ce1a7489c9e54554d15738, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.055219047
+      value: 0.055219106
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 5a40334711ce1a7489c9e54554d15738, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -0.48836342
+      value: 2.6342785
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 5a40334711ce1a7489c9e54554d15738, type: 3}
       propertyPath: m_LocalRotation.w
@@ -78,7 +46,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 5a40334711ce1a7489c9e54554d15738, type: 3}
       propertyPath: m_LocalRotation.z
-      value: -0.000000037748947
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 5a40334711ce1a7489c9e54554d15738, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -100,17 +68,8 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Bld_Floor_Concrete_02
       objectReference: {fileID: 0}
-    - target: {fileID: 919132149155446097, guid: 5a40334711ce1a7489c9e54554d15738, type: 3}
-      propertyPath: m_TagString
-      value: Floor
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 5a40334711ce1a7489c9e54554d15738, type: 3}
---- !u!4 &2705834035301564963 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 5a40334711ce1a7489c9e54554d15738, type: 3}
-  m_PrefabInstance: {fileID: 2452127282239808968}
-  m_PrefabAsset: {fileID: 0}
