@@ -15,7 +15,7 @@ MonoBehaviour:
   m_DefaultGroup: 3fb6cf33cf9c5304a81274e6b65795e6
   m_currentHash:
     serializedVersion: 2
-    Hash: 6e19fea62c06d608765c04819ff9ef13
+    Hash: 00000000000000000000000000000000
   m_OptimizeCatalogSize: 0
   m_BuildRemoteCatalog: 1
   m_CatalogRequestsTimeout: 0
@@ -77,11 +77,13 @@ MonoBehaviour:
       - m_Id: 476a4d54535b8a24880ae9ef882262d7
         m_Value: '{UnityEngine.AddressableAssets.Addressables.RuntimePath}/[BuildTarget]'
       - m_Id: 782ff586598ee5944ab236f407784e3f
-        m_Value: '{UIT.Viewer.FloorContentAddress.Origin}/unity/content/[ContentRelease]/[BuildTarget]'
+        m_Value: '{UIT.Viewer.FloorContentAddress.Origin}/unity/content/p03-r001/[BuildTarget]'
       - m_Id: c0ec840865b08d64380dd285b4051347
         m_Value: '[UnityEditor.EditorUserBuildSettings.activeBuildTarget]'
       - m_Id: e55b5f0a48971104aac1ace979c4f4d3
         m_Value: 'ServerData/[BuildTarget]'
+      - m_Id: f68fdd68ebd9248d780cc47449847e20
+        m_Value: p03-r001
     m_ProfileEntryNames:
     - m_Id: 4632e4e12fbd1e241ba25081c10e9f31
       m_Name: Local.BuildPath
@@ -97,6 +99,9 @@ MonoBehaviour:
       m_InlineUsage: 0
     - m_Id: e55b5f0a48971104aac1ace979c4f4d3
       m_Name: Remote.BuildPath
+      m_InlineUsage: 0
+    - m_Id: f68fdd68ebd9248d780cc47449847e20
+      m_Name: ContentRelease
       m_InlineUsage: 0
     m_ProfileVersion: 1
   m_LabelTable:
