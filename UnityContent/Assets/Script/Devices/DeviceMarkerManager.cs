@@ -179,6 +179,62 @@ namespace UITCampus.Devices
             }
         }
 
+        /// <summary>
+        /// Applies sensor type filters to marker instances.
+        /// </summary>
+        public void ApplySensorFilters(SensorFiltersDto filters)
+        {
+            if (filters == null) return;
+
+            bool deselectCurrent = false;
+
+            foreach (var kvp in _markers)
+            {
+                var item = kvp.Value;
+                if (item == null) continue;
+
+                bool visible = true;
+                switch (item.Kind?.ToLowerInvariant())
+                {
+                    case "temperature_humidity":
+                        visible = filters.temperatureHumidity;
+                        break;
+                    case "smart_building":
+                        visible = filters.smartBuilding;
+                        break;
+                    case "water_meter":
+                        visible = filters.waterMeter;
+                        break;
+                    case "uhf_reader":
+                        visible = filters.rfUhfReader;
+                        break;
+                    case "camera":
+                        visible = filters.camera;
+                        break;
+                    default:
+                        // If all are on, show; otherwise hide
+                        visible = filters.temperatureHumidity && filters.smartBuilding &&
+                                  filters.waterMeter && filters.rfUhfReader && filters.camera;
+                        break;
+                }
+
+                if (item.gameObject.activeSelf != visible)
+                {
+                    item.gameObject.SetActive(visible);
+                }
+
+                if (!visible && kvp.Key == _selectedDeviceId)
+                {
+                    deselectCurrent = true;
+                }
+            }
+
+            if (deselectCurrent)
+            {
+                SelectMarker(null);
+            }
+        }
+
         private void OnMarkerClicked(DeviceMarkerItem item)
         {
             if (item == null) return;

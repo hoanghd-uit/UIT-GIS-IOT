@@ -310,6 +310,14 @@ namespace UITCampus.FloorContent
                 _activeFloorId = fId;
                 _activeHandle = handle;
 
+                // Phase 05: Initialize FloorObjectFilterController on instance
+                var filterCtrl = instance.GetComponent<FloorObjectFilterController>();
+                if (filterCtrl == null)
+                {
+                    filterCtrl = instance.AddComponent<FloorObjectFilterController>();
+                }
+                filterCtrl.InitializeTargets(instance.transform, out _);
+
                 EmitStateReady(bId, fId, reqId, instanceMetadata);
                 break;
             }

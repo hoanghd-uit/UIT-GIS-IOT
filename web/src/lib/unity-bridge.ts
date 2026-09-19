@@ -4,6 +4,8 @@ import {
   FloorContentStateChangedPayload,
   ViewerErrorPayload,
   ViewerStateChangedPayload,
+  FloorFiltersAppliedPayload,
+  FloorSensorFilters,
 } from "@/types/viewer";
 
 function toObject(raw: unknown): Record<string, unknown> | null {
@@ -151,5 +153,53 @@ export function parseDeviceMarkerClickedPayload(
     externalId: String(obj.externalId || ""),
   };
 }
+
+export function parseFloorFiltersAppliedPayload(
+  raw: unknown,
+): FloorFiltersAppliedPayload | null {
+  const obj = toObject(raw);
+  if (!obj) return null;
+
+  if (obj.schemaVersion !== 1) return null;
+  if (typeof obj.buildingId !== "string" || typeof obj.floorId !== "string") return null;
+
+  return {
+    schemaVersion: 1,
+    routeRequestId: typeof obj.routeRequestId === "string" ? obj.routeRequestId : undefined,
+    buildingId: obj.buildingId as any,
+    floorId: obj.floorId as any,
+    filterRevision: typeof obj.filterRevision === "number" ? obj.filterRevision : 0,
+    status: obj.status === "rejected" ? "rejected" : "applied",
+    errorCode: typeof obj.errorCode === "string" ? obj.errorCode : null,
+  };
+}
+
+export function isDeviceKindVisible(
+  kind: string | undefined | null,
+  filters: FloorSensorFilters,
+): boolean {
+  switch (kind?.toLowerCase()) {
+    case "water_meter":
+      return filters.waterMeter;
+    case "temperature_humidity":
+      return filters.temperatureHumidity;
+    case "smart_building":
+      return filters.smartBuilding;
+    case "uhf_reader":
+      return filters.rfUhfReader;
+    case "camera":
+      return filters.camera;
+    default:
+      // Unknown kind: visible only if all 5 filters are enabled, otherwise hidden
+      return (
+        filters.waterMeter &&
+        filters.temperatureHumidity &&
+        filters.smartBuilding &&
+        filters.rfUhfReader &&
+        filters.camera
+      );
+  }
+}
+
 
 

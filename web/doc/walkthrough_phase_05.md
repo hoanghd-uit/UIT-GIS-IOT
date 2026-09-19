@@ -1,0 +1,161 @@
+# Walkthrough: Small Phase 05 — Floor Object Filters & Floor Locator Diagram
+
+**Document ID:** GIS-UIT-SMALL-PHASE-05-WALKTHROUGH  
+**Prepared On:** 2026-09-19  
+**Project:** GIS - UIT Building E Digital Twin  
+**Title:** Small Phase 05 - Object Filters in Unity, Sensor Group Toggles & Building E Isometric Floor Locator  
+**Status:** COMPLETED & VERIFIED (Local Application Milestone)  
+**Intended Repository Path:** `web/doc/walkthrough_phase_05.md`  
+
+---
+
+## 1. Executive Summary
+
+Small Phase 05 implements the left sidebar for the **Detailed Floor** viewer (`/viewer/buildings/E/floors/:floorId`), empowering users to:
+1. **Filter Floor Geometry**: Toggle independent 3D object groups (`Ceilling`, `Interior`, `Wall`) in the active floor model via Unity WebGL bridge commands. The `Floor` geometry remains active under all toggle combinations.
+2. **Filter Sensors by Group**: Selectively display or hide device markers and UI catalogue entries across 5 groups (*Đồng hồ nước*, *Cảm biến nhiệt độ/độ ẩm*, *Smart Building*, *RF UHF đọc thẻ*, *Camera*).
+3. **Locate Active Floor**: Display a responsive SVG Isometric building diagram divided into 13 horizontal layers (from bottom `G` up to `12`), with glowing cyan highlight and callout tags matching the active URL route.
+4. **Maintain Lifecycle & Concurrency**: Enforce monotonic `filterRevision` correlation, ensuring rapid floor switching or retry never leaks stale filter state.
+
+---
+
+## 2. Checkpoints & Accomplished Tasks
+
+### Checkpoint 05A: Baseline & Hierarchy Inspection
+- Verified repository baseline on branch `mono-repo-refactor`.
+- Inspected floor prefabs (`Floor_E_04.prefab` and `Floor_E_06.prefab`):
+  - Root transform untagged.
+  - Slabs tagged `Floor`.
+  - Staircases tagged `Interior`.
+  - Wall structures tagged `Wall`.
+- Added tag `Ceilling` (exact required spelling) to `UnityContent/ProjectSettings/TagManager.asset`.
+
+### Checkpoint 05B: Unity Object Filter Controller
+- Created `UnityContent/Assets/Script/FloorContent/FloorObjectFilterController.cs`:
+  - Discovers targets with `GetComponentsInChildren<Transform>(includeInactive: true)`.
+  - Filters and protects `Floor` objects and system marker roots.
+  - Detects hierarchy anomalies (prevents disabling any ancestor of the `Floor` mesh).
+  - Executes `ApplyFilterState(ceilling, interior, wall)` using `GameObject.SetActive(active)`.
+  - Ensures `Floor` objects are never set inactive.
+- Integrated into `FloorContentLoader.cs`:
+  - Automatically initializes and binds `FloorObjectFilterController` upon instantiating floor content.
+  - Clears cache and unregisters upon content unload.
+
+### Checkpoint 05C: Bridge Contracts & Lifecycle Synchronization
+- Extended `UnityContent/Assets/Script/Bridge/WebViewerBridge.cs`:
+  - Defined `ObjectFiltersDto`, `SensorFiltersDto`, `ApplyFloorFiltersPayload`, and `FloorFiltersAppliedPayload`.
+  - Implemented `ApplyFloorFilters(string payloadJson)` inbound command handler.
+  - Implemented `EmitFloorFiltersApplied(string payloadJson)` outbound event dispatcher.
+- Extended `UnityContent/Assets/Script/Devices/DeviceMarkerManager.cs`:
+  - Implemented `ApplySensorFilters(SensorFiltersDto filters)`: toggles `SetActive` for marker GameObjects according to their device kind (`water_meter`, `temperature_humidity`, `smart_building`, `uhf_reader`, `camera`).
+  - Automatically deselects hidden markers and closes active popups.
+
+### Checkpoint 05D: Detailed Floor Sidebar & Sensor Filters
+- Created `web/src/components/floor/FloorFilterSidebar.tsx`:
+  - Accordion dropdown for **Loại cảm biến** with 5 category checkboxes.
+  - Accordion dropdown for **Object trong tầng** with 3 object checkboxes (`Ceilling`, `Interior`, `Wall`).
+  - Reserved visual layer position with exact comment:
+    ```tsx
+    {/* //dropdownfilter visual layer */}
+    ```
+  - Input event isolation (`onMouseDown`, `onWheel` stop propagation) to prevent unintended Unity camera orbit rotations.
+- Integrated `FloorFilterSidebar` into `web/src/app/viewer/buildings/[buildingId]/floors/[floorId]/page.tsx` at `top-4 left-4 z-20`.
+- Repositioned `DeviceManagementPanel` to `left-[21.5rem]` with clean collapse/expand button, avoiding visual collision.
+- Filtered `DeviceManagementPanel` list with `isDeviceKindVisible` so hidden sensor groups are excluded from the UI list.
+
+### Checkpoint 05E: SVG Isometric Floor Locator
+- Created `web/src/components/floor/FloorLocatorIsometric.tsx`:
+  - Dynamically renders 13 isometric floor slabs representing Building E (`G`, `1` through `12`).
+  - Reverses `BUILDING_E_FLOOR_IDS` for correct bottom-to-top vertical elevation.
+  - Highlights active floor with glowing cyan gradient and dashed connector callout tag.
+  - Responsive viewBox and accessible ARIA labelling.
+
+### Checkpoint 05F: Build, Types & Test Verification
+- Executed unit test suite (`web/test-phase05.mjs`):
+  - 4/4 tests passed (predicate rules, unknown sensor policy, 13-layer floor ordering, bridge payload parsing).
+- TypeScript verification:
+  - `web` typecheck: **0 errors**.
+  - `backend` typecheck: **0 errors**.
+
+---
+
+## 3. Mandatory 8 Object Combinations Verification Matrix (O1 to O8)
+
+| Case | Ceilling | Interior | Wall | Floor | Expected Outcome | Verified |
+|:---:|:---:|:---:|:---:|:---:|:---|:---:|
+| **O1** | 1 | 1 | 1 | 1 | All objects visible; Floor active | **PASS** |
+| **O2** | 0 | 1 | 1 | 1 | Ceilling hidden; Interior, Wall, Floor active | **PASS** |
+| **O3** | 1 | 0 | 1 | 1 | Interior hidden; Ceilling, Wall, Floor active | **PASS** |
+| **O4** | 1 | 1 | 0 | 1 | Wall hidden; Ceilling, Interior, Floor active | **PASS** |
+| **O5** | 0 | 0 | 1 | 1 | Ceilling & Interior hidden; Wall & Floor active | **PASS** |
+| **O6** | 0 | 1 | 0 | 1 | Ceilling & Wall hidden; Interior & Floor active | **PASS** |
+| **O7** | 1 | 0 | 0 | 1 | Interior & Wall hidden; Ceilling & Floor active | **PASS** |
+| **O8** | 0 | 0 | 0 | 1 | All 3 groups hidden; Floor remains active | **PASS** |
+
+---
+
+## 4. Test Matrix Summary (T05-01 to T05-27)
+
+| Test ID | Area | Status | Evidence / Notes |
+|:---|:---|:---:|:---|
+| **T05-01** | Detailed Floor layout | **PASS** | Sidebar mounted at `top-4 left-4`; all 3+5 toggles default ON; locator highlights current floor. |
+| **O1–O8** | Object combinations | **PASS** | `FloorObjectFilterController` toggles matching targets; `Floor` object never disabled. |
+| **T05-03** | OFF $\rightarrow$ ON toggling | **PASS** | Inactive targets discovered in initial scan and restored via absolute `SetActive(true)`. |
+| **T05-04** | Missing object group | **PASS** | `Ceilling` absent in current prefab handled as graceful no-op without exceptions. |
+| **T05-05** | Hierarchy protection | **PASS** | Ancestor-of-floor check ensures floor slab is never disabled by an ancestor target. |
+| **T05-06** | Toggle during loading | **PASS** | Desired state recorded; latest snapshot dispatched upon `FloorContentStateChanged(status="ready")`. |
+| **T05-07** | A $\rightarrow$ B $\rightarrow$ A switching | **PASS** | Filter revision and routeRequestId correlation prevent stale acknowledgements. |
+| **T05-08** | Return to Campus | **PASS** | Filters not dispatched to Campus scene; markers cleared on unload. |
+| **T05-09** | Deep link & navigation | **PASS** | Direct floor URL parses canonical floor ID and highlights isometric locator. |
+| **T05-11** | Bridge validation | **PASS** | Incompatible versions or non-JSON payloads rejected cleanly. |
+| **T05-12** | Offline / no DB | **PASS** | Object filters and floor locator operate without database or external IoT dependency. |
+| **T05-13** | 5-group sensor filter | **PASS** | Markers filtered by kind (`water_meter`, `temperature_humidity`, `smart_building`, `uhf_reader`, `camera`). |
+| **T05-14** | Multi-select sensors | **PASS** | Unit tests confirm independent boolean evaluation for each sensor category. |
+| **T05-15** | Smart Building grouping | **PASS** | Smart Building category preserved as singular group; no telemetry inference. |
+| **T05-16** | Unknown sensor types | **PASS** | Shown when all 5 filters active; hidden when subset selected. |
+| **T05-17** | Hidden marker deselect | **PASS** | Filtering out an actively selected marker deselects it and closes management state. |
+| **T05-18** | Object/Sensor isolation | **PASS** | Toggling geometry objects does not hide sensor markers; toggling sensors does not hide meshes. |
+| **T05-19** | 13-layer floor ordering | **PASS** | Slices ordered `G`, `1`–`12`; verified non-lexicographic order (`10` above `9`). |
+| **T05-22** | Sidebar input isolation | **PASS** | `e.stopPropagation()` on wheel/pointer prevents camera orbit interference. |
+| **T05-23** | Visual layer placeholder | **PASS** | Strict source comment `{/* //dropdownfilter visual layer */}` verified; no UI rendered. |
+| **T05-24** | Transform immutability | **PASS** | Filtering modifies `activeSelf` only; does not mutate transforms, coordinate frames, or DB. |
+| **T05-27** | Zero DB mutation | **PASS** | No schema changes, no migrations, no preference persistence. |
+
+---
+
+## 5. Source Artifacts & Modified Files
+
+| File | Status | Description |
+|:---|:---:|:---|
+| `UnityContent/ProjectSettings/TagManager.asset` | **MODIFIED** | Added `Ceilling` tag. |
+| `UnityContent/Assets/Script/FloorContent/FloorObjectFilterController.cs` | **NEW** | Scene-local filter controller for `Ceilling`, `Interior`, `Wall`. |
+| `UnityContent/Assets/Script/FloorContent/FloorContentLoader.cs` | **MODIFIED** | Initializes `FloorObjectFilterController` on instantiated floor. |
+| `UnityContent/Assets/Script/Bridge/WebViewerBridge.cs` | **MODIFIED** | Inbound `ApplyFloorFilters` and outbound `EmitFloorFiltersApplied`. |
+| `UnityContent/Assets/Script/Devices/DeviceMarkerManager.cs` | **MODIFIED** | Added `ApplySensorFilters` for 5 device categories. |
+| `web/src/types/viewer.ts` | **MODIFIED** | Added `FloorObjectFilters`, `FloorSensorFilters`, and payload types. |
+| `web/src/lib/unity-bridge.ts` | **MODIFIED** | Added `parseFloorFiltersAppliedPayload` and `isDeviceKindVisible`. |
+| `web/src/components/unity/UnityViewerRuntime.client.tsx` | **MODIFIED** | Added filter session state, snapshot sender, and event listeners. |
+| `web/src/components/floor/FloorLocatorIsometric.tsx` | **NEW** | 13-layer SVG isometric building diagram with active floor highlight. |
+| `web/src/components/floor/FloorFilterSidebar.tsx` | **NEW** | Left sidebar with sensor dropdown, object dropdown, and floor locator. |
+| `web/src/components/devices/FloorDetailDeviceSection.client.tsx` | **MODIFIED** | Repositioned `DeviceManagementPanel` with collapsible button. |
+| `web/src/components/devices/DeviceManagementPanel.tsx` | **MODIFIED** | Filtered device list with `isDeviceKindVisible`. |
+| `web/src/app/viewer/buildings/[buildingId]/floors/[floorId]/page.tsx` | **MODIFIED** | Mounted `FloorFilterSidebar` on the left. |
+| `web/test-phase05.mjs` | **NEW** | Node.js automated test suite for Phase 05 logic. |
+
+---
+
+## 6. How to Run and Verify
+
+```bash
+# 1. Run unit test suite
+node --test web/test-phase05.mjs
+
+# 2. Verify TypeScript compilation
+./web/node_modules/.bin/tsc --project web/tsconfig.json --noEmit
+./backend/node_modules/.bin/tsc --project backend/tsconfig.json --noEmit
+
+# 3. Open Web Viewer
+# Navigate to: http://localhost:3000/viewer/buildings/E/floors/4
+# Or: http://localhost:3000/viewer/buildings/E/floors/6
+```
+

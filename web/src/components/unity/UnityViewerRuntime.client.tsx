@@ -16,12 +16,18 @@ import {
   parseDeviceMarkerClickedPayload,
   parseFloorClickedPayload,
   parseFloorContentStateChangedPayload,
+  parseFloorFiltersAppliedPayload,
   parseViewerErrorPayload,
   parseViewerStateChangedPayload,
 } from "@/lib/unity-bridge";
 import { buildFloorRoute, parseViewerRoute } from "@/lib/viewer-routes";
 import {
   ActiveFloorMetadata,
+  ApplyFloorFiltersPayload,
+  BuildingId,
+  FloorId,
+  FloorObjectFilters,
+  FloorSensorFilters,
   ViewerRuntimeStatus,
 } from "@/types/viewer";
 import { Coordinate3D, DeviceMarkerDto } from "@/types/devices";
@@ -44,6 +50,11 @@ interface UnityViewerContextValue {
   applyFloorMarkers: (devices: DeviceMarkerDto[]) => void;
   previewMarkerPosition: (deviceId: string, pos: Coordinate3D) => void;
   selectFloorMarker: (deviceId: string) => void;
+  objectFilters: FloorObjectFilters;
+  sensorFilters: FloorSensorFilters;
+  filterStatus: "idle" | "applying" | "applied" | "error";
+  updateObjectFilters: (filters: Partial<FloorObjectFilters>) => void;
+  updateSensorFilters: (filters: Partial<FloorSensorFilters>) => void;
 }
 
 
@@ -86,6 +97,31 @@ export function UnityViewerRuntime({ children }: UnityViewerRuntimeProps) {
   const [activeRequestId, setActiveRequestId] = useState<string | null>(null);
 
   const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
+
+  const [objectFilters, setObjectFilters] = useState<FloorObjectFilters>({
+    ceilling: true,
+    interior: true,
+    wall: true,
+  });
+  const [sensorFilters, setSensorFilters] = useState<FloorSensorFilters>({
+    waterMeter: true,
+    temperatureHumidity: true,
+    smartBuilding: true,
+    rfUhfReader: true,
+    camera: true,
+  });
+  const [filterStatus, setFilterStatus] = useState<"idle" | "applying" | "applied" | "error">("idle");
+  const filterRevisionRef = useRef(1);
+  const objectFiltersRef = useRef(objectFilters);
+  const sensorFiltersRef = useRef(sensorFilters);
+
+  useEffect(() => {
+    objectFiltersRef.current = objectFilters;
+  }, [objectFilters]);
+
+  useEffect(() => {
+    sensorFiltersRef.current = sensorFilters;
+  }, [sensorFilters]);
 
   const pathnameRef = useRef(pathname);
   const routerRef = useRef(router);
@@ -173,6 +209,31 @@ export function UnityViewerRuntime({ children }: UnityViewerRuntimeProps) {
     }
   }, [sendMessage]);
 
+  const sendFloorFiltersSnapshot = useCallback(
+    (
+      buildingId: BuildingId,
+      floorId: FloorId,
+      reqId: string | undefined,
+      objects: FloorObjectFilters,
+      sensors: FloorSensorFilters
+    ) => {
+      filterRevisionRef.current += 1;
+      const revision = filterRevisionRef.current;
+      setFilterStatus("applying");
+      const payload: ApplyFloorFiltersPayload = {
+        schemaVersion: 1,
+        routeRequestId: reqId,
+        buildingId,
+        floorId,
+        filterRevision: revision,
+        objects,
+        sensors,
+      };
+      sendMessage("_InitManager", "ApplyFloorFilters", JSON.stringify(payload));
+    },
+    [sendMessage]
+  );
+
   // Handle FloorContentStateChanged event from Unity WebGL
   const handleFloorContentStateChanged = useCallback((raw: unknown) => {
     const payload = parseFloorContentStateChangedPayload(raw);
@@ -210,6 +271,13 @@ export function UnityViewerRuntime({ children }: UnityViewerRuntimeProps) {
             calibrationStatus: payload.calibrationStatus ?? "Unverified",
           });
         }
+        sendFloorFiltersSnapshot(
+          payload.buildingId,
+          payload.floorId,
+          payload.requestId,
+          objectFiltersRef.current,
+          sensorFiltersRef.current
+        );
         break;
 
       case "loading":
@@ -309,6 +377,53 @@ export function UnityViewerRuntime({ children }: UnityViewerRuntimeProps) {
     [isLoaded, sendMessage]
   );
 
+  const updateObjectFilters = useCallback(
+    (newFilters: Partial<FloorObjectFilters>) => {
+      setObjectFilters((prev) => {
+        const next = { ...prev, ...newFilters };
+        if (activeFloorMetadata && viewerStatus === "floor-ready") {
+          sendFloorFiltersSnapshot(
+            activeFloorMetadata.buildingId,
+            activeFloorMetadata.floorId,
+            activeRequestIdRef.current || undefined,
+            next,
+            sensorFiltersRef.current
+          );
+        }
+        return next;
+      });
+    },
+    [activeFloorMetadata, viewerStatus, sendFloorFiltersSnapshot]
+  );
+
+  const updateSensorFilters = useCallback(
+    (newFilters: Partial<FloorSensorFilters>) => {
+      setSensorFilters((prev) => {
+        const next = { ...prev, ...newFilters };
+        if (activeFloorMetadata && viewerStatus === "floor-ready") {
+          sendFloorFiltersSnapshot(
+            activeFloorMetadata.buildingId,
+            activeFloorMetadata.floorId,
+            activeRequestIdRef.current || undefined,
+            objectFiltersRef.current,
+            next
+          );
+        }
+        return next;
+      });
+    },
+    [activeFloorMetadata, viewerStatus, sendFloorFiltersSnapshot]
+  );
+
+  const handleFloorFiltersApplied = useCallback((raw: unknown) => {
+    const payload = parseFloorFiltersAppliedPayload(raw);
+    if (!payload) return;
+
+    if (payload.filterRevision === filterRevisionRef.current) {
+      setFilterStatus(payload.status === "applied" ? "applied" : "error");
+    }
+  }, []);
+
   // Register Unity event listeners
   useEffect(() => {
     addEventListener("FloorClicked", handleFloorClicked);
@@ -316,6 +431,7 @@ export function UnityViewerRuntime({ children }: UnityViewerRuntimeProps) {
     addEventListener("FloorContentStateChanged", handleFloorContentStateChanged);
     addEventListener("ViewerError", handleViewerError);
     addEventListener("DeviceMarkerClicked", handleDeviceMarkerClicked);
+    addEventListener("FloorFiltersApplied", handleFloorFiltersApplied);
 
     return () => {
       removeEventListener("FloorClicked", handleFloorClicked);
@@ -323,6 +439,7 @@ export function UnityViewerRuntime({ children }: UnityViewerRuntimeProps) {
       removeEventListener("FloorContentStateChanged", handleFloorContentStateChanged);
       removeEventListener("ViewerError", handleViewerError);
       removeEventListener("DeviceMarkerClicked", handleDeviceMarkerClicked);
+      removeEventListener("FloorFiltersApplied", handleFloorFiltersApplied);
     };
   }, [
     addEventListener,
@@ -332,6 +449,7 @@ export function UnityViewerRuntime({ children }: UnityViewerRuntimeProps) {
     handleFloorContentStateChanged,
     handleViewerError,
     handleDeviceMarkerClicked,
+    handleFloorFiltersApplied,
   ]);
 
   // Derive human-readable status label
@@ -377,6 +495,11 @@ export function UnityViewerRuntime({ children }: UnityViewerRuntimeProps) {
       applyFloorMarkers,
       previewMarkerPosition,
       selectFloorMarker,
+      objectFilters,
+      sensorFilters,
+      filterStatus,
+      updateObjectFilters,
+      updateSensorFilters,
     }),
     [
       unityProvider,
@@ -394,6 +517,11 @@ export function UnityViewerRuntime({ children }: UnityViewerRuntimeProps) {
       applyFloorMarkers,
       previewMarkerPosition,
       selectFloorMarker,
+      objectFilters,
+      sensorFilters,
+      filterStatus,
+      updateObjectFilters,
+      updateSensorFilters,
     ]
   );
 
