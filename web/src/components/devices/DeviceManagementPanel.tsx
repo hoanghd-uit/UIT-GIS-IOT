@@ -11,6 +11,8 @@ import {
   updateDevicePosition,
   resetDevicePosition,
 } from '@/lib/devices-api';
+import { useUnityViewer } from '@/components/unity/UnityViewerRuntime.client';
+import { isDeviceKindVisible } from '@/lib/unity-bridge';
 
 interface DeviceManagementPanelProps {
   buildingId: string;
@@ -48,7 +50,20 @@ export function DeviceManagementPanel({
   const [isPending, startTransition] = useTransition();
   const [actionMessage, setActionMessage] = useState<string | null>(null);
 
-  const selectedDevice = catalogue?.devices.find((d) => d.id === selectedId) || null;
+  const { sensorFilters } = useUnityViewer();
+  const visibleDevices = (catalogue?.devices || []).filter((d) =>
+    isDeviceKindVisible(d.kind, sensorFilters)
+  );
+
+  const selectedDevice = visibleDevices.find((d) => d.id === selectedId) || null;
+
+  // Deselect if active device is filtered out
+  useEffect(() => {
+    if (selectedId && !visibleDevices.some((d) => d.id === selectedId)) {
+      setSelectedId(null);
+      onSelectDevice?.(null);
+    }
+  }, [selectedId, visibleDevices, onSelectDevice]);
 
   // Sync external selection from Unity click
   useEffect(() => {
@@ -248,11 +263,11 @@ export function DeviceManagementPanel({
       {/* Device List */}
       <div className="flex-1 overflow-y-auto pr-1 space-y-1.5 mb-3 max-h-48 border border-slate-800 rounded-lg p-1.5 bg-slate-950/50">
         {loading ? (
-          <div className="p-4 text-center text-slate-400 text-xs">Loading catalogue...</div>
-        ) : catalogue?.devices.length === 0 ? (
-          <div className="p-4 text-center text-slate-400 text-xs">No devices found on this floor.</div>
+          <div className="p-4 text-center text-slate-400 text-xs">Đang tải danh sách thiết bị...</div>
+        ) : visibleDevices.length === 0 ? (
+          <div className="p-4 text-center text-slate-400 text-xs">Không có thiết bị phù hợp với bộ lọc.</div>
         ) : (
-          catalogue?.devices.map((device) => {
+          visibleDevices.map((device) => {
             const isSelected = device.id === selectedId;
             const hasOverride = device.overrideStatus === 'active';
             return (

@@ -95,3 +95,38 @@ export type ViewerRuntimeStatus =
   | "floor-unavailable"
   | "error";
 
+export interface FloorObjectFilters {
+  ceilling: boolean;
+  interior: boolean;
+  wall: boolean;
+}
+
+export interface FloorSensorFilters {
+  waterMeter: boolean;
+  temperatureHumidity: boolean;
+  smartBuilding: boolean;
+  rfUhfReader: boolean;
+  camera: boolean;
+}
+
+export interface ApplyFloorFiltersPayload {
+  schemaVersion: 1;
+  routeRequestId?: string;
+  buildingId: BuildingId;
+  floorId: FloorId;
+  filterRevision: number;
+  objects: FloorObjectFilters;
+  sensors: FloorSensorFilters;
+}
+
+export interface FloorFiltersAppliedPayload {
+  schemaVersion: 1;
+  routeRequestId?: string;
+  buildingId: BuildingId;
+  floorId: FloorId;
+  filterRevision: number;
+  status: "applied" | "rejected";
+  errorCode?: string | null;
+}
+
+

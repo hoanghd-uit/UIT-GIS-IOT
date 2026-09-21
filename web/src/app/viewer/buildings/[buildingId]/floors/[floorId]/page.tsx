@@ -3,6 +3,7 @@ import { isValidBuildingId, isValidFloorId } from "@/config/buildings";
 import { FloorNavigationPanel } from "@/components/floor/FloorNavigationPanel";
 import { FloorContentStatusOverlay } from "@/components/floor/FloorContentStatusOverlay";
 import { FloorDetailDeviceSection } from "@/components/devices/FloorDetailDeviceSection.client";
+import { FloorFilterSidebar } from "@/components/floor/FloorFilterSidebar";
 import { FloorId } from "@/types/viewer";
 
 interface FloorDetailPageProps {
@@ -22,8 +23,11 @@ export default async function FloorDetailPage({ params }: FloorDetailPageProps) 
   return (
     <>
       <FloorContentStatusOverlay floorId={floorId as FloorId} />
+      <div className="absolute top-4 left-4 z-20">
+        <FloorFilterSidebar buildingId={buildingId} floorId={floorId} />
+      </div>
       <FloorDetailDeviceSection buildingId={buildingId} floorId={floorId} />
-      <div className="absolute top-4 right-4">
+      <div className="absolute top-4 right-4 z-20">
         <FloorNavigationPanel buildingId={buildingId} currentFloorId={floorId} />
       </div>
     </>

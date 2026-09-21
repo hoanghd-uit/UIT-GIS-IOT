@@ -4,9 +4,52 @@ using UnityEngine;
 using UITCampus.Campus.Buildings;
 using UITCampus.Core.Bootstrap;
 using UITCampus.Core.Signals;
+using UITCampus.FloorContent;
 
 namespace UITCampus.Bridge
 {
+    [Serializable]
+    public class ObjectFiltersDto
+    {
+        public bool ceilling = true;
+        public bool interior = true;
+        public bool wall = true;
+    }
+
+    [Serializable]
+    public class SensorFiltersDto
+    {
+        public bool waterMeter = true;
+        public bool temperatureHumidity = true;
+        public bool smartBuilding = true;
+        public bool rfUhfReader = true;
+        public bool camera = true;
+    }
+
+    [Serializable]
+    public class ApplyFloorFiltersPayload
+    {
+        public int schemaVersion = 1;
+        public string routeRequestId;
+        public string buildingId;
+        public string floorId;
+        public int filterRevision;
+        public ObjectFiltersDto objects;
+        public SensorFiltersDto sensors;
+    }
+
+    [Serializable]
+    public class FloorFiltersAppliedPayload
+    {
+        public int schemaVersion = 1;
+        public string routeRequestId;
+        public string buildingId;
+        public string floorId;
+        public int filterRevision;
+        public string status; // "applied" or "rejected"
+        public string errorCode;
+    }
+
     /// <summary>
     /// Outbound bridge between Unity and the host web viewer.
     /// Dispatches events via WebGL JavaScript interop in WebGL builds,
@@ -139,6 +182,136 @@ namespace UITCampus.Bridge
 
             string json = JsonUtility.ToJson(payload);
             DispatchEvent("ViewerError", json);
+        }
+
+        /// <summary>
+        /// Emits a DeviceMarkerClicked event payload.
+        /// </summary>
+        public void EmitDeviceMarkerClicked(string payloadJson)
+        {
+            DispatchEvent("DeviceMarkerClicked", payloadJson);
+        }
+
+        /// <summary>
+        /// Applies floor markers in Unity WebGL.
+        /// Inbound command from React: sendMessage("_InitManager", "ApplyFloorMarkers", json)
+        /// </summary>
+        public void ApplyFloorMarkers(string payloadJson)
+        {
+            if (UITCampus.Devices.DeviceMarkerManager.Instance != null)
+            {
+                UITCampus.Devices.DeviceMarkerManager.Instance.ApplyFloorMarkers(payloadJson);
+            }
+            else
+            {
+                var mgr = FindFirstObjectByType<UITCampus.Devices.DeviceMarkerManager>();
+                if (mgr != null)
+                {
+                    mgr.ApplyFloorMarkers(payloadJson);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Previews temporary position for selected marker.
+        /// Inbound command from React: sendMessage("_InitManager", "PreviewMarkerPosition", json)
+        /// </summary>
+        public void PreviewMarkerPosition(string payloadJson)
+        {
+            UITCampus.Devices.DeviceMarkerManager.Instance?.PreviewMarkerPosition(payloadJson);
+        }
+
+        /// <summary>
+        /// Selects a marker in Unity.
+        /// Inbound command from React: sendMessage("_InitManager", "SelectFloorMarker", deviceId)
+        /// </summary>
+        public void SelectFloorMarker(string deviceId)
+        {
+            UITCampus.Devices.DeviceMarkerManager.Instance?.SelectMarker(deviceId);
+        }
+
+        /// <summary>
+        /// Clears all markers from the floor.
+        /// Inbound command from React: sendMessage("_InitManager", "ClearFloorMarkers", "")
+        /// </summary>
+        public void ClearFloorMarkers()
+        {
+            UITCampus.Devices.DeviceMarkerManager.Instance?.ClearMarkers();
+        }
+
+        /// <summary>
+        /// Emits a FloorFiltersApplied event payload.
+        /// </summary>
+        public void EmitFloorFiltersApplied(string payloadJson)
+        {
+            DispatchEvent("FloorFiltersApplied", payloadJson);
+        }
+
+        /// <summary>
+        /// Applies floor object and sensor filters in Unity WebGL.
+        /// Inbound command from React: sendMessage("_InitManager", "ApplyFloorFilters", json)
+        /// </summary>
+        public void ApplyFloorFilters(string payloadJson)
+        {
+            if (string.IsNullOrWhiteSpace(payloadJson))
+            {
+                Debug.LogWarning("[WebViewerBridge] Received empty floor filters payload.");
+                return;
+            }
+
+            ApplyFloorFiltersPayload payload;
+            try
+            {
+                payload = JsonUtility.FromJson<ApplyFloorFiltersPayload>(payloadJson);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[WebViewerBridge] Failed to parse floor filters payload: {ex.Message}");
+                return;
+            }
+
+            if (payload == null || payload.schemaVersion != 1)
+            {
+                Debug.LogWarning("[WebViewerBridge] Unsupported floor filters schema version.");
+                return;
+            }
+
+            string status = "applied";
+            string errorCode = null;
+
+            // 1. Apply object filters to geometry
+            if (payload.objects != null)
+            {
+                var filterCtrl = UITCampus.FloorContent.FloorObjectFilterController.Current;
+                if (filterCtrl != null)
+                {
+                    if (!filterCtrl.ApplyFilterState(payload.objects.ceilling, payload.objects.interior, payload.objects.wall, out string err))
+                    {
+                        status = "rejected";
+                        errorCode = err;
+                    }
+                }
+            }
+
+            // 2. Apply sensor filters to device markers
+            if (payload.sensors != null && UITCampus.Devices.DeviceMarkerManager.Instance != null)
+            {
+                UITCampus.Devices.DeviceMarkerManager.Instance.ApplySensorFilters(payload.sensors);
+            }
+
+            // Emit acknowledgement
+            var response = new FloorFiltersAppliedPayload
+            {
+                schemaVersion = 1,
+                routeRequestId = payload.routeRequestId,
+                buildingId = payload.buildingId,
+                floorId = payload.floorId,
+                filterRevision = payload.filterRevision,
+                status = status,
+                errorCode = errorCode
+            };
+
+            EmitFloorFiltersApplied(JsonUtility.ToJson(response));
         }
 
         public static bool IsValidFloorId(string floorId)
