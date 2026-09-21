@@ -15,6 +15,13 @@ export interface AppConfig {
     namespace: string;
     enableLocalPositionEditing: boolean;
   };
+  iot: {
+    baseUrl: string;
+    masterToken: string;
+    timeoutMs: number;
+    floorMode: string;
+    coordinateMode: string;
+  };
 }
 
 export default (): AppConfig => {
@@ -47,6 +54,13 @@ export default (): AppConfig => {
       allowFixtures,
       namespace: process.env.DEVICE_SOURCE_NAMESPACE || 'phase04-fixture-v1',
       enableLocalPositionEditing: process.env.ENABLE_LOCAL_POSITION_EDITING === 'true',
+    },
+    iot: {
+      baseUrl: process.env.IOT_API_BASE_URL || 'https://api.ttlab.manhthao.uk',
+      masterToken: process.env.IOT_API_MASTER_TOKEN || '',
+      timeoutMs: parseInt(process.env.IOT_API_TIMEOUT_MS || '10000', 10),
+      floorMode: process.env.IOT_FLOOR_MAPPING_MODE || 'TEST_CURRENT_FLOOR_4_6_V1',
+      coordinateMode: process.env.IOT_COORDINATE_MAPPING_MODE || 'TEST_PREFAB_CENTER_XZ_V1',
     },
   };
 };

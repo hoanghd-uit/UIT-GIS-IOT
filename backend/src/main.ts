@@ -6,8 +6,20 @@ import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 import * as path from 'path';
 
-const envPath = process.env.DOTENV_CONFIG_PATH || path.resolve(__dirname, '../../.env.phase04.local');
-dotenv.config({ path: envPath });
+const candidateEnvPaths = [
+  process.env.DOTENV_CONFIG_PATH,
+  path.resolve(__dirname, '../../.env.phase06.local'),
+  path.resolve(__dirname, '../../.env.phase04.local'),
+  path.resolve(__dirname, '../.env.local'),
+  path.resolve(__dirname, '../../.env.local'),
+].filter(Boolean) as string[];
+
+for (const envCandidate of candidateEnvPaths) {
+  if (fs.existsSync(envCandidate)) {
+    dotenv.config({ path: envCandidate });
+    break;
+  }
+}
 
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';

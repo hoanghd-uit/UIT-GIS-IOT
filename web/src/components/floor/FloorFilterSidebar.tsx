@@ -5,6 +5,8 @@ import { useUnityViewer } from "@/components/unity/UnityViewerRuntime.client";
 import { FloorLocatorIsometric } from "./FloorLocatorIsometric";
 import { FloorObjectFilters, FloorSensorFilters } from "@/types/viewer";
 
+import { DeviceCategoryIcon } from "@/components/icons/DeviceCategoryIcon";
+
 interface FloorFilterSidebarProps {
   buildingId: string;
   floorId: string;
@@ -90,6 +92,7 @@ export function FloorFilterSidebar({ buildingId, floorId }: FloorFilterSidebarPr
                 onChange={() => handleSensorToggle("waterMeter")}
                 className="w-4 h-4 rounded border-slate-700 bg-slate-800 text-cyan-500 focus:ring-cyan-400 focus:ring-offset-slate-900 cursor-pointer"
               />
+              <DeviceCategoryIcon category="water_meter" size={16} />
               <span className="text-slate-300 group-hover:text-white transition-colors">
                 Đồng hồ nước
               </span>
@@ -103,6 +106,7 @@ export function FloorFilterSidebar({ buildingId, floorId }: FloorFilterSidebarPr
                 onChange={() => handleSensorToggle("temperatureHumidity")}
                 className="w-4 h-4 rounded border-slate-700 bg-slate-800 text-cyan-500 focus:ring-cyan-400 focus:ring-offset-slate-900 cursor-pointer"
               />
+              <DeviceCategoryIcon category="temperature_humidity" size={16} />
               <span className="text-slate-300 group-hover:text-white transition-colors">
                 Cảm biến nhiệt độ/độ ẩm
               </span>
@@ -116,8 +120,9 @@ export function FloorFilterSidebar({ buildingId, floorId }: FloorFilterSidebarPr
                 onChange={() => handleSensorToggle("smartBuilding")}
                 className="w-4 h-4 mt-0.5 rounded border-slate-700 bg-slate-800 text-cyan-500 focus:ring-cyan-400 focus:ring-offset-slate-900 cursor-pointer"
               />
+              <DeviceCategoryIcon category="smart_building" size={16} className="mt-0.5" />
               <span className="text-slate-300 group-hover:text-white transition-colors leading-tight">
-                Smart Building (VOC, nhiệt độ/độ ẩm, áp suất không khí)
+                Smart Building (VOC, nhiệt độ/độ ẩm, áp suất)
               </span>
             </label>
 
@@ -129,6 +134,7 @@ export function FloorFilterSidebar({ buildingId, floorId }: FloorFilterSidebarPr
                 onChange={() => handleSensorToggle("rfUhfReader")}
                 className="w-4 h-4 rounded border-slate-700 bg-slate-800 text-cyan-500 focus:ring-cyan-400 focus:ring-offset-slate-900 cursor-pointer"
               />
+              <DeviceCategoryIcon category="rf_uhf_reader" size={16} />
               <span className="text-slate-300 group-hover:text-white transition-colors">
                 RF UHF đọc thẻ
               </span>
@@ -142,8 +148,23 @@ export function FloorFilterSidebar({ buildingId, floorId }: FloorFilterSidebarPr
                 onChange={() => handleSensorToggle("camera")}
                 className="w-4 h-4 rounded border-slate-700 bg-slate-800 text-cyan-500 focus:ring-cyan-400 focus:ring-offset-slate-900 cursor-pointer"
               />
+              <DeviceCategoryIcon category="camera" size={16} />
               <span className="text-slate-300 group-hover:text-white transition-colors">
                 Camera
+              </span>
+            </label>
+
+            {/* Unknown / Fallback */}
+            <label className="flex items-center gap-2.5 cursor-pointer group hover:text-white border-t border-slate-800/80 pt-2">
+              <input
+                type="checkbox"
+                checked={sensorFilters.unknown}
+                onChange={() => handleSensorToggle("unknown")}
+                className="w-4 h-4 rounded border-slate-700 bg-slate-800 text-cyan-500 focus:ring-cyan-400 focus:ring-offset-slate-900 cursor-pointer"
+              />
+              <DeviceCategoryIcon category="unknown" size={16} />
+              <span className="text-slate-300 group-hover:text-white transition-colors">
+                Chưa phân loại (solar, avc, nfc...)
               </span>
             </label>
           </div>

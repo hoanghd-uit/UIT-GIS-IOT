@@ -107,6 +107,7 @@ export interface FloorSensorFilters {
   smartBuilding: boolean;
   rfUhfReader: boolean;
   camera: boolean;
+  unknown: boolean;
 }
 
 export interface ApplyFloorFiltersPayload {
