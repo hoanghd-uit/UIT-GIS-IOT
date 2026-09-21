@@ -190,10 +190,13 @@ export function isDeviceKindVisible(
       return filters.rfUhfReader;
     case "camera":
       return filters.camera;
-    case "unknown":
     case "solar":
+      return filters.solar ?? true;
     case "avc":
+      return filters.avc ?? true;
     case "nfc":
+      return filters.nfc ?? true;
+    case "unknown":
     default:
       return filters.unknown ?? true;
   }

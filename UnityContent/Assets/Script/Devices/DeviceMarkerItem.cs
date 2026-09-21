@@ -297,6 +297,9 @@ namespace UITCampus.Devices
                 case "rf_uhf_reader":
                 case "uhf_reader": return "Icons/icon_rf_uhf_reader";
                 case "camera": return "Icons/icon_camera";
+                case "solar": return "Icons/icon_solar";
+                case "avc": return "Icons/icon_avc";
+                case "nfc": return "Icons/icon_nfc";
                 case "unknown":
                 default: return "Icons/icon_unknown";
             }
@@ -317,6 +320,12 @@ namespace UITCampus.Devices
                     return new Color(0.06f, 0.73f, 0.51f); // #10B981
                 case "camera":
                     return new Color(0.66f, 0.33f, 0.97f); // #A855F7
+                case "solar":
+                    return new Color(0.92f, 0.70f, 0.03f); // #EAB308 - Yellow sun
+                case "avc":
+                    return new Color(0.44f, 0.44f, 0.48f); // #71717A - Grey box
+                case "nfc":
+                    return new Color(0.39f, 0.40f, 0.95f); // #6366F1 - Indigo NFC
                 case "group":
                     return new Color(0.95f, 0.45f, 0.15f); // Amber group
                 case "unknown":

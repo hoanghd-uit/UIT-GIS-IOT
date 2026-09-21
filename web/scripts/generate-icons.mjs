@@ -244,6 +244,71 @@ function drawGroup(x, y) {
   return [br, bg, bb, ba];
 }
 
+// 8. Solar (Yellow: 234, 179, 8)
+function drawSolar(x, y) {
+  const [br, bg, bb, ba] = baseBadge(x, y, 234, 179, 8);
+  if (ba === 0 || dist(x, y, CX, CY) > R - 3.5) return [br, bg, bb, ba];
+
+  const dCenter = dist(x, y, CX, CY);
+  // Sun glowing core
+  if (dCenter <= 7.5) return [254, 240, 138, 255]; // Light yellow core
+  if (dCenter <= 9) return [255, 255, 255, 255]; // White rim
+
+  // Cardinal rays
+  if (x >= CX - 1.5 && x <= CX + 1.5 && y >= CY - 18 && y <= CY - 11) return [255, 255, 255, 255];
+  if (x >= CX - 1.5 && x <= CX + 1.5 && y >= CY + 11 && y <= CY + 18) return [255, 255, 255, 255];
+  if (y >= CY - 1.5 && y <= CY + 1.5 && x >= CX - 18 && x <= CX - 11) return [255, 255, 255, 255];
+  if (y >= CY - 1.5 && y <= CY + 1.5 && x >= CX + 11 && x <= CX + 18) return [255, 255, 255, 255];
+
+  // Diagonal rays
+  if (Math.abs((x - CX) - (y - CY)) <= 1.5 && dCenter >= 11 && dCenter <= 17) return [255, 255, 255, 255];
+  if (Math.abs((x - CX) + (y - CY)) <= 1.5 && dCenter >= 11 && dCenter <= 17) return [255, 255, 255, 255];
+
+  return [br, bg, bb, ba];
+}
+
+// 9. AVC Controller (Grey Box: 113, 113, 122)
+function drawAvc(x, y) {
+  const [br, bg, bb, ba] = baseBadge(x, y, 113, 113, 122);
+  if (ba === 0 || dist(x, y, CX, CY) > R - 3.5) return [br, bg, bb, ba];
+
+  // Box chassis (x: 18-46, y: 18-46)
+  if (x >= 18 && x <= 46 && y >= 18 && y <= 46) {
+    if (x === 18 || x === 46 || y === 18 || y === 46) return [255, 255, 255, 255];
+    // Vent slots
+    if ((y === 24 || y === 28) && x >= 24 && x <= 40) return [161, 161, 170, 255];
+    // LED Indicators at bottom
+    if (dist(x, y, 25, 38) <= 2.5) return [34, 197, 94, 255]; // Green LED
+    if (dist(x, y, 32, 38) <= 2.5) return [56, 189, 248, 255]; // Blue LED
+    if (dist(x, y, 39, 38) <= 2.5) return [250, 204, 21, 255]; // Amber LED
+    return [39, 39, 42, 255];
+  }
+
+  return [br, bg, bb, ba];
+}
+
+// 10. NFC Reader (Indigo: 99, 102, 241)
+function drawNfc(x, y) {
+  const [br, bg, bb, ba] = baseBadge(x, y, 99, 102, 241);
+  if (ba === 0 || dist(x, y, CX, CY) > R - 3.5) return [br, bg, bb, ba];
+
+  // Origin point
+  if (dist(x, y, 22, 32) <= 3) return [255, 255, 255, 255];
+
+  // Contactless waves radiating right
+  const dWave = dist(x, y, 18, 32);
+  const angY = Math.abs(y - 32);
+
+  // Wave 1
+  if (dWave >= 8 && dWave <= 10.5 && x >= 22 && angY <= (x - 18) * 1.1) return [255, 255, 255, 255];
+  // Wave 2
+  if (dWave >= 14 && dWave <= 16.5 && x >= 25 && angY <= (x - 18) * 1.1) return [255, 255, 255, 255];
+  // Wave 3
+  if (dWave >= 20 && dWave <= 22.5 && x >= 28 && angY <= (x - 18) * 1.1) return [255, 255, 255, 255];
+
+  return [br, bg, bb, ba];
+}
+
 const icons = [
   { name: 'icon_water_meter', fn: drawWaterMeter, guid: 'a1000000000000000000000000000001' },
   { name: 'icon_temperature_humidity', fn: drawTempHumid, guid: 'a1000000000000000000000000000002' },
@@ -252,6 +317,9 @@ const icons = [
   { name: 'icon_camera', fn: drawCamera, guid: 'a1000000000000000000000000000005' },
   { name: 'icon_unknown', fn: drawUnknown, guid: 'a1000000000000000000000000000006' },
   { name: 'icon_group', fn: drawGroup, guid: 'a1000000000000000000000000000007' },
+  { name: 'icon_solar', fn: drawSolar, guid: 'a1000000000000000000000000000008' },
+  { name: 'icon_avc', fn: drawAvc, guid: 'a1000000000000000000000000000009' },
+  { name: 'icon_nfc', fn: drawNfc, guid: 'a100000000000000000000000000000a' },
 ];
 
 const unityDest = path.resolve('UnityContent/Assets/Resources/Icons');

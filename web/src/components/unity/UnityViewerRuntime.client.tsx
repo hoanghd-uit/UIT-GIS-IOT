@@ -115,6 +115,9 @@ export function UnityViewerRuntime({ children }: UnityViewerRuntimeProps) {
     smartBuilding: true,
     rfUhfReader: true,
     camera: true,
+    solar: true,
+    avc: true,
+    nfc: true,
     unknown: true,
   });
   const [filterStatus, setFilterStatus] = useState<"idle" | "applying" | "applied" | "error">("idle");

@@ -4,6 +4,9 @@ export type DeviceCategory =
   | 'smart_building'
   | 'rf_uhf_reader'
   | 'camera'
+  | 'solar'
+  | 'avc'
+  | 'nfc'
   | 'unknown';
 
 export interface FloorDeviceView {

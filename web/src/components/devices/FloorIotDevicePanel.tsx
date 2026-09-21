@@ -28,6 +28,9 @@ const CATEGORY_NAMES: Record<string, string> = {
   rf_uhf_reader: "Đầu đọc RF/UHF",
   uhf_reader: "Đầu đọc RF/UHF",
   camera: "Camera",
+  solar: "Cảm biến Solar",
+  avc: "Bộ điều khiển AVC",
+  nfc: "Đầu đọc thẻ NFC",
   unknown: "Chưa phân loại",
 };
 

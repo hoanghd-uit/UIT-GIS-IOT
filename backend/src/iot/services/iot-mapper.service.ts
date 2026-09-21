@@ -41,8 +41,14 @@ export class IotMapperService {
         return 'rf_uhf_reader';
       case 'camera':
         return 'camera';
+      case 'solar':
+        return 'solar';
+      case 'avc':
+        return 'avc';
+      case 'nfc':
+        return 'nfc';
       default:
-        // 'solar', 'avc', 'nfc', and any other new/unverified types
+        // any other new/unverified types
         return 'unknown';
     }
   }

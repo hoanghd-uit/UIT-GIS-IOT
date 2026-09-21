@@ -6,6 +6,9 @@ export type DeviceCategory =
   | "smart_building"
   | "rf_uhf_reader"
   | "camera"
+  | "solar"
+  | "avc"
+  | "nfc"
   | "unknown";
 
 interface DeviceCategoryIconProps {
@@ -124,6 +127,74 @@ export function DeviceCategoryIcon({
           <circle cx="10" cy="10.5" r="1.5" fill="#F43F5E" />
           {/* Stand */}
           <path d="M8 12V15H11" stroke="#F472B6" strokeWidth="1.25" strokeLinecap="round" />
+        </svg>
+      );
+
+    case "solar":
+      return (
+        <svg
+          width={size}
+          height={size}
+          viewBox="0 0 24 24"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          className={`shrink-0 ${className}`}
+          aria-label="Cảm biến Solar"
+        >
+          <circle cx="12" cy="12" r="10" className="fill-yellow-500/20 stroke-yellow-400" strokeWidth="1.75" />
+          {/* Sun center */}
+          <circle cx="12" cy="12" r="3.75" fill="#FACC15" />
+          {/* Sun radiant rays */}
+          <path
+            d="M12 4.5V6.5M12 17.5V19.5M4.5 12H6.5M17.5 12H19.5M6.7 6.7L8.1 8.1M15.9 15.9L17.3 17.3M6.7 17.3L8.1 15.9M15.9 8.1L17.3 6.7"
+            stroke="#FBBF24"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+          />
+        </svg>
+      );
+
+    case "avc":
+      return (
+        <svg
+          width={size}
+          height={size}
+          viewBox="0 0 24 24"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          className={`shrink-0 ${className}`}
+          aria-label="Bộ điều khiển AVC"
+        >
+          <circle cx="12" cy="12" r="10" className="fill-zinc-500/20 stroke-zinc-400" strokeWidth="1.75" />
+          {/* Grey box chassis */}
+          <rect x="6.5" y="7" width="11" height="10" rx="1.5" stroke="#A1A1AA" strokeWidth="1.25" fill="#27272A" />
+          {/* Vent slots */}
+          <line x1="9" y1="9.5" x2="15" y2="9.5" stroke="#71717A" strokeWidth="1" strokeLinecap="round" />
+          <line x1="9" y1="11.5" x2="15" y2="11.5" stroke="#71717A" strokeWidth="1" strokeLinecap="round" />
+          {/* Indicator LEDs */}
+          <circle cx="9" cy="14.5" r="0.8" fill="#22C55E" />
+          <circle cx="11.5" cy="14.5" r="0.8" fill="#38BDF8" />
+          <circle cx="14" cy="14.5" r="0.8" fill="#FACC15" />
+        </svg>
+      );
+
+    case "nfc":
+      return (
+        <svg
+          width={size}
+          height={size}
+          viewBox="0 0 24 24"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          className={`shrink-0 ${className}`}
+          aria-label="Đầu đọc thẻ NFC"
+        >
+          <circle cx="12" cy="12" r="10" className="fill-indigo-500/20 stroke-indigo-400" strokeWidth="1.75" />
+          {/* Contactless waves */}
+          <circle cx="7" cy="12" r="1.2" fill="#818CF8" />
+          <path d="M9.5 15C10.5 14.1 11 13.1 11 12C11 10.9 10.5 9.9 9.5 9" stroke="#818CF8" strokeWidth="1.5" strokeLinecap="round" />
+          <path d="M12.5 17C14.2 15.6 15 13.9 15 12C15 10.1 14.2 8.4 12.5 7" stroke="#A5B4FC" strokeWidth="1.5" strokeLinecap="round" />
+          <path d="M15.5 19C17.8 17.1 19 14.7 19 12C19 9.3 17.8 6.9 15.5 5" stroke="#C7D2FE" strokeWidth="1.5" strokeLinecap="round" />
         </svg>
       );
 

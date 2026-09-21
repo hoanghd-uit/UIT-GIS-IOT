@@ -42,6 +42,9 @@ namespace UITCampus.Devices
             { "rf_uhf_reader", true },
             { "uhf_reader", true },
             { "camera", true },
+            { "solar", true },
+            { "avc", true },
+            { "nfc", true },
             { "unknown", true },
             { "group", true }
         };
@@ -443,6 +446,9 @@ namespace UITCampus.Devices
             _categoryVisibility["rf_uhf_reader"] = sensors.rfUhfReader;
             _categoryVisibility["uhf_reader"] = sensors.rfUhfReader;
             _categoryVisibility["camera"] = sensors.camera;
+            _categoryVisibility["solar"] = sensors.solar;
+            _categoryVisibility["avc"] = sensors.avc;
+            _categoryVisibility["nfc"] = sensors.nfc;
             _categoryVisibility["unknown"] = sensors.unknown;
             _categoryVisibility["group"] = true;
         }

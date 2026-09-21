@@ -14,22 +14,28 @@ function isDeviceKindVisible(kind, filters) {
       return filters.rfUhfReader;
     case "camera":
       return filters.camera;
-    case "unknown":
     case "solar":
+      return filters.solar ?? true;
     case "avc":
+      return filters.avc ?? true;
     case "nfc":
+      return filters.nfc ?? true;
+    case "unknown":
     default:
       return filters.unknown ?? true;
   }
 }
 
-test("T06-Sensor-Filter: All 6 groups toggle visibility independently including unknown", () => {
+test("T06-Sensor-Filter: All 8 groups toggle visibility independently including solar, avc, nfc", () => {
   const allOn = {
     waterMeter: true,
     temperatureHumidity: true,
     smartBuilding: true,
     rfUhfReader: true,
     camera: true,
+    solar: true,
+    avc: true,
+    nfc: true,
     unknown: true,
   };
 
@@ -39,25 +45,34 @@ test("T06-Sensor-Filter: All 6 groups toggle visibility independently including 
   assert.equal(isDeviceKindVisible("rf_uhf_reader", allOn), true);
   assert.equal(isDeviceKindVisible("uhf_reader", allOn), true);
   assert.equal(isDeviceKindVisible("camera", allOn), true);
-  assert.equal(isDeviceKindVisible("unknown", allOn), true);
   assert.equal(isDeviceKindVisible("solar", allOn), true);
   assert.equal(isDeviceKindVisible("avc", allOn), true);
   assert.equal(isDeviceKindVisible("nfc", allOn), true);
+  assert.equal(isDeviceKindVisible("unknown", allOn), true);
+
+  // Turn off solar only
+  const noSolar = { ...allOn, solar: false };
+  assert.equal(isDeviceKindVisible("solar", noSolar), false);
+  assert.equal(isDeviceKindVisible("avc", noSolar), true);
+  assert.equal(isDeviceKindVisible("nfc", noSolar), true);
+  assert.equal(isDeviceKindVisible("unknown", noSolar), true);
+
+  // Turn off avc only
+  const noAvc = { ...allOn, avc: false };
+  assert.equal(isDeviceKindVisible("avc", noAvc), false);
+  assert.equal(isDeviceKindVisible("solar", noAvc), true);
+
+  // Turn off nfc only
+  const noNfc = { ...allOn, nfc: false };
+  assert.equal(isDeviceKindVisible("nfc", noNfc), false);
+  assert.equal(isDeviceKindVisible("unknown", noNfc), true);
 
   // Turn off unknown only
   const noUnknown = { ...allOn, unknown: false };
   assert.equal(isDeviceKindVisible("unknown", noUnknown), false);
-  assert.equal(isDeviceKindVisible("solar", noUnknown), false);
-  assert.equal(isDeviceKindVisible("avc", noUnknown), false);
-  assert.equal(isDeviceKindVisible("nfc", noUnknown), false);
-  assert.equal(isDeviceKindVisible("camera", noUnknown), true);
-  assert.equal(isDeviceKindVisible("water_meter", noUnknown), true);
-
-  // Turn off waterMeter only
-  const noWater = { ...allOn, waterMeter: false };
-  assert.equal(isDeviceKindVisible("water_meter", noWater), false);
-  assert.equal(isDeviceKindVisible("unknown", noWater), true);
-  assert.equal(isDeviceKindVisible("solar", noWater), true);
+  assert.equal(isDeviceKindVisible("solar", noUnknown), true);
+  assert.equal(isDeviceKindVisible("avc", noUnknown), true);
+  assert.equal(isDeviceKindVisible("nfc", noUnknown), true);
 });
 
 test("T06-Coordinate-Mapping: TEST_PREFAB_CENTER_XZ_V1 transforms correctly", () => {

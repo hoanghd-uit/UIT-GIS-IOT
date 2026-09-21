@@ -131,7 +131,7 @@ describe('IotMapperService & IotClientService (Small Phase 06)', () => {
       const first = res.devices[0];
       expect(first.deviceId).toBe('70B3D57ED0073E9D');
       expect(first.sourceDeviceType).toBe('solar');
-      expect(first.category).toBe('unknown');
+      expect(first.category).toBe('solar');
       expect(first.sourceLocation).toEqual({ x: 0, y: 0, floorLevel: 0 });
       expect(first.displayFloorId).toBe('4');
 
@@ -139,7 +139,7 @@ describe('IotMapperService & IotClientService (Small Phase 06)', () => {
       const dummyRecord = res.devices.find((d) => d.deviceId === 'dummy01801182ed2814');
       expect(dummyRecord).toBeDefined();
       expect(dummyRecord?.sourceDeviceType).toBe('avc');
-      expect(dummyRecord?.category).toBe('unknown');
+      expect(dummyRecord?.category).toBe('avc');
     });
 
     it('projects same snapshot onto Floor 6 with displayFloorId 6', () => {
@@ -161,7 +161,7 @@ describe('IotMapperService & IotClientService (Small Phase 06)', () => {
   });
 
   describe('Category mapping and edge cases', () => {
-    it('maps known 5 categories accurately', () => {
+    it('maps known 8 categories accurately', () => {
       expect(mapper.mapCategory('water_meter')).toBe('water_meter');
       expect(mapper.mapCategory('temperature_humidity')).toBe('temperature_humidity');
       expect(mapper.mapCategory('smart_building')).toBe('smart_building');
@@ -169,12 +169,12 @@ describe('IotMapperService & IotClientService (Small Phase 06)', () => {
       expect(mapper.mapCategory('uhf_reader')).toBe('rf_uhf_reader');
       expect(mapper.mapCategory('camera')).toBe('camera');
       expect(mapper.mapCategory('CAMERA')).toBe('camera');
+      expect(mapper.mapCategory('solar')).toBe('solar');
+      expect(mapper.mapCategory('avc')).toBe('avc');
+      expect(mapper.mapCategory('nfc')).toBe('nfc');
     });
 
     it('maps unknown / new raw types to unknown', () => {
-      expect(mapper.mapCategory('solar')).toBe('unknown');
-      expect(mapper.mapCategory('avc')).toBe('unknown');
-      expect(mapper.mapCategory('nfc')).toBe('unknown');
       expect(mapper.mapCategory('future_sensor_99')).toBe('unknown');
       expect(mapper.mapCategory(null)).toBe('unknown');
       expect(mapper.mapCategory('')).toBe('unknown');

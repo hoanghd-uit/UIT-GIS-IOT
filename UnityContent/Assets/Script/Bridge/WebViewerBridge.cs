@@ -24,6 +24,9 @@ namespace UITCampus.Bridge
         public bool smartBuilding = true;
         public bool rfUhfReader = true;
         public bool camera = true;
+        public bool solar = true;
+        public bool avc = true;
+        public bool nfc = true;
         public bool unknown = true;
     }
 
