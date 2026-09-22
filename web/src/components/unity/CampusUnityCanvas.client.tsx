@@ -14,11 +14,17 @@ export function CampusUnityCanvas() {
 
   const loadingPercentage = Math.round(loadingProgression * 100);
 
+  const dpr =
+    typeof window === "undefined"
+      ? 1
+      : Math.min(window.devicePixelRatio || 1, 2);
+
   return (
     <div className="relative h-full w-full min-h-0 min-w-0 overflow-hidden bg-[#020a12]">
       {/* Unity Canvas */}
       <Unity
         unityProvider={unityProvider}
+        devicePixelRatio={dpr}
         className="h-full w-full outline-none"
         tabIndex={1}
       />

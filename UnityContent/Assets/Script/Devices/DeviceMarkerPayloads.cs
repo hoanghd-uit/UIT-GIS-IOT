@@ -53,6 +53,9 @@ namespace UITCampus.Devices
         public string floorId;
         public string deviceId;
         public string externalId;
+        public string category;
+        public string sourceDeviceType;
+        public bool isTestAnchor;
     }
 }
 

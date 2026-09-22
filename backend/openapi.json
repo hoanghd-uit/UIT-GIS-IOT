@@ -71,6 +71,40 @@
         ]
       }
     },
+    "/api/v1/iot/buildings/{buildingId}/floors/{floorId}/devices": {
+      "get": {
+        "operationId": "DevicesController_getIotFloorDevices",
+        "parameters": [
+          {
+            "name": "buildingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": "E",
+              "type": "string"
+            }
+          },
+          {
+            "name": "floorId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": "4",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "IoT floor devices returned successfully"
+          }
+        },
+        "summary": "Get IoT devices list directly from upstream API (Phase 06, no persistence)",
+        "tags": [
+          "Devices"
+        ]
+      }
+    },
     "/api/v1/devices/{deviceId}": {
       "get": {
         "operationId": "DevicesController_getDevice",

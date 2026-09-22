@@ -24,6 +24,61 @@ namespace UITCampus.Bridge
         public bool smartBuilding = true;
         public bool rfUhfReader = true;
         public bool camera = true;
+        public bool solar = true;
+        public bool avc = true;
+        public bool nfc = true;
+        public bool unknown = true;
+    }
+
+    [Serializable]
+    public class FloorDeviceSourceLocationDto
+    {
+        public float x;
+        public float y;
+        public float floorLevel;
+    }
+
+    [Serializable]
+    public class FloorDeviceItemDto
+    {
+        public string deviceId;
+        public string sourceDeviceType;
+        public string category;
+        public FloorDeviceSourceLocationDto sourceLocation;
+        public string displayFloorId;
+    }
+
+    [Serializable]
+    public class ApplyFloorDeviceMarkersPayload
+    {
+        public int schemaVersion = 1;
+        public string routeRequestId;
+        public int loadGeneration;
+        public string buildingId;
+        public string floorId;
+        public FloorDeviceItemDto[] devices;
+    }
+
+    [Serializable]
+    public class ClearFloorDeviceMarkersPayload
+    {
+        public int schemaVersion = 1;
+        public int loadGeneration;
+        public string buildingId;
+        public string floorId;
+    }
+
+    [Serializable]
+    public class FloorDeviceMarkersAppliedPayload
+    {
+        public int schemaVersion = 1;
+        public string routeRequestId;
+        public int loadGeneration;
+        public string buildingId;
+        public string floorId;
+        public int appliedCount;
+        public string status;
+        public string errorCode;
     }
 
     [Serializable]
@@ -240,6 +295,42 @@ namespace UITCampus.Bridge
         }
 
         /// <summary>
+        /// Applies IoT floor device markers with TEST mapping and clustering in Unity WebGL.
+        /// Inbound command from React: sendMessage("_InitManager", "ApplyFloorDeviceMarkers", json)
+        /// </summary>
+        public void ApplyFloorDeviceMarkers(string payloadJson)
+        {
+            var mgr = UITCampus.Devices.DeviceMarkerManager.EnsureInstance();
+            mgr?.ApplyFloorDeviceMarkers(payloadJson);
+        }
+
+        /// <summary>
+        /// Clears IoT floor device markers with generation correlation.
+        /// Inbound command from React: sendMessage("_InitManager", "ClearFloorDeviceMarkers", json)
+        /// </summary>
+        public void ClearFloorDeviceMarkers(string payloadJson)
+        {
+            var mgr = UITCampus.Devices.DeviceMarkerManager.EnsureInstance();
+            mgr?.ClearFloorDeviceMarkers(payloadJson);
+        }
+
+        /// <summary>
+        /// Emits a FloorDeviceMarkersApplied event payload.
+        /// </summary>
+        public void EmitFloorDeviceMarkersApplied(string payloadJson)
+        {
+            DispatchEvent("FloorDeviceMarkersApplied", payloadJson);
+        }
+
+        /// <summary>
+        /// Emits a DeviceMarkerGroupClicked event payload when a cluster of co-located devices is clicked.
+        /// </summary>
+        public void EmitDeviceMarkerGroupClicked(string payloadJson)
+        {
+            DispatchEvent("DeviceMarkerGroupClicked", payloadJson);
+        }
+
+        /// <summary>
         /// Emits a FloorFiltersApplied event payload.
         /// </summary>
         public void EmitFloorFiltersApplied(string payloadJson)
@@ -294,9 +385,10 @@ namespace UITCampus.Bridge
             }
 
             // 2. Apply sensor filters to device markers
-            if (payload.sensors != null && UITCampus.Devices.DeviceMarkerManager.Instance != null)
+            if (payload.sensors != null)
             {
-                UITCampus.Devices.DeviceMarkerManager.Instance.ApplySensorFilters(payload.sensors);
+                var mgr = UITCampus.Devices.DeviceMarkerManager.EnsureInstance();
+                mgr?.ApplySensorFilters(payload.sensors);
             }
 
             // Emit acknowledgement

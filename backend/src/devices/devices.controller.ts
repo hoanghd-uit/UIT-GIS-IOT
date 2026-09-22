@@ -6,6 +6,7 @@ import {
   Param,
   Body,
   Headers,
+  Header,
   Query,
   BadRequestException,
 } from '@nestjs/common';
@@ -19,6 +20,7 @@ import {
 import { DevicesService } from './devices.service';
 import { UpdateDisplayPositionDto } from './dto/update-display-position.dto';
 import { FloorDevicesResponseDto, DeviceDto } from './dto/device-response.dto';
+import { FloorDeviceResponse } from '../iot/dto/iot-devices.dto';
 
 @ApiTags('Devices')
 @Controller('api/v1')
@@ -26,6 +28,7 @@ export class DevicesController {
   constructor(private readonly devicesService: DevicesService) {}
 
   @Get('buildings/:buildingId/floors/:floorId/devices')
+  @Header('Cache-Control', 'no-store')
   @ApiOperation({ summary: 'Get catalogue and effective marker positions for a floor' })
   @ApiParam({ name: 'buildingId', example: 'E' })
   @ApiParam({ name: 'floorId', example: '4' })
@@ -34,8 +37,21 @@ export class DevicesController {
   async getFloorDevices(
     @Param('buildingId') buildingId: string,
     @Param('floorId') floorId: string,
-  ): Promise<FloorDevicesResponseDto> {
+  ): Promise<FloorDevicesResponseDto | FloorDeviceResponse> {
     return this.devicesService.getFloorDevices(buildingId, floorId);
+  }
+
+  @Get('iot/buildings/:buildingId/floors/:floorId/devices')
+  @Header('Cache-Control', 'no-store')
+  @ApiOperation({ summary: 'Get IoT devices list directly from upstream API (Phase 06, no persistence)' })
+  @ApiParam({ name: 'buildingId', example: 'E' })
+  @ApiParam({ name: 'floorId', example: '4' })
+  @ApiResponse({ status: 200, description: 'IoT floor devices returned successfully' })
+  async getIotFloorDevices(
+    @Param('buildingId') buildingId: string,
+    @Param('floorId') floorId: string,
+  ): Promise<FloorDeviceResponse> {
+    return this.devicesService.getIotFloorDevices(buildingId, floorId);
   }
 
   @Get('devices/:deviceId')
