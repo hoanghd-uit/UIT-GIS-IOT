@@ -13,6 +13,8 @@ import { CatalogueSyncStateEntity } from '../database/entities/catalogue-sync-st
 import { FloorEntity } from '../database/entities/floor.entity';
 import { DeviceDto, FloorDevicesResponseDto } from './dto/device-response.dto';
 import { UpdateDisplayPositionDto } from './dto/update-display-position.dto';
+import { IotService } from '../iot/iot.service';
+import { FloorDeviceResponse } from '../iot/dto/iot-devices.dto';
 
 @Injectable()
 export class DevicesService {
@@ -27,6 +29,7 @@ export class DevicesService {
     private readonly floorRepo: Repository<FloorEntity>,
     private readonly dataSource: DataSource,
     private readonly config: ConfigService,
+    private readonly iotService: IotService,
   ) {}
 
   private getSourceMode(): 'disabled' | 'fixture' | 'iot' {
@@ -37,8 +40,20 @@ export class DevicesService {
     return this.config.get<string>('fixtures.namespace', 'phase04-fixture-v1');
   }
 
-  async getFloorDevices(buildingId: string, floorId: string): Promise<FloorDevicesResponseDto> {
+  async getIotFloorDevices(buildingId: string, floorId: string): Promise<FloorDeviceResponse> {
+    return this.iotService.getFloorDevices(buildingId, floorId);
+  }
+
+  async getFloorDevices(
+    buildingId: string,
+    floorId: string,
+  ): Promise<FloorDevicesResponseDto | FloorDeviceResponse> {
     const mode = this.getSourceMode();
+
+    if (mode === 'iot') {
+      return this.iotService.getFloorDevices(buildingId, floorId);
+    }
+
     const namespace = this.getSourceNamespace();
 
     // Verify floor exists

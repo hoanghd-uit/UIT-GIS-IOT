@@ -30,7 +30,8 @@ import {
   FloorSensorFilters,
   ViewerRuntimeStatus,
 } from "@/types/viewer";
-import { Coordinate3D, DeviceMarkerDto } from "@/types/devices";
+import { DeviceMarkerDto, Coordinate3D } from "@/types/devices";
+import { FloorDeviceView } from "@/types/iot-devices";
 
 interface UnityViewerContextValue {
   unityProvider: ReturnType<typeof useUnityContext>["unityProvider"];
@@ -43,11 +44,15 @@ interface UnityViewerContextValue {
   activeRequestId: string | null;
   selectedDeviceId: string | null;
   setSelectedDeviceId: (id: string | null) => void;
+  selectedClusterIds: string[] | null;
+  setSelectedClusterIds: (ids: string[] | null) => void;
   setViewerStatus: (status: ViewerRuntimeStatus) => void;
   sendMessage: ReturnType<typeof useUnityContext>["sendMessage"];
   dispatchRouteRequest: (pathname: string) => void;
   retryCurrentFloor: () => void;
   applyFloorMarkers: (devices: DeviceMarkerDto[]) => void;
+  applyFloorDeviceMarkers: (devices: FloorDeviceView[], loadGeneration: number) => void;
+  clearFloorDeviceMarkers: (loadGeneration: number) => void;
   previewMarkerPosition: (deviceId: string, pos: Coordinate3D) => void;
   selectFloorMarker: (deviceId: string) => void;
   objectFilters: FloorObjectFilters;
@@ -97,6 +102,7 @@ export function UnityViewerRuntime({ children }: UnityViewerRuntimeProps) {
   const [activeRequestId, setActiveRequestId] = useState<string | null>(null);
 
   const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
+  const [selectedClusterIds, setSelectedClusterIds] = useState<string[] | null>(null);
 
   const [objectFilters, setObjectFilters] = useState<FloorObjectFilters>({
     ceilling: true,
@@ -109,6 +115,10 @@ export function UnityViewerRuntime({ children }: UnityViewerRuntimeProps) {
     smartBuilding: true,
     rfUhfReader: true,
     camera: true,
+    solar: true,
+    avc: true,
+    nfc: true,
+    unknown: true,
   });
   const [filterStatus, setFilterStatus] = useState<"idle" | "applying" | "applied" | "error">("idle");
   const filterRevisionRef = useRef(1);
@@ -324,7 +334,20 @@ export function UnityViewerRuntime({ children }: UnityViewerRuntimeProps) {
     setSelectedDeviceId(payload.deviceId);
   }, []);
 
-  // Apply floor markers to Unity WebGL
+  // Handle DeviceMarkerGroupClicked from Unity WebGL (cluster of co-located devices)
+  const handleDeviceMarkerGroupClicked = useCallback((raw: unknown) => {
+    try {
+      const obj = typeof raw === "string" ? JSON.parse(raw) : raw;
+      if (obj && Array.isArray(obj.deviceIds)) {
+        setSelectedClusterIds(obj.deviceIds);
+        setSelectedDeviceId(null);
+      }
+    } catch (e) {
+      console.warn("[UnityViewerRuntime] Failed to parse cluster clicked:", e);
+    }
+  }, []);
+
+  // Apply floor markers to Unity WebGL (Phase 04 legacy)
   const applyFloorMarkers = useCallback(
     (devices: DeviceMarkerDto[]) => {
       if (!isLoaded || !activeFloorMetadata) return;
@@ -348,6 +371,40 @@ export function UnityViewerRuntime({ children }: UnityViewerRuntimeProps) {
       };
 
       sendMessage("_InitManager", "ApplyFloorMarkers", JSON.stringify(payload));
+    },
+    [isLoaded, activeFloorMetadata, sendMessage]
+  );
+
+  // Apply IoT floor device markers with generation correlation (Phase 06)
+  const applyFloorDeviceMarkers = useCallback(
+    (devices: FloorDeviceView[], loadGeneration: number) => {
+      if (!isLoaded || !activeFloorMetadata) return;
+
+      const payload = {
+        schemaVersion: 1,
+        routeRequestId: activeRequestIdRef.current || `req-${Date.now()}`,
+        loadGeneration,
+        buildingId: activeFloorMetadata.buildingId,
+        floorId: activeFloorMetadata.floorId,
+        devices,
+      };
+
+      sendMessage("_InitManager", "ApplyFloorDeviceMarkers", JSON.stringify(payload));
+    },
+    [isLoaded, activeFloorMetadata, sendMessage]
+  );
+
+  // Clear IoT floor device markers with generation correlation (Phase 06)
+  const clearFloorDeviceMarkers = useCallback(
+    (loadGeneration: number) => {
+      if (!isLoaded) return;
+      const payload = {
+        schemaVersion: 1,
+        loadGeneration,
+        buildingId: activeFloorMetadata?.buildingId || "E",
+        floorId: activeFloorMetadata?.floorId || "4",
+      };
+      sendMessage("_InitManager", "ClearFloorDeviceMarkers", JSON.stringify(payload));
     },
     [isLoaded, activeFloorMetadata, sendMessage]
   );
@@ -431,6 +488,7 @@ export function UnityViewerRuntime({ children }: UnityViewerRuntimeProps) {
     addEventListener("FloorContentStateChanged", handleFloorContentStateChanged);
     addEventListener("ViewerError", handleViewerError);
     addEventListener("DeviceMarkerClicked", handleDeviceMarkerClicked);
+    addEventListener("DeviceMarkerGroupClicked", handleDeviceMarkerGroupClicked);
     addEventListener("FloorFiltersApplied", handleFloorFiltersApplied);
 
     return () => {
@@ -439,6 +497,7 @@ export function UnityViewerRuntime({ children }: UnityViewerRuntimeProps) {
       removeEventListener("FloorContentStateChanged", handleFloorContentStateChanged);
       removeEventListener("ViewerError", handleViewerError);
       removeEventListener("DeviceMarkerClicked", handleDeviceMarkerClicked);
+      removeEventListener("DeviceMarkerGroupClicked", handleDeviceMarkerGroupClicked);
       removeEventListener("FloorFiltersApplied", handleFloorFiltersApplied);
     };
   }, [
@@ -449,6 +508,7 @@ export function UnityViewerRuntime({ children }: UnityViewerRuntimeProps) {
     handleFloorContentStateChanged,
     handleViewerError,
     handleDeviceMarkerClicked,
+    handleDeviceMarkerGroupClicked,
     handleFloorFiltersApplied,
   ]);
 
@@ -488,11 +548,15 @@ export function UnityViewerRuntime({ children }: UnityViewerRuntimeProps) {
       activeRequestId,
       selectedDeviceId,
       setSelectedDeviceId,
+      selectedClusterIds,
+      setSelectedClusterIds,
       setViewerStatus,
       sendMessage,
       dispatchRouteRequest,
       retryCurrentFloor,
       applyFloorMarkers,
+      applyFloorDeviceMarkers,
+      clearFloorDeviceMarkers,
       previewMarkerPosition,
       selectFloorMarker,
       objectFilters,
@@ -511,10 +575,13 @@ export function UnityViewerRuntime({ children }: UnityViewerRuntimeProps) {
       activeFloorMetadata,
       activeRequestId,
       selectedDeviceId,
+      selectedClusterIds,
       sendMessage,
       dispatchRouteRequest,
       retryCurrentFloor,
       applyFloorMarkers,
+      applyFloorDeviceMarkers,
+      clearFloorDeviceMarkers,
       previewMarkerPosition,
       selectFloorMarker,
       objectFilters,

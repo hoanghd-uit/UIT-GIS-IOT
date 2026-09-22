@@ -185,19 +185,20 @@ export function isDeviceKindVisible(
       return filters.temperatureHumidity;
     case "smart_building":
       return filters.smartBuilding;
+    case "rf_uhf_reader":
     case "uhf_reader":
       return filters.rfUhfReader;
     case "camera":
       return filters.camera;
+    case "solar":
+      return filters.solar ?? true;
+    case "avc":
+      return filters.avc ?? true;
+    case "nfc":
+      return filters.nfc ?? true;
+    case "unknown":
     default:
-      // Unknown kind: visible only if all 5 filters are enabled, otherwise hidden
-      return (
-        filters.waterMeter &&
-        filters.temperatureHumidity &&
-        filters.smartBuilding &&
-        filters.rfUhfReader &&
-        filters.camera
-      );
+      return filters.unknown ?? true;
   }
 }
 
