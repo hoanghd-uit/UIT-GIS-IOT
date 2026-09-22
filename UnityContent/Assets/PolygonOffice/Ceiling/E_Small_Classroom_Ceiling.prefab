@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 4560287753421924740}
   m_Layer: 0
   m_Name: E_Small_Classroom_Ceiling
-  m_TagString: Untagged
+  m_TagString: Interior
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -117,7 +117,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 91d7be1abf4410f43a7b3b27c56ede69, type: 3}
       propertyPath: m_TagString
-      value: Ceilling
+      value: Interior
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -195,7 +195,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: bc239bf163e017c42a705f812fcda076, type: 3}
       propertyPath: m_TagString
-      value: Ceilling
+      value: Interior
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -273,7 +273,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 91d7be1abf4410f43a7b3b27c56ede69, type: 3}
       propertyPath: m_TagString
-      value: Ceilling
+      value: Interior
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -351,7 +351,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 91d7be1abf4410f43a7b3b27c56ede69, type: 3}
       propertyPath: m_TagString
-      value: Ceilling
+      value: Interior
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -429,7 +429,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: f8f31c4d3bdbfe644ad6b9f416f6c9a0, type: 3}
       propertyPath: m_TagString
-      value: Ceilling
+      value: Interior
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -507,7 +507,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 3ef7c6fab0cd80846a157d46a41506ee, type: 3}
       propertyPath: m_TagString
-      value: Ceilling
+      value: Interior
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -585,7 +585,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: f8f31c4d3bdbfe644ad6b9f416f6c9a0, type: 3}
       propertyPath: m_TagString
-      value: Ceilling
+      value: Interior
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -663,7 +663,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 275625676075d9d43b296b37d824b3d4, type: 3}
       propertyPath: m_TagString
-      value: Ceilling
+      value: Interior
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -741,7 +741,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 91d7be1abf4410f43a7b3b27c56ede69, type: 3}
       propertyPath: m_TagString
-      value: Ceilling
+      value: Interior
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -819,7 +819,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 3b72714f75acc05409be959e3d539706, type: 3}
       propertyPath: m_TagString
-      value: Ceilling
+      value: Interior
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -897,7 +897,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 91d7be1abf4410f43a7b3b27c56ede69, type: 3}
       propertyPath: m_TagString
-      value: Ceilling
+      value: Interior
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -975,7 +975,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 91d7be1abf4410f43a7b3b27c56ede69, type: 3}
       propertyPath: m_TagString
-      value: Ceilling
+      value: Interior
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1053,7 +1053,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 91d7be1abf4410f43a7b3b27c56ede69, type: 3}
       propertyPath: m_TagString
-      value: Ceilling
+      value: Interior
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1131,7 +1131,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 91d7be1abf4410f43a7b3b27c56ede69, type: 3}
       propertyPath: m_TagString
-      value: Ceilling
+      value: Interior
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1209,7 +1209,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 275625676075d9d43b296b37d824b3d4, type: 3}
       propertyPath: m_TagString
-      value: Ceilling
+      value: Interior
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1287,7 +1287,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 91d7be1abf4410f43a7b3b27c56ede69, type: 3}
       propertyPath: m_TagString
-      value: Ceilling
+      value: Interior
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1365,7 +1365,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 91d7be1abf4410f43a7b3b27c56ede69, type: 3}
       propertyPath: m_TagString
-      value: Ceilling
+      value: Interior
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1443,7 +1443,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 91d7be1abf4410f43a7b3b27c56ede69, type: 3}
       propertyPath: m_TagString
-      value: Ceilling
+      value: Interior
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1521,7 +1521,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 91d7be1abf4410f43a7b3b27c56ede69, type: 3}
       propertyPath: m_TagString
-      value: Ceilling
+      value: Interior
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1599,7 +1599,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 3b72714f75acc05409be959e3d539706, type: 3}
       propertyPath: m_TagString
-      value: Ceilling
+      value: Interior
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
