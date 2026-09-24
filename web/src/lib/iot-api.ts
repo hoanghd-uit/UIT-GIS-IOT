@@ -1,4 +1,5 @@
 import { FloorDeviceResponse } from '@/types/iot-devices';
+import { DeviceTelemetryResponseDto } from '@/types/iot-telemetry';
 
 const BASE_URL = '/api/devices';
 
@@ -26,4 +27,47 @@ export async function fetchFloorIotDevices(
 
   return res.json();
 }
+
+/**
+ * Fetches telemetry readings/events for one IoT device within the rolling 72-hour window.
+ * Always fresh fetch: cache: 'no-store'. Zero persistent storage.
+ */
+export async function fetchDeviceTelemetry(
+  deviceId: string,
+  query: {
+    start: string;
+    stop: string;
+    limit?: number;
+    deviceType?: string;
+  },
+  signal?: AbortSignal,
+): Promise<DeviceTelemetryResponseDto> {
+  const params = new URLSearchParams({
+    start: query.start,
+    stop: query.stop,
+  });
+  if (query.limit !== undefined) {
+    params.set('limit', String(query.limit));
+  }
+  if (query.deviceType) {
+    params.set('deviceType', query.deviceType);
+  }
+
+  const encodedId = encodeURIComponent(deviceId);
+  const url = `${BASE_URL}/iot/devices/${encodedId}/telemetry?${params.toString()}`;
+
+  const res = await fetch(url, {
+    cache: 'no-store',
+    signal,
+  });
+
+  if (!res.ok) {
+    const errBody = await res.json().catch(() => ({}));
+    const message = errBody.message || `Lỗi tải dữ liệu thiết bị (${res.status})`;
+    throw new Error(message);
+  }
+
+  return res.json();
+}
+
 

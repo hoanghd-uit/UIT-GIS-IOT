@@ -11,7 +11,7 @@ import {
 export class IotMapperService {
   constructor(private readonly config: ConfigService) {}
 
-  private getFloorMappingMode(): string {
+  getFloorMappingMode(): string {
     return this.config.get<string>('iot.floorMode', 'TEST_CURRENT_FLOOR_4_6_V1');
   }
 
@@ -51,6 +51,46 @@ export class IotMapperService {
         // any other new/unverified types
         return 'unknown';
     }
+  }
+
+  /**
+   * Resolves viewer building and floor ID to upstream integer floor_level.
+   * Throws BadRequestException if mapping is unsupported, ambiguous (e.g. 'G'), or invalid.
+   */
+  resolveUpstreamFloorLevel(buildingId: string, floorId: string): number {
+    const normalizedBuilding = (buildingId || '').trim().toUpperCase();
+    const normalizedFloor = (floorId || '').trim();
+
+    if (normalizedBuilding !== 'E') {
+      throw new BadRequestException(
+        `IoT floor integration is currently configured for Building E only (requested: ${buildingId}).`,
+      );
+    }
+
+    if (normalizedFloor === 'G') {
+      throw new BadRequestException(
+        `Viewer floor 'G' does not have an approved upstream floor_level mapping yet.`,
+      );
+    }
+
+    if (!/^-?\d+$/.test(normalizedFloor)) {
+      throw new BadRequestException(
+        `Invalid floor identifier '${floorId}': cannot map to upstream integer floor_level.`,
+      );
+    }
+
+    const floorLevel = parseInt(normalizedFloor, 10);
+
+    const floorMode = this.getFloorMappingMode();
+    if (floorMode === 'TEST_CURRENT_FLOOR_4_6_V1') {
+      if (![4, 6].includes(floorLevel)) {
+        throw new BadRequestException(
+          `IoT floor integration is currently configured for Building E, floors 4 and 6 only (requested: ${buildingId}/${floorId}).`,
+        );
+      }
+    }
+
+    return floorLevel;
   }
 
   /**
@@ -97,7 +137,7 @@ export class IotMapperService {
 
       const deviceId = item.device_id;
 
-      // Validate install_location: x, y, floorLevel must be finite numbers
+      // Validate install_location: x, y, z, floorLevel must be finite numbers
       const loc = item.install_location;
       if (
         !loc ||
@@ -106,6 +146,8 @@ export class IotMapperService {
         !Number.isFinite(loc.install_x) ||
         typeof loc.install_y !== 'number' ||
         !Number.isFinite(loc.install_y) ||
+        typeof loc.install_z !== 'number' ||
+        !Number.isFinite(loc.install_z) ||
         typeof loc.install_floor_level !== 'number' ||
         !Number.isFinite(loc.install_floor_level)
       ) {
@@ -132,6 +174,7 @@ export class IotMapperService {
         sourceLocation: {
           x: loc.install_x,
           y: loc.install_y,
+          z: loc.install_z,
           floorLevel: loc.install_floor_level,
         },
         displayFloorId: normalizedFloor,

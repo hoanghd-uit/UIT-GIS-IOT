@@ -15,6 +15,7 @@ import { DeviceDto, FloorDevicesResponseDto } from './dto/device-response.dto';
 import { UpdateDisplayPositionDto } from './dto/update-display-position.dto';
 import { IotService } from '../iot/iot.service';
 import { FloorDeviceResponse } from '../iot/dto/iot-devices.dto';
+import { DeviceTelemetryQueryDto, DeviceTelemetryResponseDto } from '../iot/dto/iot-telemetry.dto';
 
 @Injectable()
 export class DevicesService {
@@ -43,6 +44,14 @@ export class DevicesService {
   async getIotFloorDevices(buildingId: string, floorId: string): Promise<FloorDeviceResponse> {
     return this.iotService.getFloorDevices(buildingId, floorId);
   }
+
+  async getDeviceTelemetry(
+    deviceId: string,
+    query: DeviceTelemetryQueryDto,
+  ): Promise<DeviceTelemetryResponseDto> {
+    return this.iotService.getDeviceTelemetry(deviceId, query);
+  }
+
 
   async getFloorDevices(
     buildingId: string,

@@ -329,18 +329,21 @@ export function UnityViewerRuntime({ children }: UnityViewerRuntimeProps) {
   // Handle DeviceMarkerClicked from Unity WebGL
   const handleDeviceMarkerClicked = useCallback((raw: unknown) => {
     const payload = parseDeviceMarkerClickedPayload(raw);
-    if (!payload) return;
+    if (!payload || !payload.deviceId) return;
 
+    // Direct single selection: clear any stale cluster filter and set the selected device ID
+    setSelectedClusterIds(null);
     setSelectedDeviceId(payload.deviceId);
   }, []);
 
   // Handle DeviceMarkerGroupClicked from Unity WebGL (cluster of co-located devices)
   const handleDeviceMarkerGroupClicked = useCallback((raw: unknown) => {
+    // Cluster cycling is removed in Phase 07 (R09).
+    // Never clear selectedDeviceId. If no device is currently selected, pick the first device ID.
     try {
       const obj = typeof raw === "string" ? JSON.parse(raw) : raw;
-      if (obj && Array.isArray(obj.deviceIds)) {
-        setSelectedClusterIds(obj.deviceIds);
-        setSelectedDeviceId(null);
+      if (obj && Array.isArray(obj.deviceIds) && obj.deviceIds.length > 0) {
+        setSelectedDeviceId((prev) => prev ?? obj.deviceIds[0]);
       }
     } catch (e) {
       console.warn("[UnityViewerRuntime] Failed to parse cluster clicked:", e);

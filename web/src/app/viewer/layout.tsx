@@ -3,6 +3,8 @@ import { ViewerShell } from "@/components/layout/ViewerShell";
 import { UnityViewerRuntime } from "@/components/unity/UnityViewerRuntime.client";
 import { UnityViewerCanvas } from "@/components/unity/UnityViewerCanvas.client";
 import { UnityRouteSynchronizer } from "@/components/unity/UnityRouteSynchronizer.client";
+import { IotToastProvider } from "@/context/IotToastContext";
+import { IotToastContainer } from "@/components/common/IotToastContainer";
 
 export default function ViewerLayout({
   children,
@@ -11,10 +13,13 @@ export default function ViewerLayout({
 }) {
   return (
     <UnityViewerRuntime>
-      <UnityRouteSynchronizer />
-      <ViewerShell unityCanvasSlot={<UnityViewerCanvas />}>
-        {children}
-      </ViewerShell>
+      <IotToastProvider>
+        <UnityRouteSynchronizer />
+        <ViewerShell unityCanvasSlot={<UnityViewerCanvas />}>
+          {children}
+        </ViewerShell>
+        <IotToastContainer />
+      </IotToastProvider>
     </UnityViewerRuntime>
   );
 }

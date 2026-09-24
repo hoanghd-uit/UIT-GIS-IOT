@@ -21,6 +21,7 @@ import { DevicesService } from './devices.service';
 import { UpdateDisplayPositionDto } from './dto/update-display-position.dto';
 import { FloorDevicesResponseDto, DeviceDto } from './dto/device-response.dto';
 import { FloorDeviceResponse } from '../iot/dto/iot-devices.dto';
+import { DeviceTelemetryResponseDto } from '../iot/dto/iot-telemetry.dto';
 
 @ApiTags('Devices')
 @Controller('api/v1')
@@ -53,6 +54,30 @@ export class DevicesController {
   ): Promise<FloorDeviceResponse> {
     return this.devicesService.getIotFloorDevices(buildingId, floorId);
   }
+
+  @Get('iot/devices/:deviceId/telemetry')
+  @Header('Cache-Control', 'no-store')
+  @ApiOperation({ summary: 'Get IoT device telemetry readings/events within rolling 72-hour window (Phase 07, zero persistence)' })
+  @ApiParam({ name: 'deviceId', example: 'd0ba7a2a-f40d-4b39-885b-6dc79815a104' })
+  @ApiResponse({ status: 200, description: 'Telemetry readings returned successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid query parameters (range, limit)' })
+  @ApiResponse({ status: 404, description: 'Device not found in registry' })
+  async getDeviceTelemetry(
+    @Param('deviceId') deviceId: string,
+    @Query('start') start: string,
+    @Query('stop') stop: string,
+    @Query('limit') limit?: string,
+    @Query('deviceType') deviceType?: string,
+  ): Promise<DeviceTelemetryResponseDto> {
+    const parsedLimit = limit !== undefined ? parseInt(limit, 10) : undefined;
+    return this.devicesService.getDeviceTelemetry(deviceId, {
+      start,
+      stop,
+      limit: parsedLimit,
+      deviceTypeHint: deviceType,
+    });
+  }
+
 
   @Get('devices/:deviceId')
   @ApiOperation({ summary: 'Get device metadata and placement detail' })

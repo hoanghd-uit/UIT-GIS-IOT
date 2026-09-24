@@ -3,6 +3,7 @@ import * as path from 'path';
 
 // Load local environment configuration
 dotenv.config({ path: path.resolve(__dirname, '../../.env.phase04.local') });
+process.env.DEVICE_SOURCE_MODE = 'fixture';
 
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';

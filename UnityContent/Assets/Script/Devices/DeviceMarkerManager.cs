@@ -336,53 +336,26 @@ namespace UITCampus.Devices
 
         private void OnMarkerClicked(DeviceMarkerItem item)
         {
-            if (item == null) return;
+            if (item == null || string.IsNullOrEmpty(item.DeviceId)) return;
 
-            // When markers overlay each other, repeated clicks cycle through the stack
-            DeviceMarkerItem targetItem = item;
-            var colocated = new List<DeviceMarkerItem>();
-            foreach (var kvp in _singleMarkers.Values)
-            {
-                if (kvp != null && Vector3.Distance(kvp.DisplayAnchorLocal, item.DisplayAnchorLocal) < 0.05f)
-                {
-                    colocated.Add(kvp);
-                }
-            }
-
-            if (colocated.Count > 1 && _selectedDeviceId == item.DeviceId)
-            {
-                int currentIndex = colocated.FindIndex(m => m.DeviceId == item.DeviceId);
-                int nextIndex = (currentIndex + 1) % colocated.Count;
-                targetItem = colocated[nextIndex];
-            }
-
-            SelectMarker(targetItem.DeviceId);
+            // Phase 07 (v1.2.0): Each marker binds a stable device ID without overlap cycling.
+            // Direct selection without identity switching or cluster emission.
+            SelectMarker(item.DeviceId);
 
             if (bridge == null) bridge = FindFirstObjectByType<WebViewerBridge>();
 
-            // 1. Emit single-device clicked event
+            // Emit single-device clicked event directly for the clicked marker
             var clickedPayload = new DeviceMarkerClickedPayload
             {
                 schemaVersion = 1,
-                buildingId = targetItem.BuildingId,
-                floorId = targetItem.FloorId,
-                deviceId = targetItem.DeviceId,
-                category = targetItem.Category,
-                sourceDeviceType = targetItem.SourceDeviceType,
-                isTestAnchor = targetItem.IsTestAnchor,
+                buildingId = item.BuildingId,
+                floorId = item.FloorId,
+                deviceId = item.DeviceId,
+                category = item.Category,
+                sourceDeviceType = item.SourceDeviceType,
+                isTestAnchor = item.IsTestAnchor,
             };
             bridge?.EmitDeviceMarkerClicked(JsonUtility.ToJson(clickedPayload));
-
-            // 2. Also emit group clicked event for backwards compatibility
-            var groupPayload = new DeviceMarkerClusterClickedPayload
-            {
-                schemaVersion = 1,
-                buildingId = targetItem.BuildingId,
-                floorId = targetItem.FloorId,
-                count = 1,
-                deviceIds = new string[] { targetItem.DeviceId }
-            };
-            bridge?.EmitDeviceMarkerGroupClicked(JsonUtility.ToJson(groupPayload));
         }
 
         public void SelectMarker(string deviceId)

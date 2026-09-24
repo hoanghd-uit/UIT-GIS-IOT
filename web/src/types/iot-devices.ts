@@ -16,6 +16,7 @@ export interface FloorDeviceView {
   sourceLocation: {
     x: number;
     y: number;
+    z?: number;
     floorLevel: number;
   };
   displayFloorId: string;

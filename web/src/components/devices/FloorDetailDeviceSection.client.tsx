@@ -7,6 +7,7 @@ import { FloorIotDevicePanel } from "./FloorIotDevicePanel";
 import { DeviceManagementPanel } from "./DeviceManagementPanel";
 import { fetchFloorIotDevices } from "@/lib/iot-api";
 import { FloorDeviceResponse } from "@/types/iot-devices";
+import { useIotToast } from "@/context/IotToastContext";
 
 interface FloorDetailDeviceSectionProps {
   buildingId: string;
@@ -19,6 +20,7 @@ export function FloorDetailDeviceSection({
 }: FloorDetailDeviceSectionProps) {
   const searchParams = useSearchParams();
   const isDevMode = searchParams.get("dev") === "true";
+  const { showToast } = useIotToast();
 
   const {
     viewerStatus,
@@ -96,13 +98,21 @@ export function FloorDetailDeviceSection({
         return;
       }
       console.error("[FloorDetailDeviceSection] Failed to fetch IoT devices:", err);
-      setError(err.message || "Không thể kết nối đến máy chủ IoT.");
+      const msg = err.message || "Không thể kết nối đến máy chủ IoT.";
+      setError(msg);
+      showToast({
+        type: "error",
+        message: msg,
+        onRetry: () => {
+          loadIotDevices();
+        },
+      });
     } finally {
       if (loadGenerationRef.current === currentGen) {
         setLoading(false);
       }
     }
-  }, [buildingId, floorId, isSupportedFloor, clearFloorDeviceMarkers, setSelectedDeviceId, setSelectedClusterIds]);
+  }, [buildingId, floorId, isSupportedFloor, clearFloorDeviceMarkers, setSelectedDeviceId, setSelectedClusterIds, showToast]);
 
   // Trigger fetch on mount or buildingId/floorId change
   useEffect(() => {
@@ -128,10 +138,20 @@ export function FloorDetailDeviceSection({
     }
   }, [activeTab, isFloorReady, iotData, applyFloorDeviceMarkers]);
 
+  // Auto-close inventory drawer whenever a device is selected (via 3D marker or list) per R09 & Section 3.6
+  useEffect(() => {
+    if (selectedDeviceId) {
+      setIsListOpen(false);
+    }
+  }, [selectedDeviceId]);
+
   // 3. Selection synchronization
   const handleSelectDevice = (id: string | null) => {
     setSelectedDeviceId(id);
     selectFloorMarker(id || "");
+    if (id) {
+      setIsListOpen(false);
+    }
   };
 
   const handleClearCluster = () => {

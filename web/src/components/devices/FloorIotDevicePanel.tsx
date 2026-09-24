@@ -5,6 +5,8 @@ import { FloorDeviceResponse, FloorDeviceView } from "@/types/iot-devices";
 import { DeviceCategoryIcon } from "@/components/icons/DeviceCategoryIcon";
 import { useUnityViewer } from "@/components/unity/UnityViewerRuntime.client";
 import { isDeviceKindVisible } from "@/lib/unity-bridge";
+import { IotDeviceDataPopup } from "./IotDeviceDataPopup";
+
 
 interface FloorIotDevicePanelProps {
   buildingId: string;
@@ -67,12 +69,21 @@ export function FloorIotDevicePanel({
     isDeviceKindVisible(d.category, sensorFilters)
   );
 
-  const displayList =
-    selectedClusterIds && selectedClusterIds.length > 0
-      ? visibleDevices.filter((d) => selectedClusterIds.includes(d.deviceId))
-      : visibleDevices;
+  // Phase 07 (R09): List shows visible devices without cluster filtering
+  const displayList = visibleDevices;
 
-  const selectedDevice = allDevices.find((d) => d.deviceId === selectedDeviceId);
+  // Phase 07 (R10): Never gate popup on catalogue presence; provide fallback if device metadata is loading
+  const selectedDevice: FloorDeviceView | null =
+    allDevices.find((d) => d.deviceId === selectedDeviceId) ??
+    (selectedDeviceId
+      ? {
+          deviceId: selectedDeviceId,
+          category: "unknown",
+          sourceDeviceType: "unknown",
+          sourceLocation: { x: 0, y: 0, floorLevel: Number(floorId) || 0 },
+          displayFloorId: floorId,
+        }
+      : null);
 
   return (
     <div className="flex flex-col items-start gap-2 select-none pointer-events-auto">
@@ -182,68 +193,17 @@ export function FloorIotDevicePanel({
         </div>
       )}
 
-      {/* 3. Single Device Popup Card (Appears when an icon is selected on 3D floor) */}
-      {selectedDevice && !isListOpen && (
-        <div
-          className="w-80 p-3.5 bg-slate-900/95 backdrop-blur-md border border-cyan-500/50 rounded-2xl shadow-2xl text-xs text-slate-200 flex flex-col gap-2 z-20 animate-in fade-in slide-in-from-top-2 duration-150"
-          onMouseDown={(e) => e.stopPropagation()}
-          onWheel={(e) => e.stopPropagation()}
-        >
-          <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-            <div className="flex items-center gap-2">
-              <DeviceCategoryIcon category={selectedDevice.category} size={22} />
-              <div>
-                <h3 className="font-semibold text-slate-100 text-xs">
-                  {CATEGORY_NAMES[selectedDevice.category] || selectedDevice.category}
-                </h3>
-                <span className="font-mono text-[10px] text-slate-400">
-                  {selectedDevice.deviceId}
-                </span>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => onSelectDevice(null)}
-              className="text-slate-400 hover:text-white p-1 rounded hover:bg-slate-800 transition-colors"
-              title="Đóng chi tiết"
-            >
-              ✕
-            </button>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2 text-[11px] bg-slate-950/50 p-2 rounded-xl border border-slate-800/80">
-            <div>
-              <span className="text-slate-400 block text-[10px]">Loại thiết bị gốc:</span>
-              <span className="font-medium text-cyan-300 font-mono">
-                {selectedDevice.sourceDeviceType}
-              </span>
-            </div>
-            <div>
-              <span className="text-slate-400 block text-[10px]">Tầng hiển thị:</span>
-              <span className="font-medium text-slate-200">
-                Tòa {buildingId} / Tầng {floorId}
-              </span>
-            </div>
-            <div className="col-span-2 flex items-center justify-between border-t border-slate-800/60 pt-1.5 mt-0.5">
-              <span className="text-slate-400 text-[10px]">Tọa độ nguồn API:</span>
-              <span className="font-mono text-[10px] text-slate-300">
-                ({selectedDevice.sourceLocation.x}, {selectedDevice.sourceLocation.y})
-              </span>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between text-[10px] text-cyan-300 bg-cyan-500/10 border border-cyan-500/30 px-2 py-1 rounded-lg">
-            <span>📍 Tọa độ API gốc tại tâm prefab</span>
-            <button
-              type="button"
-              onClick={onToggleList}
-              className="text-cyan-400 hover:underline ml-2"
-            >
-              Xem trong danh sách →
-            </button>
-          </div>
-        </div>
+      {/* 3. IoT Device Telemetry Popup (Phase 07: Live 72h fetch, chart/events, zero persistence) */}
+      {selectedDevice && (
+        <IotDeviceDataPopup
+          device={selectedDevice}
+          buildingId={buildingId}
+          floorId={floorId}
+          onClose={() => onSelectDevice(null)}
+          onViewInList={onToggleList}
+        />
       )}
+
 
       {/* 4. Full Device Inventory Drawer (Opens only when user clicks 'Danh sách') */}
       {isListOpen && (
@@ -294,19 +254,6 @@ export function FloorIotDevicePanel({
             </div>
           ) : (
             <>
-              {selectedClusterIds && selectedClusterIds.length > 0 && (
-                <div className="flex items-center justify-between px-2.5 py-1 bg-sky-950/60 border border-sky-600/50 rounded-lg text-[11px] text-sky-300">
-                  <span>Đang lọc cụm: {selectedClusterIds.length} thiết bị</span>
-                  <button
-                    type="button"
-                    onClick={onClearClusterSelection}
-                    className="text-slate-400 hover:text-white text-xs ml-2 underline"
-                  >
-                    Hiện tất cả
-                  </button>
-                </div>
-              )}
-
               {/* Devices List */}
               <div className="flex flex-col gap-1.5 overflow-y-auto max-h-72 pr-1">
                 {displayList.length === 0 ? (

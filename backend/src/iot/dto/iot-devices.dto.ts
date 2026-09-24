@@ -9,6 +9,10 @@ export type DeviceCategory =
   | 'nfc'
   | 'unknown';
 
+export interface IotDeviceListFilter {
+  floorLevel?: number;
+}
+
 export interface FloorDeviceView {
   deviceId: string;
   sourceDeviceType: string;
@@ -16,6 +20,7 @@ export interface FloorDeviceView {
   sourceLocation: {
     x: number;
     y: number;
+    z?: number;
     floorLevel: number;
   };
   displayFloorId: string;
@@ -43,9 +48,10 @@ export interface FloorDeviceResponse {
 }
 
 export interface IoTUpstreamLocation {
-  install_x?: number;
-  install_y?: number;
-  install_floor_level?: number;
+  install_x: number;
+  install_y: number;
+  install_z: number;
+  install_floor_level: number;
 }
 
 export interface IoTUpstreamDevice {
@@ -64,5 +70,10 @@ export interface IoTUpstreamDeviceListResponse {
     truncated?: boolean;
     [key: string]: unknown;
   };
+}
+
+export interface IotDeviceGateway {
+  listDevices(filter?: IotDeviceListFilter): Promise<IoTUpstreamDeviceListResponse>;
+  getDevice(deviceId: string): Promise<unknown>;
 }
 

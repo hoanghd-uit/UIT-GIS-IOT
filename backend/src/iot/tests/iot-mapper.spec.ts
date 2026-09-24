@@ -15,7 +15,7 @@ describe('IotMapperService & IotClientService (Small Phase 06)', () => {
         device_type: 'solar',
         create_timestamp: '2026-09-20T19:09:17.355Z',
         last_updated_timestamp: '2026-09-20T19:09:17.355Z',
-        install_location: { install_x: 0, install_y: 0, install_floor_level: 0 },
+        install_location: { install_x: 0, install_y: 0, install_z: 0, install_floor_level: 0 },
         is_active: true,
       },
       {
@@ -23,7 +23,7 @@ describe('IotMapperService & IotClientService (Small Phase 06)', () => {
         device_type: 'solar',
         create_timestamp: '2026-09-20T19:09:17.566Z',
         last_updated_timestamp: '2026-09-20T19:09:17.566Z',
-        install_location: { install_x: 0, install_y: 0, install_floor_level: 0 },
+        install_location: { install_x: 0, install_y: 0, install_z: 0, install_floor_level: 0 },
         is_active: true,
       },
       {
@@ -31,7 +31,7 @@ describe('IotMapperService & IotClientService (Small Phase 06)', () => {
         device_type: 'solar',
         create_timestamp: '2026-09-20T19:09:17.773Z',
         last_updated_timestamp: '2026-09-20T19:09:17.773Z',
-        install_location: { install_x: 0, install_y: 0, install_floor_level: 0 },
+        install_location: { install_x: 0, install_y: 0, install_z: 0, install_floor_level: 0 },
         is_active: true,
       },
       {
@@ -39,7 +39,7 @@ describe('IotMapperService & IotClientService (Small Phase 06)', () => {
         device_type: 'solar',
         create_timestamp: '2026-09-20T19:09:17.979Z',
         last_updated_timestamp: '2026-09-20T19:09:17.979Z',
-        install_location: { install_x: 0, install_y: 0, install_floor_level: 0 },
+        install_location: { install_x: 0, install_y: 0, install_z: 0, install_floor_level: 0 },
         is_active: true,
       },
       {
@@ -47,7 +47,7 @@ describe('IotMapperService & IotClientService (Small Phase 06)', () => {
         device_type: 'solar',
         create_timestamp: '2026-09-20T19:09:18.188Z',
         last_updated_timestamp: '2026-09-20T19:09:18.188Z',
-        install_location: { install_x: 0, install_y: 0, install_floor_level: 0 },
+        install_location: { install_x: 0, install_y: 0, install_z: 0, install_floor_level: 0 },
         is_active: true,
       },
       {
@@ -55,7 +55,7 @@ describe('IotMapperService & IotClientService (Small Phase 06)', () => {
         device_type: 'avc',
         create_timestamp: '2026-09-20T19:09:18.399Z',
         last_updated_timestamp: '2026-09-20T19:09:18.399Z',
-        install_location: { install_x: 0, install_y: 0, install_floor_level: 0 },
+        install_location: { install_x: 0, install_y: 0, install_z: 0, install_floor_level: 0 },
         is_active: true,
       },
       {
@@ -63,7 +63,7 @@ describe('IotMapperService & IotClientService (Small Phase 06)', () => {
         device_type: 'avc',
         create_timestamp: '2026-09-20T19:09:18.604Z',
         last_updated_timestamp: '2026-09-20T19:09:18.604Z',
-        install_location: { install_x: 0, install_y: 0, install_floor_level: 0 },
+        install_location: { install_x: 0, install_y: 0, install_z: 0, install_floor_level: 0 },
         is_active: true,
       },
       {
@@ -71,7 +71,7 @@ describe('IotMapperService & IotClientService (Small Phase 06)', () => {
         device_type: 'nfc',
         create_timestamp: '2026-09-20T19:09:18.810Z',
         last_updated_timestamp: '2026-09-20T19:09:18.810Z',
-        install_location: { install_x: 0, install_y: 0, install_floor_level: 0 },
+        install_location: { install_x: 0, install_y: 0, install_z: 0, install_floor_level: 0 },
         is_active: true,
       },
       {
@@ -79,7 +79,7 @@ describe('IotMapperService & IotClientService (Small Phase 06)', () => {
         device_type: 'nfc',
         create_timestamp: '2026-09-20T19:09:19.018Z',
         last_updated_timestamp: '2026-09-20T19:09:19.018Z',
-        install_location: { install_x: 0, install_y: 0, install_floor_level: 0 },
+        install_location: { install_x: 0, install_y: 0, install_z: 0, install_floor_level: 0 },
         is_active: true,
       },
       {
@@ -87,7 +87,7 @@ describe('IotMapperService & IotClientService (Small Phase 06)', () => {
         device_type: 'nfc',
         create_timestamp: '2026-09-20T19:09:19.224Z',
         last_updated_timestamp: '2026-09-20T19:09:19.224Z',
-        install_location: { install_x: 0, install_y: 0, install_floor_level: 0 },
+        install_location: { install_x: 0, install_y: 0, install_z: 0, install_floor_level: 0 },
         is_active: true,
       },
     ],
@@ -111,8 +111,39 @@ describe('IotMapperService & IotClientService (Small Phase 06)', () => {
     mapper = new IotMapperService(mockConfig as ConfigService);
   });
 
-  describe('mapResponse with 2026-09-21 upstream snapshot', () => {
-    it('correctly projects 10 snapshot records onto Floor 4 with category unknown', () => {
+  describe('resolveUpstreamFloorLevel', () => {
+    it('maps Building E floors 4 and 6 to integers 4 and 6', () => {
+      expect(mapper.resolveUpstreamFloorLevel('E', '4')).toBe(4);
+      expect(mapper.resolveUpstreamFloorLevel('E', '6')).toBe(6);
+    });
+
+    it('rejects floor G with explicit unresolved mapping message', () => {
+      expect(() => mapper.resolveUpstreamFloorLevel('E', 'G')).toThrow(BadRequestException);
+      try {
+        mapper.resolveUpstreamFloorLevel('E', 'G');
+      } catch (err: any) {
+        expect(err.message).toContain("Viewer floor 'G' does not have an approved upstream floor_level mapping yet.");
+      }
+    });
+
+    it('rejects floors outside TEST_CURRENT_FLOOR_4_6_V1', () => {
+      expect(() => mapper.resolveUpstreamFloorLevel('E', '2')).toThrow(BadRequestException);
+      expect(() => mapper.resolveUpstreamFloorLevel('E', '7')).toThrow(BadRequestException);
+    });
+
+    it('rejects non-E building IDs', () => {
+      expect(() => mapper.resolveUpstreamFloorLevel('A', '4')).toThrow(BadRequestException);
+      expect(() => mapper.resolveUpstreamFloorLevel('B', '6')).toThrow(BadRequestException);
+    });
+
+    it('rejects non-integer floor strings', () => {
+      expect(() => mapper.resolveUpstreamFloorLevel('E', '4.5')).toThrow(BadRequestException);
+      expect(() => mapper.resolveUpstreamFloorLevel('E', 'invalid')).toThrow(BadRequestException);
+    });
+  });
+
+  describe('mapResponse with 2026-09-24 upstream contract', () => {
+    it('correctly projects 10 snapshot records onto Floor 4 with category and preserves coordinates including z', () => {
       const res = mapper.mapResponse(snapshotFixture, 'E', '4');
 
       expect(res.schemaVersion).toBe(1);
@@ -132,7 +163,7 @@ describe('IotMapperService & IotClientService (Small Phase 06)', () => {
       expect(first.deviceId).toBe('70B3D57ED0073E9D');
       expect(first.sourceDeviceType).toBe('solar');
       expect(first.category).toBe('solar');
-      expect(first.sourceLocation).toEqual({ x: 0, y: 0, floorLevel: 0 });
+      expect(first.sourceLocation).toEqual({ x: 0, y: 0, z: 0, floorLevel: 0 });
       expect(first.displayFloorId).toBe('4');
 
       // Check dummy ID opaque preservation
@@ -180,18 +211,18 @@ describe('IotMapperService & IotClientService (Small Phase 06)', () => {
       expect(mapper.mapCategory('')).toBe('unknown');
     });
 
-    it('handles negative, non-zero, and zero finite coordinates properly', () => {
+    it('handles negative, non-zero, and zero finite coordinates properly including z', () => {
       const payload: IoTUpstreamDeviceListResponse = {
         data: [
           {
             device_id: 'dev-neg',
             device_type: 'water_meter',
-            install_location: { install_x: -12.34, install_y: 56.78, install_floor_level: 0 },
+            install_location: { install_x: -12.34, install_y: 56.78, install_z: -1.5, install_floor_level: 0 },
           },
           {
             device_id: 'dev-zero',
             device_type: 'camera',
-            install_location: { install_x: 0, install_y: 0, install_floor_level: 0 },
+            install_location: { install_x: 0, install_y: 0, install_z: 0.75, install_floor_level: 0 },
           },
         ],
       };
@@ -200,28 +231,46 @@ describe('IotMapperService & IotClientService (Small Phase 06)', () => {
       expect(res.devices).toHaveLength(2);
       expect(res.devices[0].sourceLocation.x).toBe(-12.34);
       expect(res.devices[0].sourceLocation.y).toBe(56.78);
+      expect(res.devices[0].sourceLocation.z).toBe(-1.5);
       expect(res.devices[0].category).toBe('water_meter');
       expect(res.devices[1].sourceLocation.x).toBe(0);
+      expect(res.devices[1].sourceLocation.z).toBe(0.75);
       expect(res.devices[1].category).toBe('camera');
     });
 
-    it('skips records with non-finite coordinates or missing ID and counts them', () => {
+    it('skips records with non-finite coordinates, missing install_z, or missing ID and counts them', () => {
       const payload: IoTUpstreamDeviceListResponse = {
         data: [
           {
             device_id: 'dev-ok',
             device_type: 'solar',
-            install_location: { install_x: 1, install_y: 2, install_floor_level: 0 },
+            install_location: { install_x: 1, install_y: 2, install_z: 3, install_floor_level: 0 },
           },
           {
             device_id: '',
             device_type: 'solar',
-            install_location: { install_x: 1, install_y: 2, install_floor_level: 0 },
+            install_location: { install_x: 1, install_y: 2, install_z: 3, install_floor_level: 0 },
           },
           {
-            device_id: 'dev-nan',
+            device_id: 'dev-nan-x',
             device_type: 'solar',
-            install_location: { install_x: NaN, install_y: 2, install_floor_level: 0 },
+            install_location: { install_x: NaN, install_y: 2, install_z: 3, install_floor_level: 0 },
+          },
+          {
+            device_id: 'dev-missing-z',
+            device_type: 'solar',
+            // Missing install_z (contract drift)
+            install_location: { install_x: 1, install_y: 2, install_floor_level: 0 } as any,
+          },
+          {
+            device_id: 'dev-nan-z',
+            device_type: 'solar',
+            install_location: { install_x: 1, install_y: 2, install_z: NaN, install_floor_level: 0 },
+          },
+          {
+            device_id: 'dev-str-z',
+            device_type: 'solar',
+            install_location: { install_x: 1, install_y: 2, install_z: '0' as any, install_floor_level: 0 },
           },
           {
             device_id: 'dev-no-loc',
@@ -232,9 +281,11 @@ describe('IotMapperService & IotClientService (Small Phase 06)', () => {
 
       const res = mapper.mapResponse(payload, 'E', '4');
       expect(res.devices).toHaveLength(1);
-      expect(res.summary.receivedCount).toBe(4);
+      expect(res.devices[0].deviceId).toBe('dev-ok');
+      expect(res.devices[0].sourceLocation.z).toBe(3);
+      expect(res.summary.receivedCount).toBe(7);
       expect(res.summary.acceptedCount).toBe(1);
-      expect(res.summary.skippedCount).toBe(3);
+      expect(res.summary.skippedCount).toBe(6);
     });
 
     it('deduplicates duplicate device IDs keeping the first valid record', () => {
@@ -243,12 +294,12 @@ describe('IotMapperService & IotClientService (Small Phase 06)', () => {
           {
             device_id: 'dup-1',
             device_type: 'solar',
-            install_location: { install_x: 1, install_y: 1, install_floor_level: 0 },
+            install_location: { install_x: 1, install_y: 1, install_z: 1, install_floor_level: 0 },
           },
           {
             device_id: 'dup-1',
             device_type: 'avc',
-            install_location: { install_x: 2, install_y: 2, install_floor_level: 0 },
+            install_location: { install_x: 2, install_y: 2, install_z: 2, install_floor_level: 0 },
           },
         ],
       };
@@ -266,13 +317,13 @@ describe('IotMapperService & IotClientService (Small Phase 06)', () => {
           {
             device_id: 'dev-active-true',
             device_type: 'camera',
-            install_location: { install_x: 0, install_y: 0, install_floor_level: 0 },
+            install_location: { install_x: 0, install_y: 0, install_z: 0, install_floor_level: 0 },
             is_active: true,
           },
           {
             device_id: 'dev-active-false',
             device_type: 'camera',
-            install_location: { install_x: 1, install_y: 1, install_floor_level: 0 },
+            install_location: { install_x: 1, install_y: 1, install_z: 1, install_floor_level: 0 },
             is_active: false,
           },
         ],

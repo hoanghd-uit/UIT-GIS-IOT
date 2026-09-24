@@ -105,6 +105,69 @@
         ]
       }
     },
+    "/api/v1/iot/devices/{deviceId}/telemetry": {
+      "get": {
+        "operationId": "DevicesController_getDeviceTelemetry",
+        "parameters": [
+          {
+            "name": "deviceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": "d0ba7a2a-f40d-4b39-885b-6dc79815a104",
+              "type": "string"
+            }
+          },
+          {
+            "name": "start",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "stop",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "deviceType",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Telemetry readings returned successfully"
+          },
+          "400": {
+            "description": "Invalid query parameters (range, limit)"
+          },
+          "404": {
+            "description": "Device not found in registry"
+          }
+        },
+        "summary": "Get IoT device telemetry readings/events within rolling 72-hour window (Phase 07, zero persistence)",
+        "tags": [
+          "Devices"
+        ]
+      }
+    },
     "/api/v1/devices/{deviceId}": {
       "get": {
         "operationId": "DevicesController_getDevice",
