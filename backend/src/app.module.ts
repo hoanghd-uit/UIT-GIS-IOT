@@ -7,6 +7,7 @@ import { FloorsModule } from './floors/floors.module';
 import { DevicesModule } from './devices/devices.module';
 import { FixturesModule } from './fixtures/fixtures.module';
 import { IotModule } from './iot/iot.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { IotModule } from './iot/iot.module';
     DevicesModule,
     FixturesModule,
     IotModule,
+    DashboardModule,
   ],
 })
 export class AppModule {}

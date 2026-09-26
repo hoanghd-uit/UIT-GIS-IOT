@@ -307,6 +307,59 @@
           "Devices"
         ]
       }
+    },
+    "/api/v1/dashboard/buildings/{buildingId}/iot/devices": {
+      "get": {
+        "description": "Returns a normalized active device catalogue for Dashboard Page 07. Supports full-building catalogue (omitting floorId) and approved floor-scoped queries (floorId=4, 6). Zero database persistence.",
+        "operationId": "DashboardIotController_getCatalogue",
+        "parameters": [
+          {
+            "name": "buildingId",
+            "required": true,
+            "in": "path",
+            "description": "Building identifier (currently E only)",
+            "schema": {
+              "example": "E",
+              "type": "string"
+            }
+          },
+          {
+            "name": "floorId",
+            "required": false,
+            "in": "query",
+            "description": "Application floor ID (4, 6). When omitted, returns full unfiltered catalogue.",
+            "schema": {
+              "example": "4",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Device catalogue returned successfully with live provenance",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardDeviceCatalogueResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid buildingId, unsupported floor, or floor G"
+          },
+          "502": {
+            "description": "Upstream IoT service error, timeout, or malformed payload"
+          },
+          "503": {
+            "description": "IoT integration disabled, fixture mode, or missing credentials"
+          }
+        },
+        "summary": "Get Dashboard IoT device catalogue (read-only, live provenance)",
+        "tags": [
+          "Dashboard"
+        ]
+      }
     }
   },
   "info": {
@@ -379,6 +432,256 @@
           "frameId",
           "frameVersion",
           "position"
+        ]
+      },
+      "DashboardCatalogueProvenanceDto": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "example": "live",
+            "enum": [
+              "live"
+            ]
+          },
+          "sourceId": {
+            "type": "string",
+            "example": "iot-device-catalogue"
+          },
+          "sourceType": {
+            "type": "string",
+            "example": "iot_backend"
+          },
+          "fetchedAt": {
+            "type": "string",
+            "example": "2026-09-26T02:45:00.000Z",
+            "description": "Application backend fetch timestamp (ISO-8601)"
+          },
+          "caveats": {
+            "example": [
+              "Dữ liệu development fallback được áp dụng cho tầng 4"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "mode",
+          "sourceId",
+          "sourceType",
+          "fetchedAt"
+        ]
+      },
+      "DashboardCatalogueMappingDto": {
+        "type": "object",
+        "properties": {
+          "floorMode": {
+            "type": "string",
+            "example": "TEST_CURRENT_FLOOR_4_6_V1"
+          },
+          "developmentFallbackApplied": {
+            "type": "boolean",
+            "example": false,
+            "description": "True when development fallback from floor 0 was applied"
+          },
+          "requestedUpstreamFloorLevel": {
+            "type": "number",
+            "example": 4,
+            "nullable": true,
+            "description": "Mapped upstream floor level requested, or null if full catalogue"
+          }
+        },
+        "required": [
+          "floorMode",
+          "developmentFallbackApplied",
+          "requestedUpstreamFloorLevel"
+        ]
+      },
+      "DashboardCatalogueSummaryDto": {
+        "type": "object",
+        "properties": {
+          "receivedCount": {
+            "type": "number",
+            "example": 25,
+            "description": "Raw records received from upstream"
+          },
+          "acceptedCount": {
+            "type": "number",
+            "example": 25,
+            "description": "Valid records accepted into catalogue"
+          },
+          "skippedCount": {
+            "type": "number",
+            "example": 0,
+            "description": "Malformed records skipped"
+          },
+          "duplicateCount": {
+            "type": "number",
+            "example": 0,
+            "description": "Duplicate device IDs skipped"
+          },
+          "truncated": {
+            "type": "boolean",
+            "example": false,
+            "nullable": true,
+            "description": "Upstream truncation indicator"
+          }
+        },
+        "required": [
+          "receivedCount",
+          "acceptedCount",
+          "skippedCount",
+          "duplicateCount",
+          "truncated"
+        ]
+      },
+      "DashboardDeviceSourceLocationDto": {
+        "type": "object",
+        "properties": {
+          "x": {
+            "type": "number",
+            "example": 10.5,
+            "description": "Source installation X coordinate"
+          },
+          "y": {
+            "type": "number",
+            "example": 2.1,
+            "description": "Source installation Y coordinate"
+          },
+          "z": {
+            "type": "number",
+            "example": 15.3,
+            "description": "Source installation Z coordinate"
+          },
+          "floorLevel": {
+            "type": "number",
+            "example": 4,
+            "description": "Source installation floor level integer"
+          }
+        },
+        "required": [
+          "x",
+          "y",
+          "z",
+          "floorLevel"
+        ]
+      },
+      "DashboardDeviceCatalogueItemDto": {
+        "type": "object",
+        "properties": {
+          "externalDeviceId": {
+            "type": "string",
+            "example": "70B3D57ED0073E9D",
+            "description": "Opaque upstream device identifier"
+          },
+          "sourceDeviceType": {
+            "type": "string",
+            "example": "solar",
+            "description": "Raw source device type string"
+          },
+          "category": {
+            "type": "string",
+            "example": "solar",
+            "description": "Mapped application device category"
+          },
+          "active": {
+            "type": "boolean",
+            "example": true,
+            "description": "Catalogue registration/activity metadata (NOT an online/health signal)"
+          },
+          "sourceCreatedAt": {
+            "type": "string",
+            "example": "2026-09-20T19:09:17.355Z",
+            "description": "Source record creation timestamp"
+          },
+          "sourceUpdatedAt": {
+            "type": "string",
+            "example": "2026-09-20T19:09:17.355Z",
+            "description": "Source metadata update timestamp (NOT telemetry last-seen)"
+          },
+          "sourceLocation": {
+            "$ref": "#/components/schemas/DashboardDeviceSourceLocationDto"
+          },
+          "displayFloorId": {
+            "type": "string",
+            "example": "4",
+            "nullable": true,
+            "description": "Viewer display floor ID, or null if unmapped"
+          },
+          "floorAssignment": {
+            "type": "string",
+            "example": "source",
+            "enum": [
+              "source",
+              "development-fallback",
+              "unmapped"
+            ],
+            "description": "Floor assignment provenance: source, development-fallback, or unmapped"
+          }
+        },
+        "required": [
+          "externalDeviceId",
+          "sourceDeviceType",
+          "category",
+          "active",
+          "sourceCreatedAt",
+          "sourceUpdatedAt",
+          "sourceLocation",
+          "displayFloorId",
+          "floorAssignment"
+        ]
+      },
+      "DashboardDeviceCatalogueResponseDto": {
+        "type": "object",
+        "properties": {
+          "schemaVersion": {
+            "type": "number",
+            "example": 1
+          },
+          "buildingId": {
+            "type": "string",
+            "example": "E"
+          },
+          "requestedFloorId": {
+            "type": "string",
+            "example": "4",
+            "nullable": true
+          },
+          "availability": {
+            "type": "string",
+            "example": "ready",
+            "enum": [
+              "ready",
+              "empty"
+            ]
+          },
+          "provenance": {
+            "$ref": "#/components/schemas/DashboardCatalogueProvenanceDto"
+          },
+          "mapping": {
+            "$ref": "#/components/schemas/DashboardCatalogueMappingDto"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/DashboardCatalogueSummaryDto"
+          },
+          "devices": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DashboardDeviceCatalogueItemDto"
+            }
+          }
+        },
+        "required": [
+          "schemaVersion",
+          "buildingId",
+          "requestedFloorId",
+          "availability",
+          "provenance",
+          "mapping",
+          "summary",
+          "devices"
         ]
       }
     }
