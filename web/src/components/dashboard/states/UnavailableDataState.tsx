@@ -7,6 +7,7 @@ export interface UnavailableDataStateProps {
   phaseNote?: string;
   actionText?: string;
   onAction?: () => void;
+  compact?: boolean;
   className?: string;
 }
 
@@ -17,8 +18,44 @@ export function UnavailableDataState({
   phaseNote,
   actionText,
   onAction,
+  compact = false,
   className = '',
 }: UnavailableDataStateProps) {
+  if (compact) {
+    return (
+      <div
+        role="region"
+        aria-label={title}
+        className={`flex flex-col items-center justify-center p-4 text-center rounded-lg border border-dashed ${className}`}
+        style={{
+          backgroundColor: 'rgba(255, 255, 255, 0.02)',
+          borderColor: 'var(--border)',
+        }}
+      >
+        <div
+          className="w-8 h-8 rounded-full flex items-center justify-center mb-2"
+          style={{ backgroundColor: 'var(--panel-elevated)', color: 'var(--primary)' }}
+          aria-hidden="true"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={1.5}
+              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+        </div>
+        <h4 className="text-xs font-semibold mb-1 text-[#E6EDF1]">
+          {title}
+        </h4>
+        <p className="text-[11px] max-w-xs text-[#7E8B96] leading-relaxed">
+          {description}
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div
       role="region"

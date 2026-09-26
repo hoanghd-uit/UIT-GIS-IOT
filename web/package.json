@@ -7,8 +7,9 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
-    "test": "node test-phase09.mjs && node test-bp2-phase02.mjs",
-    "test:bp2:p02": "node test-bp2-phase02.mjs"
+    "test": "node test-phase09.mjs && node test-bp2-phase02.mjs && node test-bp2-phase03.mjs",
+    "test:bp2:p02": "node test-bp2-phase02.mjs",
+    "test:bp2:p03": "node test-bp2-phase03.mjs"
   },
   "dependencies": {
     "@ant-design/charts": "^2.6.7",

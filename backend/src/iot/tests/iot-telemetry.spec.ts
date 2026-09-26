@@ -330,5 +330,100 @@ describe('IotTelemetryService (Small Phase 07)', () => {
       expect(res.coverage.isTruncated).toBe(true);
     });
   });
+
+  describe('BP2-P03 Hardening Requirements', () => {
+    it('BP2-P03-T06 & BP2-P03-T07: Server-validated solar routes only to /solar, AVC routes only to /avc; client hint cannot reroute', async () => {
+      service.registerDeviceType('dev-solar-strict', 'solar');
+      mockClient.fetchSolarReadings.mockResolvedValueOnce({ data: [], meta: { count: 0, truncated: false } });
+
+      // Even if client passes unknown object or attempt to inject type, routing is server-authoritative
+      const resSolar = await service.getDeviceTelemetry('dev-solar-strict', {
+        start: '2026-09-19T00:00:00Z',
+        stop: '2026-09-22T00:00:00Z',
+      });
+
+      expect(mockClient.fetchSolarReadings).toHaveBeenCalledWith('dev-solar-strict', expect.any(String), expect.any(String), 1000);
+      expect(mockClient.fetchAvcReadings).not.toHaveBeenCalled();
+      expect(resSolar.deviceType).toBe('solar');
+
+      service.registerDeviceType('dev-avc-strict', 'avc');
+      mockClient.fetchAvcReadings.mockResolvedValueOnce({ data: [], meta: { count: 0, truncated: false } });
+
+      const resAvc = await service.getDeviceTelemetry('dev-avc-strict', {
+        start: '2026-09-19T00:00:00Z',
+        stop: '2026-09-22T00:00:00Z',
+      });
+
+      expect(mockClient.fetchAvcReadings).toHaveBeenCalledWith('dev-avc-strict', expect.any(String), expect.any(String), 1000);
+      expect(resAvc.deviceType).toBe('avc');
+    });
+
+    it('BP2-P03-T08: Trusted catalogue cache miss falls back to approved device-detail GET and handles 404 safely', async () => {
+      mockClient.fetchDeviceDetail.mockRejectedValueOnce(new BadRequestException('Device not found'));
+
+      await expect(
+        service.getDeviceTelemetry('missing-dev-999', {
+          start: '2026-09-19T00:00:00Z',
+          stop: '2026-09-22T00:00:00Z',
+        }),
+      ).rejects.toThrow(BadRequestException);
+
+      expect(mockClient.fetchDeviceDetail).toHaveBeenCalledWith('missing-dev-999');
+    });
+
+    it('BP2-P03-T15: Non-finite numbers (NaN, Infinity) are safely set to null rather than corrupting payload', async () => {
+      service.registerDeviceType('solar-nan', 'solar');
+      mockClient.fetchSolarReadings.mockResolvedValueOnce({
+        data: [
+          {
+            dev_eui: 'solar-nan',
+            timestamp: '2026-09-22T10:00:00.000Z',
+            current_uA: NaN as any,
+            lux: Infinity as any,
+            rssi: 0, // valid zero
+            snr: -Infinity as any,
+          },
+        ],
+        meta: { count: 1, truncated: false },
+      });
+
+      const res = await service.getDeviceTelemetry('solar-nan', {
+        start: '2026-09-19T00:00:00Z',
+        stop: '2026-09-22T00:00:00Z',
+      });
+
+      const solar = res.telemetry as any;
+      const reading = solar.readings[0];
+      expect(reading.currentUa).toBeNull();
+      expect(reading.lux).toBeNull();
+      expect(reading.rssi).toBe(0); // Valid zero preserved!
+      expect(reading.snr).toBeNull();
+    });
+
+    it('BP2-P03-T16: Identity/timestamp mismatch increments invalidCount; all-invalid non-empty payload throws BadGatewayException', async () => {
+      service.registerDeviceType('solar-mismatch', 'solar');
+      mockClient.fetchSolarReadings.mockResolvedValueOnce({
+        data: [
+          {
+            dev_eui: 'wrong-eui',
+            timestamp: '2026-09-22T10:00:00.000Z',
+          },
+          {
+            dev_eui: 'solar-mismatch',
+            timestamp: 'not-a-timestamp',
+          },
+        ],
+        meta: { count: 2, truncated: false },
+      });
+
+      await expect(
+        service.getDeviceTelemetry('solar-mismatch', {
+          start: '2026-09-19T00:00:00Z',
+          stop: '2026-09-22T00:00:00Z',
+        }),
+      ).rejects.toThrow('All returned upstream telemetry rows were invalid or malformed.');
+    });
+  });
 });
+
 

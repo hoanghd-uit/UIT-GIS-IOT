@@ -67,14 +67,12 @@ export class DevicesController {
     @Query('start') start: string,
     @Query('stop') stop: string,
     @Query('limit') limit?: string,
-    @Query('deviceType') deviceType?: string,
   ): Promise<DeviceTelemetryResponseDto> {
     const parsedLimit = limit !== undefined ? parseInt(limit, 10) : undefined;
     return this.devicesService.getDeviceTelemetry(deviceId, {
       start,
       stop,
       limit: parsedLimit,
-      deviceTypeHint: deviceType,
     });
   }
 

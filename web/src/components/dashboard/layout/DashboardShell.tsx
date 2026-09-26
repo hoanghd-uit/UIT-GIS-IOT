@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -13,14 +13,73 @@ export interface DashboardShellProps {
   children: React.ReactNode;
 }
 
+function renderRouteIcon(routeId: string, className = 'w-5 h-5') {
+  switch (routeId) {
+    case 'overview':
+      return (
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden="true">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+        </svg>
+      );
+    case 'energy-water':
+      return (
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden="true">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+        </svg>
+      );
+    case 'environment':
+      return (
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden="true">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M14 10a2 2 0 10-2-2H4a2 2 0 000 4h8a2 2 0 002-2zm4-4a2 2 0 10-2-2H4a2 2 0 000 4h12a2 2 0 002-2zm-2 8a2 2 0 10-2-2H4a2 2 0 000 4h10a2 2 0 002-2z" />
+        </svg>
+      );
+    case 'alerts':
+      return (
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden="true">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+        </svg>
+      );
+    case 'iot':
+      return (
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden="true">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.393 9.393c5.857-5.857 15.355-5.857 21.213 0" />
+        </svg>
+      );
+    case 'parking':
+      return (
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden="true">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M8 17h.01M16 17h.01M3 11l1.5-4.5A2 2 0 016.4 5h11.2a2 2 0 011.9 1.5L21 11v6a1 1 0 01-1 1h-1a1 1 0 01-1-1v-1H6v1a1 1 0 01-1 1H4a1 1 0 01-1-1v-6z" />
+        </svg>
+      );
+    case 'fire-safety':
+      return (
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden="true">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z" />
+        </svg>
+      );
+    default:
+      return (
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden="true">
+          <circle cx="12" cy="12" r="9" />
+        </svg>
+      );
+  }
+}
+
 export function DashboardShell({ children }: DashboardShellProps) {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Active route
-  const currentRoute = DASHBOARD_ROUTES.find((r) =>
-    isDashboardRouteActive(pathname, r.path)
-  );
+  // Close drawer on Escape key press
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && mobileMenuOpen) {
+        setMobileMenuOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [mobileMenuOpen]);
 
   return (
     <div
@@ -31,12 +90,12 @@ export function DashboardShell({ children }: DashboardShellProps) {
       }}
     >
       {/* ========================================================= */}
-      {/* 1. Web-HighLevel-Menu (Shared Left Navigation Rail: w-16) */}
+      {/* 1. High-Level Sidebar (Global Rail: w-16 / 64px)          */}
       {/* ========================================================= */}
       <aside
         className="flex w-16 flex-col items-center justify-between border-r py-4 z-30 shrink-0"
         style={{
-          backgroundColor: 'var(--panel-bg)',
+          backgroundColor: 'var(--high-level-sidebar-bg)',
           borderColor: 'var(--border)',
         }}
         aria-label="Điều hướng cấp cao hệ thống"
@@ -44,11 +103,11 @@ export function DashboardShell({ children }: DashboardShellProps) {
         <div className="flex flex-col items-center gap-6">
           {/* Logo / Brand Symbol */}
           <div
-            className="flex h-10 w-10 items-center justify-center rounded-lg font-bold text-sm shadow-md"
+            className="flex h-10 w-10 items-center justify-center rounded-lg font-bold text-xs shadow-md transition-colors"
             style={{
               backgroundColor: 'var(--panel-elevated)',
               border: '1px solid var(--border)',
-              color: 'var(--accent-cyan)',
+              color: 'var(--primary)',
             }}
             title="UIT Digital Twin"
           >
@@ -66,14 +125,15 @@ export function DashboardShell({ children }: DashboardShellProps) {
                 border: '1px solid transparent',
                 color: 'var(--text-muted)',
               }}
-              title="Campus View"
+              title="Campus View (Viewer)"
             >
               <svg
-                className="h-5 w-5 group-hover:text-cyan-400 transition-colors"
+                className="h-5 w-5 group-hover:text-[#4FB9AD] transition-colors"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
                 strokeWidth={2}
+                aria-hidden="true"
               >
                 <path
                   strokeLinecap="round"
@@ -90,7 +150,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
               style={{
                 backgroundColor: 'var(--panel-elevated)',
                 border: '1px solid var(--primary)',
-                color: 'var(--accent-cyan)',
+                color: 'var(--primary)',
               }}
               title="Dashboard"
               aria-current="page"
@@ -101,6 +161,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
                 viewBox="0 0 24 24"
                 stroke="currentColor"
                 strokeWidth={2}
+                aria-hidden="true"
               >
                 <path
                   strokeLinecap="round"
@@ -114,53 +175,67 @@ export function DashboardShell({ children }: DashboardShellProps) {
 
         {/* Footer info / Version */}
         <div
-          className="text-[10px] tracking-wider uppercase opacity-60 font-mono"
+          className="text-[10px] tracking-wider uppercase font-mono opacity-50"
           style={{ color: 'var(--text-muted)' }}
         >
           v1.0
         </div>
       </aside>
 
-      {/* Mobile Drawer Overlay */}
+      {/* Mobile Drawer Overlay for Dashboard Workspace */}
       {mobileMenuOpen && (
         <div
           role="presentation"
-          className="fixed inset-0 z-40 bg-black/60 md:hidden"
+          className="fixed inset-y-0 left-16 right-0 z-40 bg-black/70 xl:hidden backdrop-blur-sm"
           onClick={() => setMobileMenuOpen(false)}
         />
       )}
 
       {/* ========================================================= */}
-      {/* 2. Dashboard Menu (Sub-menu Panel: w-64)                   */}
+      {/* 2. Dashboard Sidebar (Secondary Sidebar: 288px / w-72)     */}
       {/* ========================================================= */}
       <aside
-        className={`fixed inset-y-0 left-16 z-50 flex w-64 flex-col justify-between border-r transition-transform duration-200 md:static md:translate-x-0 ${
-          mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+        className={`fixed inset-y-0 left-16 z-50 flex w-72 flex-col justify-between border-r transition-transform duration-200 xl:static xl:translate-x-0 ${
+          mobileMenuOpen ? 'translate-x-0' : '-translate-x-full xl:translate-x-0'
         }`}
         style={{
-          backgroundColor: 'var(--panel-bg)',
+          backgroundColor: 'var(--dashboard-sidebar-bg)',
           borderColor: 'var(--border)',
+          width: 'var(--dashboard-sidebar-width, 18rem)',
         }}
+        aria-label="Điều hướng phân hệ Dashboard"
       >
         <div className="flex flex-col flex-1 overflow-hidden">
-          {/* Dashboard Header */}
+          {/* Brand Header */}
           <div
-            className="flex h-14 items-center justify-between px-4 border-b shrink-0"
+            className="flex h-16 items-center justify-between px-4 border-b shrink-0"
             style={{ borderColor: 'var(--border)' }}
           >
-            <div className="flex flex-col">
-              <span className="text-xs font-bold tracking-wide" style={{ color: 'var(--text-primary)' }}>
-                GIS & IOT DASHBOARD
-              </span>
-              <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
-                Tòa nhà E — Digital Twin
-              </span>
+            <div className="flex items-center gap-3">
+              <div
+                className="flex h-10 w-10 items-center justify-center rounded-xl font-bold text-xs tracking-wider shadow-inner"
+                style={{
+                  backgroundColor: '#162833',
+                  border: '1px solid rgba(79, 185, 173, 0.35)',
+                  color: 'var(--primary)',
+                }}
+              >
+                BEI
+              </div>
+              <div className="flex flex-col">
+                <span className="text-sm font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
+                  Digital Twin
+                </span>
+                <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
+                  Tòa E · Living Lab
+                </span>
+              </div>
             </div>
 
             {/* Mobile close button */}
             <button
               type="button"
-              className="md:hidden p-1.5 rounded text-sm focus:outline-none"
+              className="xl:hidden p-1.5 rounded-lg text-sm focus:outline-none hover:bg-white/5"
               style={{ color: 'var(--text-muted)' }}
               onClick={() => setMobileMenuOpen(false)}
               aria-label="Đóng bảng điều hướng"
@@ -171,11 +246,14 @@ export function DashboardShell({ children }: DashboardShellProps) {
 
           {/* Navigation Items List */}
           <nav
-            aria-label="Điều hướng chính Dashboard"
-            className="flex-1 overflow-y-auto p-3 flex flex-col gap-1.5"
+            aria-label="Danh mục phân hệ giám sát"
+            className="flex-1 overflow-y-auto px-3 py-4 flex flex-col gap-1"
           >
-            <div className="px-2 py-1 text-[11px] font-semibold uppercase tracking-wider opacity-60" style={{ color: 'var(--text-muted)' }}>
-              Phân hệ chức năng
+            <div
+              className="px-3 pt-2 pb-1.5 text-[11px] font-semibold uppercase tracking-wider"
+              style={{ color: 'var(--text-muted)', letterSpacing: '0.08em' }}
+            >
+              GIÁM SÁT
             </div>
 
             {DASHBOARD_ROUTES.map((route) => {
@@ -185,30 +263,35 @@ export function DashboardShell({ children }: DashboardShellProps) {
                   key={route.id}
                   href={route.path}
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`group flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all ${
-                    isActive ? 'shadow-sm' : 'hover:bg-white/5'
+                  className={`group relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium transition-all ${
+                    isActive
+                      ? 'shadow-sm text-[#E6EDF1]'
+                      : 'hover:bg-white/5 text-[#A5B0B9] hover:text-[#E6EDF1]'
                   }`}
                   style={{
                     backgroundColor: isActive ? 'var(--panel-elevated)' : 'transparent',
-                    border: `1px solid ${isActive ? 'var(--primary)' : 'transparent'}`,
-                    color: isActive ? 'var(--text-primary)' : 'var(--text-muted)',
+                    border: `1px solid ${isActive ? 'var(--border)' : 'transparent'}`,
                   }}
                   aria-current={isActive ? 'page' : undefined}
                 >
-                  <div className="flex items-center gap-2.5 min-w-0">
+                  {/* Left Teal Active Indicator */}
+                  {isActive && (
                     <span
-                      className="font-mono text-[10px] px-1.5 py-0.5 rounded font-bold shrink-0"
-                      style={{
-                        backgroundColor: isActive ? 'var(--primary)' : 'rgba(78, 163, 225, 0.1)',
-                        color: isActive ? '#ffffff' : 'var(--accent-cyan)',
-                      }}
-                    >
-                      {route.pageNumber}
-                    </span>
-                    <span className="truncate">{route.title}</span>
-                  </div>
+                      className="absolute left-0 top-2 bottom-2 w-1 rounded-r"
+                      style={{ backgroundColor: 'var(--primary)' }}
+                      aria-hidden="true"
+                    />
+                  )}
 
-                  {/* Invariant: Page 06 has no fabricated notification counter */}
+                  <span
+                    className="shrink-0 transition-colors"
+                    style={{
+                      color: isActive ? 'var(--primary)' : 'var(--text-muted)',
+                    }}
+                  >
+                    {renderRouteIcon(route.id, 'w-4 h-4')}
+                  </span>
+                  <span className="truncate text-[13px]">{route.shortTitle || route.title}</span>
                 </Link>
               );
             })}
@@ -220,77 +303,43 @@ export function DashboardShell({ children }: DashboardShellProps) {
           className="p-3 border-t flex flex-col items-center gap-1 shrink-0"
           style={{ borderColor: 'var(--border)' }}
         >
-          <div className="text-[10px] text-center font-mono opacity-60" style={{ color: 'var(--text-muted)' }}>
-            Big Phase 02 — Sub-phase 01
+          <div className="text-[10px] text-center font-mono opacity-50" style={{ color: 'var(--text-muted)' }}>
+            Digital Twin · Building E
           </div>
         </div>
       </aside>
 
       {/* ========================================================= */}
-      {/* 3. Dashboard Content Area                                 */}
+      {/* 3. Dashboard Content Canvas                               */}
       {/* ========================================================= */}
       <div className="flex flex-1 flex-col min-w-0 min-h-0 overflow-hidden">
-        {/* Top Header */}
-        <header
-          className="flex h-14 items-center justify-between border-b px-4 md:px-6 z-20 shrink-0"
-          style={{
-            backgroundColor: 'var(--panel-bg)',
-            borderColor: 'var(--border)',
-          }}
-        >
-          <div className="flex items-center gap-3">
-            {/* Hamburger button for mobile to open Dashboard Menu */}
-            <button
-              type="button"
-              className="md:hidden p-1.5 rounded focus:outline-none"
-              style={{ color: 'var(--text-primary)' }}
-              onClick={() => setMobileMenuOpen(true)}
-              aria-label="Mở bảng điều hướng"
-            >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </button>
+        {/* Mobile/Tablet Drawer Toggle Bar (Hidden on desktop reference viewport) */}
+        <div className="xl:hidden flex h-12 items-center justify-between border-b px-4 shrink-0 bg-[#0A1116] border-[var(--border)]">
+          <button
+            type="button"
+            className="flex items-center gap-2 p-1.5 rounded-lg text-xs font-medium hover:bg-white/5"
+            style={{ color: 'var(--text-primary)' }}
+            onClick={() => setMobileMenuOpen(true)}
+            aria-label="Mở bảng điều hướng Dashboard"
+          >
+            <svg className="w-5 h-5 text-[#4FB9AD]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+            <span className="text-xs font-semibold">Phân hệ giám sát</span>
+          </button>
+          <Link
+            href={VIEWER_CAMPUS_PATH}
+            className="text-[11px] px-2.5 py-1 rounded border border-[rgba(79,185,173,0.3)] text-[#4FB9AD] hover:bg-[#4FB9AD]/10 transition-colors"
+          >
+            3D Campus
+          </Link>
+        </div>
 
-            {/* Breadcrumb / Title */}
-            <div className="flex items-center gap-2 text-xs sm:text-sm font-semibold">
-              <span style={{ color: 'var(--text-muted)' }}>Dashboard</span>
-              <span style={{ color: 'var(--text-muted)' }}>/</span>
-              <span style={{ color: 'var(--accent-cyan)' }}>
-                {currentRoute?.title || 'Tổng quan'}
-              </span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            {/* Direct Switch to Digital Twin 3D */}
-            <Link
-              href={VIEWER_CAMPUS_PATH}
-              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded text-xs font-medium transition-all"
-              style={{
-                backgroundColor: 'rgba(34, 199, 232, 0.1)',
-                border: '1px solid rgba(34, 199, 232, 0.3)',
-                color: 'var(--accent-cyan)',
-              }}
-            >
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                />
-              </svg>
-              <span>Digital Twin 3D</span>
-            </Link>
-          </div>
-        </header>
-
-        {/* Scrollable Content Viewport */}
+        {/* Scrollable Content Viewport (No max-w-7xl, clean full workspace) */}
         <div
           id="dashboard-main-content"
           tabIndex={-1}
-          className="flex-1 min-w-0 min-h-0 overflow-y-auto p-4 sm:p-6 lg:p-8"
+          className="flex-1 min-w-0 min-h-0 overflow-y-auto px-5 py-5 sm:px-7 sm:py-6 lg:px-8 lg:py-7"
           style={{ backgroundColor: 'var(--app-bg)' }}
         >
           {children}
@@ -299,3 +348,4 @@ export function DashboardShell({ children }: DashboardShellProps) {
     </div>
   );
 }
+

@@ -123,7 +123,6 @@ export function useIotDeviceTelemetry({
             start: startDate.toISOString(),
             stop: stopDate.toISOString(),
             limit: DEFAULT_LIMIT,
-            deviceType: deviceTypeHint,
           },
           controller.signal,
         );
@@ -195,7 +194,7 @@ export function useIotDeviceTelemetry({
         }
       }
     },
-    [deviceTypeHint, showToast, dismissDeviceToasts],
+    [showToast, dismissDeviceToasts],
   );
 
   // Trigger on deviceId change or selection

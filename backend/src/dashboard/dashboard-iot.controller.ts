@@ -13,13 +13,19 @@ import {
   ApiResponse,
 } from '@nestjs/swagger';
 import { DashboardIotCatalogueService } from './dashboard-iot-catalogue.service';
+import { DashboardIotTelemetryService } from './dashboard-iot-telemetry.service';
 import { DashboardIotCatalogueQueryDto } from './dto/dashboard-iot-catalogue-query.dto';
 import { DashboardDeviceCatalogueResponseDto } from './dto/dashboard-device-catalogue-response.dto';
+import { DashboardIotTelemetryQueryDto } from './dto/dashboard-iot-telemetry-query.dto';
+import { DashboardDeviceTelemetryResponseDto } from './dto/dashboard-iot-telemetry-response.dto';
 
 @ApiTags('Dashboard')
 @Controller('api/v1/dashboard')
 export class DashboardIotController {
-  constructor(private readonly catalogueService: DashboardIotCatalogueService) {}
+  constructor(
+    private readonly catalogueService: DashboardIotCatalogueService,
+    private readonly telemetryService: DashboardIotTelemetryService,
+  ) {}
 
   @Get('buildings/:buildingId/iot/devices')
   @Header('Cache-Control', 'no-store')
@@ -57,5 +63,43 @@ export class DashboardIotController {
     @Query() query: DashboardIotCatalogueQueryDto,
   ): Promise<DashboardDeviceCatalogueResponseDto> {
     return this.catalogueService.getCatalogue(buildingId, query.floorId);
+  }
+
+  @Get('buildings/:buildingId/iot/devices/:deviceId/telemetry')
+  @Header('Cache-Control', 'no-store')
+  @ApiOperation({
+    summary: 'Get Dashboard IoT device telemetry (read-only, live provenance)',
+    description:
+      'Returns normalized telemetry readings and coherent latest sample for a supported device (solar or avc). Strictly read-only and in-memory.',
+  })
+  @ApiParam({ name: 'buildingId', example: 'E', description: 'Building identifier (currently E only)' })
+  @ApiParam({ name: 'deviceId', example: '70B3D57ED0073E9D', description: 'Device EUI / ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Telemetry readings returned successfully with live provenance',
+    type: DashboardDeviceTelemetryResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid buildingId, deviceId, range duration (>7d), limit (>1000), or unsupported device type',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Device not found',
+  })
+  @ApiResponse({
+    status: 502,
+    description: 'Upstream IoT service error, timeout, or malformed payload',
+  })
+  @ApiResponse({
+    status: 503,
+    description: 'IoT integration disabled, fixture mode, or missing credentials',
+  })
+  async getTelemetry(
+    @Param('buildingId') buildingId: string,
+    @Param('deviceId') deviceId: string,
+    @Query() query: DashboardIotTelemetryQueryDto,
+  ): Promise<DashboardDeviceTelemetryResponseDto> {
+    return this.telemetryService.getTelemetry(buildingId, deviceId, query);
   }
 }

@@ -141,14 +141,6 @@
             "schema": {
               "type": "string"
             }
-          },
-          {
-            "name": "deviceType",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
           }
         ],
         "responses": {
@@ -356,6 +348,93 @@
           }
         },
         "summary": "Get Dashboard IoT device catalogue (read-only, live provenance)",
+        "tags": [
+          "Dashboard"
+        ]
+      }
+    },
+    "/api/v1/dashboard/buildings/{buildingId}/iot/devices/{deviceId}/telemetry": {
+      "get": {
+        "description": "Returns normalized telemetry readings and coherent latest sample for a supported device (solar or avc). Strictly read-only and in-memory.",
+        "operationId": "DashboardIotController_getTelemetry",
+        "parameters": [
+          {
+            "name": "buildingId",
+            "required": true,
+            "in": "path",
+            "description": "Building identifier (currently E only)",
+            "schema": {
+              "example": "E",
+              "type": "string"
+            }
+          },
+          {
+            "name": "deviceId",
+            "required": true,
+            "in": "path",
+            "description": "Device EUI / ID",
+            "schema": {
+              "example": "70B3D57ED0073E9D",
+              "type": "string"
+            }
+          },
+          {
+            "name": "start",
+            "required": true,
+            "in": "query",
+            "description": "Query window start as ISO-8601 UTC string",
+            "schema": {
+              "example": "2026-09-23T12:00:00.000Z",
+              "type": "string"
+            }
+          },
+          {
+            "name": "stop",
+            "required": true,
+            "in": "query",
+            "description": "Query window stop as ISO-8601 UTC string",
+            "schema": {
+              "example": "2026-09-26T12:00:00.000Z",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Maximum readings to return (1..1000). Defaults to 1000.",
+            "schema": {
+              "default": 1000,
+              "example": 1000,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Telemetry readings returned successfully with live provenance",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardDeviceTelemetryResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid buildingId, deviceId, range duration (>7d), limit (>1000), or unsupported device type"
+          },
+          "404": {
+            "description": "Device not found"
+          },
+          "502": {
+            "description": "Upstream IoT service error, timeout, or malformed payload"
+          },
+          "503": {
+            "description": "IoT integration disabled, fixture mode, or missing credentials"
+          }
+        },
+        "summary": "Get Dashboard IoT device telemetry (read-only, live provenance)",
         "tags": [
           "Dashboard"
         ]
@@ -682,6 +761,171 @@
           "mapping",
           "summary",
           "devices"
+        ]
+      },
+      "DashboardTelemetryProvenanceDto": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "example": "live"
+          },
+          "sourceId": {
+            "type": "string",
+            "example": "iot_telemetry_70B3D57ED0073E9D"
+          },
+          "sourceType": {
+            "type": "string",
+            "example": "iot_backend_telemetry"
+          },
+          "observedAt": {
+            "type": "string",
+            "example": "2026-09-26T12:00:00.000Z"
+          },
+          "windowStart": {
+            "type": "string",
+            "example": "2026-09-23T12:00:00.000Z"
+          },
+          "windowEnd": {
+            "type": "string",
+            "example": "2026-09-26T12:00:00.000Z"
+          },
+          "fetchedAt": {
+            "type": "string",
+            "example": "2026-09-26T12:00:05.123Z"
+          },
+          "caveats": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "mode",
+          "sourceId",
+          "sourceType",
+          "windowStart",
+          "windowEnd",
+          "fetchedAt"
+        ]
+      },
+      "DashboardTelemetryQueryRangeDto": {
+        "type": "object",
+        "properties": {
+          "start": {
+            "type": "string",
+            "example": "2026-09-23T12:00:00.000Z"
+          },
+          "stop": {
+            "type": "string",
+            "example": "2026-09-26T12:00:00.000Z"
+          },
+          "limit": {
+            "type": "number",
+            "example": 1000
+          }
+        },
+        "required": [
+          "start",
+          "stop",
+          "limit"
+        ]
+      },
+      "DashboardTelemetryLatestSampleDto": {
+        "type": "object",
+        "properties": {
+          "observedAt": {
+            "type": "string",
+            "example": "2026-09-26T12:00:00.000Z"
+          },
+          "gatewayId": {
+            "type": "string",
+            "example": "gateway-01",
+            "nullable": true
+          },
+          "rssiDbm": {
+            "type": "number",
+            "example": -85,
+            "nullable": true
+          },
+          "snrDb": {
+            "type": "number",
+            "example": 9.5,
+            "nullable": true
+          }
+        },
+        "required": [
+          "observedAt",
+          "gatewayId",
+          "rssiDbm",
+          "snrDb"
+        ]
+      },
+      "DashboardDeviceTelemetryResponseDto": {
+        "type": "object",
+        "properties": {
+          "schemaVersion": {
+            "type": "number",
+            "example": 1
+          },
+          "buildingId": {
+            "type": "string",
+            "example": "E"
+          },
+          "deviceId": {
+            "type": "string",
+            "example": "70B3D57ED0073E9D"
+          },
+          "deviceType": {
+            "type": "string",
+            "enum": [
+              "solar",
+              "avc"
+            ],
+            "example": "solar"
+          },
+          "availability": {
+            "type": "string",
+            "enum": [
+              "ready",
+              "empty"
+            ],
+            "example": "ready"
+          },
+          "provenance": {
+            "$ref": "#/components/schemas/DashboardTelemetryProvenanceDto"
+          },
+          "queryRange": {
+            "$ref": "#/components/schemas/DashboardTelemetryQueryRangeDto"
+          },
+          "coverage": {
+            "type": "object"
+          },
+          "latestSample": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DashboardTelemetryLatestSampleDto"
+              }
+            ]
+          },
+          "telemetry": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "schemaVersion",
+          "buildingId",
+          "deviceId",
+          "deviceType",
+          "availability",
+          "provenance",
+          "queryRange",
+          "coverage",
+          "latestSample",
+          "telemetry"
         ]
       }
     }

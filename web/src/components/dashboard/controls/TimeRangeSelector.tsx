@@ -1,6 +1,14 @@
 import React from 'react';
 
-export type TimeRangePreset = 'today' | 'yesterday' | 'last-7d' | 'last-30d' | 'custom';
+export type TimeRangePreset =
+  | 'today'
+  | 'yesterday'
+  | 'last-24h'
+  | 'last-72h'
+  | 'last-7d'
+  | 'last-30d'
+  | 'custom'
+  | string;
 
 export interface TimeRangeValue {
   preset: TimeRangePreset;
@@ -8,14 +16,20 @@ export interface TimeRangeValue {
   endIso?: string;
 }
 
+export interface TimeRangeOption {
+  id: string;
+  label: string;
+}
+
 export interface TimeRangeSelectorProps {
   value: TimeRangeValue;
   onChange?: (val: TimeRangeValue) => void;
   disabled?: boolean;
   className?: string;
+  options?: TimeRangeOption[];
 }
 
-const PRESET_OPTIONS: { id: TimeRangePreset; label: string }[] = [
+const DEFAULT_PRESET_OPTIONS: TimeRangeOption[] = [
   { id: 'today', label: 'Hôm nay' },
   { id: 'yesterday', label: 'Hôm qua' },
   { id: 'last-7d', label: '7 ngày qua' },
@@ -28,8 +42,11 @@ export function TimeRangeSelector({
   onChange,
   disabled = false,
   className = '',
+  options,
 }: TimeRangeSelectorProps) {
-  const handlePresetClick = (preset: TimeRangePreset) => {
+  const activeOptions = options && options.length > 0 ? options : DEFAULT_PRESET_OPTIONS;
+
+  const handlePresetClick = (preset: string) => {
     if (disabled || !onChange) return;
     onChange({
       ...value,
@@ -47,7 +64,7 @@ export function TimeRangeSelector({
         borderColor: 'var(--border)',
       }}
     >
-      {PRESET_OPTIONS.map((opt) => {
+      {activeOptions.map((opt) => {
         const isActive = value.preset === opt.id;
         return (
           <button

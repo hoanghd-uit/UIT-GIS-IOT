@@ -6,6 +6,7 @@ import {
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { DashboardIotCatalogueService } from '../dashboard-iot-catalogue.service';
+import { DashboardIotTelemetryService } from '../dashboard-iot-telemetry.service';
 import { DashboardIotController } from '../dashboard-iot.controller';
 import { IotClientService } from '../../iot/services/iot-client.service';
 import { IotMapperService } from '../../iot/services/iot-mapper.service';
@@ -76,6 +77,10 @@ describe('DashboardIotCatalogueService & Controller (Big Phase 02 / Phase 02)', 
           useValue: mockClient,
         },
         IotMapperService,
+        {
+          provide: DashboardIotTelemetryService,
+          useValue: {},
+        },
       ],
     }).compile();
 

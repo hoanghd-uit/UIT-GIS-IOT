@@ -13,6 +13,7 @@ export interface IotCatalogueFiltersProps {
   totalLoaded: number;
   filteredCount: number;
   disabled?: boolean;
+  searchInputRef?: React.RefObject<HTMLInputElement | null>;
 }
 
 export function IotCatalogueFilters({
@@ -26,54 +27,102 @@ export function IotCatalogueFilters({
   totalLoaded,
   filteredCount,
   disabled = false,
+  searchInputRef,
 }: IotCatalogueFiltersProps) {
-  const hasActiveLocalFilter = searchQuery.trim() !== '' || selectedType !== 'all';
+  const hasActiveLocalFilter = searchQuery.trim() !== '' || selectedType !== 'all' || selectedFloor !== 'all';
 
   return (
-    <div
-      className="p-3.5 rounded-lg border mb-4 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs"
-      style={{
-        backgroundColor: 'var(--panel-bg)',
-        borderColor: 'var(--border)',
-      }}
-    >
-      <div className="flex flex-wrap items-center gap-2.5 flex-1">
-        {/* Floor Selection */}
-        <div className="flex items-center gap-1.5">
-          <label htmlFor="iot-floor-filter" className="font-medium whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>
-            Phạm vi tầng:
-          </label>
-          <select
-            id="iot-floor-filter"
-            value={selectedFloor}
-            onChange={(e) => onFloorChange(e.target.value)}
-            disabled={disabled}
-            className="px-2.5 py-1.5 rounded border text-xs font-medium focus:outline-none focus:ring-1 transition-colors"
-            style={{
-              backgroundColor: 'var(--panel-elevated)',
-              borderColor: 'var(--border)',
-              color: 'var(--text-primary)',
-            }}
-          >
-            <option value="all">Toàn bộ danh mục (Tất cả)</option>
-            <option value="4">Tầng 4 (Building E)</option>
-            <option value="6">Tầng 6 (Building E)</option>
-          </select>
-        </div>
+    <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 w-full pb-3 border-b border-[rgba(83,109,126,0.18)]">
+      {/* Left: Card Title with Counts and Filter Pills */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <h2 className="text-base font-semibold text-[#E6EDF1] flex items-center gap-1.5 whitespace-nowrap">
+          <span>Danh sách thiết bị</span>
+          <span className="text-xs font-mono text-[#A5B0B9]">
+            ({filteredCount} / {totalLoaded})
+          </span>
+        </h2>
 
-        {/* Separator on desktop */}
-        <div className="hidden md:block w-px h-5" style={{ backgroundColor: 'var(--border)' }} />
+        {/* Filter Pills from Mockup */}
+        <div className="flex items-center gap-1 p-0.5 rounded-lg bg-[rgba(255,255,255,0.03)] border border-[var(--border)] text-xs">
+          <button
+            type="button"
+            className="px-2.5 py-1 rounded-md font-medium bg-[#17222C] text-[#E6EDF1] border border-[rgba(79,185,173,0.3)] shadow-sm"
+          >
+            Tất cả
+          </button>
+          <button
+            type="button"
+            disabled
+            className="px-2.5 py-1 rounded-md text-[#7E8B96] opacity-50 cursor-not-allowed"
+            title="Chưa có nguồn trạng thái sự cố"
+          >
+            Có sự cố
+          </button>
+          <button
+            type="button"
+            disabled
+            className="px-2.5 py-1 rounded-md text-[#7E8B96] opacity-50 cursor-not-allowed"
+            title="Chưa xác nhận dữ liệu pin"
+          >
+            Pin yếu
+          </button>
+        </div>
+      </div>
+
+      {/* Right: Secondary Compact Controls (Floor, Type, Search) */}
+      <div className="flex items-center gap-2 flex-wrap">
+        {/* Floor Selection Dropdown */}
+        <select
+          id="iot-floor-filter"
+          value={selectedFloor}
+          onChange={(e) => onFloorChange(e.target.value)}
+          disabled={disabled}
+          className="px-2.5 py-1.5 rounded-lg border text-xs font-medium focus:outline-none focus:ring-1 focus:ring-[var(--primary)] transition-colors"
+          style={{
+            backgroundColor: 'var(--panel-elevated)',
+            borderColor: 'var(--border)',
+            color: 'var(--text-primary)',
+          }}
+          aria-label="Lọc theo tầng"
+        >
+          <option value="all">Tất cả tầng</option>
+          <option value="4">Tầng 4</option>
+          <option value="6">Tầng 6</option>
+        </select>
+
+        {/* Type Selection Dropdown */}
+        <select
+          id="iot-type-filter"
+          value={selectedType}
+          onChange={(e) => onTypeChange(e.target.value)}
+          disabled={disabled}
+          className="px-2.5 py-1.5 rounded-lg border text-xs font-medium focus:outline-none focus:ring-1 focus:ring-[var(--primary)] transition-colors"
+          style={{
+            backgroundColor: 'var(--panel-elevated)',
+            borderColor: 'var(--border)',
+            color: 'var(--text-primary)',
+          }}
+          aria-label="Lọc theo loại thiết bị"
+        >
+          <option value="all">Tất cả loại ({availableTypes.length})</option>
+          {availableTypes.map((type) => (
+            <option key={type} value={type}>
+              {type}
+            </option>
+          ))}
+        </select>
 
         {/* Search by Device ID */}
-        <div className="relative min-w-[200px] flex-1 max-w-xs">
+        <div className="relative min-w-[170px] max-w-[220px]">
           <input
+            ref={searchInputRef as React.RefObject<HTMLInputElement>}
             id="iot-search-id"
             type="search"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="Tìm theo mã thiết bị (Device ID)..."
+            placeholder="Tìm mã thiết bị..."
             disabled={disabled}
-            className="w-full pl-8 pr-2.5 py-1.5 rounded border text-xs focus:outline-none focus:ring-1 transition-colors"
+            className="w-full pl-7 pr-2.5 py-1.5 rounded-lg border text-xs focus:outline-none focus:ring-1 focus:ring-[var(--primary)] transition-colors"
             style={{
               backgroundColor: 'var(--panel-elevated)',
               borderColor: 'var(--border)',
@@ -81,8 +130,7 @@ export function IotCatalogueFilters({
             }}
           />
           <svg
-            className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none"
-            style={{ color: 'var(--text-muted)' }}
+            className="w-3.5 h-3.5 absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none text-[#7E8B96]"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -96,61 +144,23 @@ export function IotCatalogueFilters({
           </svg>
         </div>
 
-        {/* Filter by Device Type */}
-        <div className="flex items-center gap-1.5">
-          <label htmlFor="iot-type-filter" className="font-medium whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>
-            Loại thiết bị:
-          </label>
-          <select
-            id="iot-type-filter"
-            value={selectedType}
-            onChange={(e) => onTypeChange(e.target.value)}
-            disabled={disabled}
-            className="px-2.5 py-1.5 rounded border text-xs font-medium focus:outline-none focus:ring-1 transition-colors"
-            style={{
-              backgroundColor: 'var(--panel-elevated)',
-              borderColor: 'var(--border)',
-              color: 'var(--text-primary)',
-            }}
-          >
-            <option value="all">Tất cả loại ({availableTypes.length})</option>
-            {availableTypes.map((type) => (
-              <option key={type} value={type}>
-                {type}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Clear Local Filters button */}
+        {/* Clear Filters */}
         {hasActiveLocalFilter && (
           <button
             type="button"
             onClick={() => {
               onSearchChange('');
               onTypeChange('all');
+              if (selectedFloor !== 'all') onFloorChange('all');
             }}
-            className="px-2 py-1 rounded text-[11px] font-medium transition-colors"
-            style={{
-              backgroundColor: 'rgba(255, 255, 255, 0.05)',
-              color: 'var(--text-muted)',
-            }}
+            className="px-2 py-1.5 rounded-lg text-xs font-medium text-[#7E8B96] hover:text-[#E6EDF1] hover:bg-white/5 transition-colors border border-transparent"
+            title="Xóa tất cả bộ lọc tìm kiếm"
           >
-            Xóa bộ lọc
+            Xóa lọc
           </button>
         )}
-      </div>
-
-      {/* Summary Count Indicator */}
-      <div className="flex items-center gap-1 text-[11px] font-medium whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>
-        <span>Hiển thị:</span>
-        <strong className="font-mono text-xs" style={{ color: 'var(--text-primary)' }}>
-          {filteredCount}
-        </strong>
-        <span>/</span>
-        <span className="font-mono">{totalLoaded}</span>
-        <span>thiết bị</span>
       </div>
     </div>
   );
 }
+

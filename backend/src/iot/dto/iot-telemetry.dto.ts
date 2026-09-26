@@ -109,7 +109,6 @@ export interface DeviceTelemetryQueryDto {
   start: string; // ISO-8601 UTC string
   stop: string;  // ISO-8601 UTC string
   limit?: number; // Integer, default 1000, cap 10000
-  deviceTypeHint?: string;
 }
 
 // --- Normalized Telemetry Data Models ---

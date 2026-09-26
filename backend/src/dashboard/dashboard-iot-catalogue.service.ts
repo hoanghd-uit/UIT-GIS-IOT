@@ -21,6 +21,9 @@ function isValidIsoDate(str: unknown): boolean {
   return !Number.isNaN(parsed);
 }
 
+import { Optional } from '@nestjs/common';
+import { IotTelemetryService } from '../iot/services/iot-telemetry.service';
+
 @Injectable()
 export class DashboardIotCatalogueService {
   private readonly logger = new Logger(DashboardIotCatalogueService.name);
@@ -29,6 +32,7 @@ export class DashboardIotCatalogueService {
     private readonly config: ConfigService,
     private readonly iotClient: IotClientService,
     private readonly iotMapper: IotMapperService,
+    @Optional() private readonly telemetryService?: IotTelemetryService,
   ) {}
 
   /**
@@ -252,6 +256,10 @@ export class DashboardIotCatalogueService {
         displayFloorId,
         floorAssignment,
       });
+
+      if (this.telemetryService) {
+        this.telemetryService.registerDeviceType(deviceId, deviceType);
+      }
     }
 
     const acceptedCount = devices.length;
