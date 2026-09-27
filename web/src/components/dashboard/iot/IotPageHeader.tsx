@@ -3,6 +3,7 @@
 import React from 'react';
 import { DataModeBadge } from '@/components/dashboard/cards/DataModeBadge';
 import { DashboardProvenance } from '@/types/dashboard';
+import { TimeFilterSegmented } from '@/components/dashboard/controls/TimeFilterSegmented';
 
 export interface IotPageHeaderProps {
   provenance?: DashboardProvenance;
@@ -59,40 +60,12 @@ export function IotPageHeader({
           </div>
         )}
 
-        {/* Time Segmented Selector */}
-        <div
-          role="group"
-          aria-label="Khoảng thời gian giám sát"
-          className="inline-flex items-center p-1 rounded-xl border text-xs"
-          style={{
-            backgroundColor: 'var(--panel-bg)',
-            borderColor: 'var(--border)',
-          }}
-        >
-          {[
-            { id: 'today', label: 'Hôm nay' },
-            { id: '7d', label: '7 ngày' },
-            { id: '30d', label: '30 ngày' },
-            { id: 'custom', label: 'Tùy chọn' },
-          ].map((item) => {
-            const isActive = activeTimePreset === item.id;
-            return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => onTimePresetChange?.(item.id)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                  isActive
-                    ? 'bg-[#17222C] text-[#E6EDF1] shadow-sm border border-[rgba(83,109,126,0.3)]'
-                    : 'text-[#A5B0B9] hover:text-[#E6EDF1] hover:bg-white/5'
-                }`}
-                aria-pressed={isActive}
-              >
-                {item.label}
-              </button>
-            );
-          })}
-        </div>
+        {/* Time Segmented Selector (Reused) */}
+        <TimeFilterSegmented
+          activePreset={activeTimePreset}
+          onPresetChange={onTimePresetChange}
+          ariaLabel="Khoảng thời gian giám sát"
+        />
 
         {/* Search Catalogue Trigger Button */}
         <button

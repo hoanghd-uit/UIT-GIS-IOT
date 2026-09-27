@@ -100,9 +100,38 @@ export function MetricTrendChart({
     accessibleSummary ||
     `Biểu đồ xu hướng ${metricLabel} (${unit || ''}) gồm ${data.length} điểm dữ liệu từ ${data[0]?.[timeKey]} đến ${data[data.length - 1]?.[timeKey]}.`;
 
+  // Format helper for friendly X-axis ticks (spaced every ~3 hours, 2 lines: time\ndate)
+  const formatXAxisTime = (raw: unknown): string => {
+    const d = raw instanceof Date ? raw : new Date(raw as string | number);
+    if (isNaN(d.getTime())) return String(raw ?? '');
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${pad(d.getHours())}:${pad(d.getMinutes())}\n${pad(d.getDate())}/${pad(d.getMonth() + 1)}`;
+  };
+
+  // Format helper for hover tooltip date header (Giờ:Phút:Giây Ngày/Tháng/Năm)
+  const formatTooltipTime = (raw: unknown): string => {
+    const d = raw instanceof Date ? raw : new Date(raw as string | number);
+    if (isNaN(d.getTime())) return String(raw ?? '');
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())} ${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
+  };
+
+  // Convert timeKey to Date objects to enable native continuous time scale & 3-hour tick spacing
+  const chartData = React.useMemo(() => {
+    if (!data) return [];
+    return data.map((d) => {
+      const rawTime = d[timeKey];
+      const dateObj = rawTime instanceof Date ? rawTime : new Date(rawTime as string | number);
+      return {
+        ...d,
+        [timeKey]: isNaN(dateObj.getTime()) ? rawTime : dateObj,
+      };
+    });
+  }, [data, timeKey]);
+
   // Ant Design Charts Line Config
   const chartConfig: Record<string, unknown> = {
-    data,
+    data: chartData,
     xField: timeKey,
     yField: valueKey,
     autoFit: true,
@@ -111,10 +140,17 @@ export function MetricTrendChart({
     style: {
       lineWidth: 2,
     },
+    scale: {
+      x: {
+        type: 'time',
+        tickCount: 8, // ~every 3 hours over 24h
+      },
+    },
     axis: {
       x: {
         title: false,
         labelSpacing: 8,
+        labelFormatter: formatXAxisTime,
       },
       y: {
         title: unit ? `${metricLabel} (${unit})` : metricLabel,
@@ -123,6 +159,24 @@ export function MetricTrendChart({
     },
     tooltip: {
       showMarkers: true,
+      title: (d: Record<string, unknown>) => {
+        const rawTime = d?.[timeKey] || d?.timestamp || d?.time;
+        return formatTooltipTime(rawTime);
+      },
+      items: [
+        {
+          channel: 'y',
+          field: valueKey,
+          name: metricLabel,
+          valueFormatter: (val: any) => {
+            const num = typeof val === 'number' ? val : parseFloat(val);
+            const formattedVal = !isNaN(num)
+              ? num.toLocaleString('vi-VN', { maximumFractionDigits: 3 })
+              : String(val ?? '—');
+            return `${formattedVal} ${unit || ''}`.trim();
+          },
+        },
+      ],
     },
   };
 

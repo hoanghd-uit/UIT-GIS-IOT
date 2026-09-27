@@ -439,6 +439,146 @@
           "Dashboard"
         ]
       }
+    },
+    "/api/v1/dashboard/buildings/{buildingId}/water/meters": {
+      "get": {
+        "description": "Returns a list of registered AVC water meters for Building E. Reuses existing catalogue service and floor mapping. Strictly read-only and in-memory.",
+        "operationId": "DashboardWaterController_getMeters",
+        "parameters": [
+          {
+            "name": "buildingId",
+            "required": true,
+            "in": "path",
+            "description": "Building identifier (currently E only)",
+            "schema": {
+              "example": "E",
+              "type": "string"
+            }
+          },
+          {
+            "name": "floorId",
+            "required": false,
+            "in": "query",
+            "description": "Application floor ID (4, 6). When omitted, returns full unfiltered catalogue of AVC meters.",
+            "schema": {
+              "example": "4",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "AVC water meter list returned successfully with live provenance",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardWaterMeterListResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid buildingId, unsupported floor, or floor G"
+          },
+          "502": {
+            "description": "Upstream IoT service error, timeout, or malformed payload"
+          },
+          "503": {
+            "description": "IoT integration disabled, fixture mode, or missing credentials"
+          }
+        },
+        "summary": "Get Dashboard AVC water meter list (read-only, live provenance)",
+        "tags": [
+          "Dashboard"
+        ]
+      }
+    },
+    "/api/v1/dashboard/buildings/{buildingId}/water/meters/{deviceId}/readings": {
+      "get": {
+        "description": "Returns normalized readings, latest sample, coverage, and raw flag disclosures for a single selected AVC water meter. Enforces server-authoritative AVC type. Range duration cap 7 days, limit cap 1000.",
+        "operationId": "DashboardWaterController_getReadings",
+        "parameters": [
+          {
+            "name": "buildingId",
+            "required": true,
+            "in": "path",
+            "description": "Building identifier (currently E only)",
+            "schema": {
+              "example": "E",
+              "type": "string"
+            }
+          },
+          {
+            "name": "deviceId",
+            "required": true,
+            "in": "path",
+            "description": "Device EUI / ID of AVC water meter",
+            "schema": {
+              "example": "8cf9572000149bd3",
+              "type": "string"
+            }
+          },
+          {
+            "name": "start",
+            "required": true,
+            "in": "query",
+            "description": "Inclusive query range start in ISO-8601 UTC format. Must be strictly before stop.",
+            "schema": {
+              "example": "2026-09-25T12:00:00.000Z",
+              "type": "string"
+            }
+          },
+          {
+            "name": "stop",
+            "required": true,
+            "in": "query",
+            "description": "Inclusive query range stop in ISO-8601 UTC format. Must be strictly after start.",
+            "schema": {
+              "example": "2026-09-26T12:00:00.000Z",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Maximum number of readings to return (1..1000). Default is 1000.",
+            "schema": {
+              "default": 1000,
+              "example": 1000,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Water meter readings returned successfully with live provenance",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardWaterReadingsResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid buildingId, deviceId, range duration (>7d), limit (>1000), or device is not an AVC water meter"
+          },
+          "404": {
+            "description": "Device not found"
+          },
+          "502": {
+            "description": "Upstream IoT service error, timeout, or malformed payload"
+          },
+          "503": {
+            "description": "IoT integration disabled, fixture mode, or missing credentials"
+          }
+        },
+        "summary": "Get Dashboard selected AVC water meter readings (read-only, live provenance)",
+        "tags": [
+          "Dashboard"
+        ]
+      }
     }
   },
   "info": {
@@ -926,6 +1066,561 @@
           "coverage",
           "latestSample",
           "telemetry"
+        ]
+      },
+      "DashboardWaterMeterProvenanceDto": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "example": "live",
+            "enum": [
+              "live"
+            ]
+          },
+          "sourceId": {
+            "type": "string",
+            "example": "dashboard-water-meters"
+          },
+          "sourceType": {
+            "type": "string",
+            "example": "iot_backend_catalogue"
+          },
+          "fetchedAt": {
+            "type": "string",
+            "example": "2026-09-26T12:00:00.000Z",
+            "description": "Application backend fetch timestamp (ISO-8601)"
+          },
+          "caveats": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "mode",
+          "sourceId",
+          "sourceType",
+          "fetchedAt"
+        ]
+      },
+      "DashboardWaterMeterSummaryDto": {
+        "type": "object",
+        "properties": {
+          "receivedCount": {
+            "type": "number",
+            "example": 2,
+            "description": "Raw AVC records received from upstream catalogue"
+          },
+          "acceptedCount": {
+            "type": "number",
+            "example": 2,
+            "description": "Valid AVC records accepted into water meter list"
+          },
+          "skippedCount": {
+            "type": "number",
+            "example": 0,
+            "description": "Malformed records skipped"
+          },
+          "duplicateCount": {
+            "type": "number",
+            "example": 0,
+            "description": "Duplicate device IDs skipped"
+          },
+          "truncated": {
+            "type": "boolean",
+            "example": false,
+            "nullable": true,
+            "description": "Upstream truncation indicator"
+          }
+        },
+        "required": [
+          "receivedCount",
+          "acceptedCount",
+          "skippedCount",
+          "duplicateCount",
+          "truncated"
+        ]
+      },
+      "DashboardWaterMeterListItemDto": {
+        "type": "object",
+        "properties": {
+          "deviceId": {
+            "type": "string",
+            "example": "8cf9572000149bd3",
+            "description": "Opaque upstream device identifier (query parameter dev_eui)"
+          },
+          "sourceDeviceType": {
+            "type": "string",
+            "example": "avc",
+            "enum": [
+              "avc"
+            ],
+            "description": "Authoritative source device type"
+          },
+          "catalogueActive": {
+            "type": "boolean",
+            "example": true,
+            "description": "Catalogue registration/activity metadata (NOT online/offline health)"
+          },
+          "sourceCreatedAt": {
+            "type": "string",
+            "example": "2026-09-20T19:09:17.355Z",
+            "description": "Source record creation timestamp"
+          },
+          "sourceUpdatedAt": {
+            "type": "string",
+            "example": "2026-09-20T19:09:17.355Z",
+            "description": "Source metadata update timestamp (NOT latest reading)"
+          },
+          "sourceLocation": {
+            "$ref": "#/components/schemas/DashboardDeviceSourceLocationDto"
+          },
+          "displayFloorId": {
+            "type": "string",
+            "example": "4",
+            "nullable": true,
+            "description": "Viewer display floor ID, or null if unmapped"
+          },
+          "floorAssignment": {
+            "type": "string",
+            "example": "source",
+            "enum": [
+              "source",
+              "development-fallback",
+              "unmapped"
+            ],
+            "description": "Floor assignment provenance"
+          }
+        },
+        "required": [
+          "deviceId",
+          "sourceDeviceType",
+          "catalogueActive",
+          "sourceCreatedAt",
+          "sourceUpdatedAt",
+          "sourceLocation",
+          "displayFloorId",
+          "floorAssignment"
+        ]
+      },
+      "DashboardWaterMeterListResponseDto": {
+        "type": "object",
+        "properties": {
+          "schemaVersion": {
+            "type": "number",
+            "example": 1
+          },
+          "buildingId": {
+            "type": "string",
+            "example": "E"
+          },
+          "requestedFloorId": {
+            "type": "string",
+            "example": "4",
+            "nullable": true
+          },
+          "availability": {
+            "type": "string",
+            "example": "ready",
+            "enum": [
+              "ready",
+              "empty"
+            ]
+          },
+          "provenance": {
+            "$ref": "#/components/schemas/DashboardWaterMeterProvenanceDto"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/DashboardWaterMeterSummaryDto"
+          },
+          "meters": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DashboardWaterMeterListItemDto"
+            }
+          }
+        },
+        "required": [
+          "schemaVersion",
+          "buildingId",
+          "requestedFloorId",
+          "availability",
+          "provenance",
+          "summary",
+          "meters"
+        ]
+      },
+      "DashboardWaterReadingsProvenanceDto": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "example": "live"
+          },
+          "sourceId": {
+            "type": "string",
+            "example": "water_readings_8cf9572000149bd3"
+          },
+          "sourceType": {
+            "type": "string",
+            "example": "iot_backend_avc"
+          },
+          "observedAt": {
+            "type": "string",
+            "example": "2026-09-26T12:33:14.339Z"
+          },
+          "windowStart": {
+            "type": "string",
+            "example": "2026-09-25T12:00:00.000Z"
+          },
+          "windowEnd": {
+            "type": "string",
+            "example": "2026-09-26T12:00:00.000Z"
+          },
+          "fetchedAt": {
+            "type": "string",
+            "example": "2026-09-26T12:35:00.000Z"
+          },
+          "caveats": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "mode",
+          "sourceId",
+          "sourceType",
+          "windowStart",
+          "windowEnd",
+          "fetchedAt"
+        ]
+      },
+      "DashboardWaterReadingsQueryRangeDto": {
+        "type": "object",
+        "properties": {
+          "start": {
+            "type": "string",
+            "example": "2026-09-25T12:00:00.000Z"
+          },
+          "stop": {
+            "type": "string",
+            "example": "2026-09-26T12:00:00.000Z"
+          },
+          "limit": {
+            "type": "number",
+            "example": 1000
+          }
+        },
+        "required": [
+          "start",
+          "stop",
+          "limit"
+        ]
+      },
+      "DashboardWaterReadingRawFlagsDto": {
+        "type": "object",
+        "properties": {
+          "valveOpen": {
+            "type": "number",
+            "example": 1,
+            "nullable": true,
+            "description": "Valve state code (unconfirmed encoding)"
+          },
+          "pipeLeak": {
+            "type": "number",
+            "example": 0,
+            "nullable": true,
+            "description": "Leak flag code (unconfirmed encoding)"
+          },
+          "pipeBurst": {
+            "type": "number",
+            "example": 0,
+            "nullable": true,
+            "description": "Burst flag code (unconfirmed encoding)"
+          },
+          "batteryLow": {
+            "type": "number",
+            "example": 0,
+            "nullable": true,
+            "description": "Battery low flag code (unconfirmed encoding)"
+          },
+          "frozen": {
+            "type": "number",
+            "example": 0,
+            "nullable": true,
+            "description": "Frozen flag code (unconfirmed encoding)"
+          },
+          "tamper": {
+            "type": "number",
+            "example": 0,
+            "nullable": true,
+            "description": "Tamper flag code (unconfirmed encoding)"
+          },
+          "reverseFlow": {
+            "type": "number",
+            "example": 0,
+            "nullable": true,
+            "description": "Reverse flow flag code (unconfirmed encoding)"
+          }
+        },
+        "required": [
+          "valveOpen",
+          "pipeLeak",
+          "pipeBurst",
+          "batteryLow",
+          "frozen",
+          "tamper",
+          "reverseFlow"
+        ]
+      },
+      "DashboardWaterLatestSampleDto": {
+        "type": "object",
+        "properties": {
+          "observedAt": {
+            "type": "string",
+            "example": "2026-09-26T12:33:14.339Z"
+          },
+          "deviceName": {
+            "type": "string",
+            "example": "testavc2",
+            "nullable": true,
+            "description": "Friendly device name from ChirpStack"
+          },
+          "meterSerial": {
+            "type": "string",
+            "example": "00000025870203",
+            "nullable": true,
+            "description": "Physical meter serial number"
+          },
+          "gatewayId": {
+            "type": "string",
+            "example": "58bf25fffee73060",
+            "nullable": true
+          },
+          "rssiDbm": {
+            "type": "number",
+            "example": -105,
+            "nullable": true
+          },
+          "snrDb": {
+            "type": "number",
+            "example": 11.75,
+            "nullable": true
+          },
+          "instantFlowM3h": {
+            "type": "number",
+            "example": 0,
+            "nullable": true,
+            "description": "Latest instantaneous flow in m3/h"
+          },
+          "forwardVolumeM3": {
+            "type": "number",
+            "example": 16.636,
+            "nullable": true,
+            "description": "Latest forward volume counter in m3"
+          },
+          "reverseVolumeM3": {
+            "type": "number",
+            "example": 0,
+            "nullable": true,
+            "description": "Latest reverse volume counter in m3"
+          },
+          "temperatureC": {
+            "type": "number",
+            "example": 27,
+            "nullable": true,
+            "description": "Latest temperature in degrees Celsius"
+          },
+          "rawFlags": {
+            "$ref": "#/components/schemas/DashboardWaterReadingRawFlagsDto"
+          }
+        },
+        "required": [
+          "observedAt",
+          "deviceName",
+          "meterSerial",
+          "gatewayId",
+          "rssiDbm",
+          "snrDb",
+          "instantFlowM3h",
+          "forwardVolumeM3",
+          "reverseVolumeM3",
+          "temperatureC",
+          "rawFlags"
+        ]
+      },
+      "DashboardWaterRadioMetadataDto": {
+        "type": "object",
+        "properties": {
+          "devAddr": {
+            "type": "string",
+            "example": "01ca3fa4",
+            "nullable": true,
+            "description": "LoRaWAN session address (dev_addr)"
+          },
+          "fcnt": {
+            "type": "number",
+            "example": 556,
+            "nullable": true,
+            "description": "LoRaWAN uplink frame counter"
+          },
+          "region": {
+            "type": "string",
+            "example": "as923_2",
+            "nullable": true,
+            "description": "Regional frequency plan"
+          },
+          "frequencyHz": {
+            "type": "number",
+            "example": 921400000,
+            "nullable": true,
+            "description": "Radio frequency in Hz"
+          },
+          "spreadingFactor": {
+            "type": "number",
+            "example": 7,
+            "nullable": true,
+            "description": "Spreading factor"
+          },
+          "dr": {
+            "type": "number",
+            "example": 5,
+            "nullable": true,
+            "description": "Data rate"
+          }
+        }
+      },
+      "DashboardWaterReadingItemDto": {
+        "type": "object",
+        "properties": {
+          "observedAt": {
+            "type": "string",
+            "example": "2026-09-26T12:33:14.339Z",
+            "description": "Sample observation timestamp"
+          },
+          "instantFlowM3h": {
+            "type": "number",
+            "example": 0,
+            "nullable": true,
+            "description": "Instantaneous flow rate in m3/h"
+          },
+          "forwardVolumeM3": {
+            "type": "number",
+            "example": 16.636,
+            "nullable": true,
+            "description": "Forward cumulative volume in m3"
+          },
+          "reverseVolumeM3": {
+            "type": "number",
+            "example": 0,
+            "nullable": true,
+            "description": "Reverse cumulative volume in m3"
+          },
+          "temperatureC": {
+            "type": "number",
+            "example": 27,
+            "nullable": true,
+            "description": "Measured temperature in degrees Celsius"
+          },
+          "rssiDbm": {
+            "type": "number",
+            "example": -105,
+            "nullable": true,
+            "description": "LoRa RSSI in dBm"
+          },
+          "snrDb": {
+            "type": "number",
+            "example": 11.75,
+            "nullable": true,
+            "description": "LoRa SNR in dB"
+          },
+          "gatewayId": {
+            "type": "string",
+            "example": "58bf25fffee73060",
+            "nullable": true,
+            "description": "Receiving gateway ID"
+          },
+          "rawFlags": {
+            "$ref": "#/components/schemas/DashboardWaterReadingRawFlagsDto"
+          },
+          "radioMetadata": {
+            "$ref": "#/components/schemas/DashboardWaterRadioMetadataDto"
+          }
+        },
+        "required": [
+          "observedAt",
+          "instantFlowM3h",
+          "forwardVolumeM3",
+          "reverseVolumeM3",
+          "temperatureC",
+          "rssiDbm",
+          "snrDb",
+          "gatewayId",
+          "rawFlags"
+        ]
+      },
+      "DashboardWaterReadingsResponseDto": {
+        "type": "object",
+        "properties": {
+          "schemaVersion": {
+            "type": "number",
+            "example": 1
+          },
+          "buildingId": {
+            "type": "string",
+            "example": "E"
+          },
+          "meterId": {
+            "type": "string",
+            "example": "8cf9572000149bd3"
+          },
+          "availability": {
+            "type": "string",
+            "enum": [
+              "ready",
+              "empty"
+            ],
+            "example": "ready"
+          },
+          "provenance": {
+            "$ref": "#/components/schemas/DashboardWaterReadingsProvenanceDto"
+          },
+          "queryRange": {
+            "$ref": "#/components/schemas/DashboardWaterReadingsQueryRangeDto"
+          },
+          "coverage": {
+            "type": "object"
+          },
+          "latestSample": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DashboardWaterLatestSampleDto"
+              }
+            ]
+          },
+          "readings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DashboardWaterReadingItemDto"
+            }
+          }
+        },
+        "required": [
+          "schemaVersion",
+          "buildingId",
+          "meterId",
+          "availability",
+          "provenance",
+          "queryRange",
+          "coverage",
+          "latestSample",
+          "readings"
         ]
       }
     }
