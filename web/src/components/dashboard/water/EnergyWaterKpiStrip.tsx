@@ -45,7 +45,7 @@ export function EnergyWaterKpiStrip({
           </span>
         </div>
         <div className="text-[11px] text-[#7E8B96] truncate" title="Energy demo được triển khai ở phase riêng">
-          Energy demo triển khai ở phase riêng
+          Unavailable
         </div>
       </div>
 
@@ -68,7 +68,7 @@ export function EnergyWaterKpiStrip({
           </span>
         </div>
         <div className="text-[11px] text-[#7E8B96] truncate" title="Chưa có nguồn smart-meter">
-          Chưa có nguồn smart-meter
+          Unavailable
         </div>
       </div>
 
@@ -85,6 +85,10 @@ export function EnergyWaterKpiStrip({
         <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[#A5B0B9]">
           <span className="w-1.5 h-1.5 rounded-full bg-[#E4BF55]" aria-hidden="true" />
           <span>Phụ tải nền ban đêm</span>
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-[#ED8936]/15 text-[#ED8936] border border-[#ED8936]/30">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#ED8936]" />
+            Demo
+          </span>
         </div>
         <div className="my-1.5 flex items-baseline">
           <span className="text-2xl font-light font-mono text-[#7E8B96]">
@@ -107,7 +111,7 @@ export function EnergyWaterKpiStrip({
         }}
       >
         <span className="text-xs font-semibold uppercase tracking-wider text-[#A5B0B9]">
-          Lưu lượng tức thời
+          Lưu lượng nước tức thời
         </span>
         <div className="my-1.5 flex items-baseline gap-1.5">
           {isReadingReady && latestSample?.instantFlowM3h != null ? (
@@ -123,7 +127,7 @@ export function EnergyWaterKpiStrip({
             </span>
           )}
         </div>
-        <div
+        {/* <div
           className="text-[11px] text-[#7E8B96] truncate"
           title={
             hasMeter
@@ -136,13 +140,13 @@ export function EnergyWaterKpiStrip({
             : isReadingReady
               ? 'Tổng từ tất cả đồng hồ AVC'
               : 'Đang tải dữ liệu tổng...'}
-        </div>
+        </div> */}
       </div>
 
-      {/* Slot 5: Lưu lượng nước đêm (Mockup baseline as requested - Image 02) */}
+      {/* Slot 5: Lưu lượng nước đêm*/}
       <div
         role="article"
-        aria-label="Lưu lượng nước đêm: xx m3/h, Mức nền xx m3/h — nghi rò rỉ"
+        aria-label="Lưu lượng nước đêm: 0,90 m3/h, Mức nền 0,20 m³/h — nghi rò rỉ"
         className="flex flex-col justify-between p-4 rounded-xl border transition-all min-h-[136px]"
         style={{
           backgroundColor: 'var(--panel-bg)',
@@ -152,10 +156,14 @@ export function EnergyWaterKpiStrip({
         <div className="flex items-center gap-1.5 text-xs font-semibold text-[#A5B0B9]">
           <span className="w-2 h-2 rounded-full bg-[#ED8936] shrink-0" aria-hidden="true" />
           <span>Lưu lượng nước đêm</span>
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-[#ED8936]/15 text-[#ED8936] border border-[#ED8936]/30">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#ED8936]" />
+            Demo
+          </span>
         </div>
         <div className="my-1.5 flex items-baseline gap-1.5">
           <span className="text-3xl font-bold font-mono tracking-tight text-[#E6EDF1]">
-            xx
+            0,90
           </span>
           <span className="text-xs font-medium text-[#A5B0B9]">m³/h</span>
         </div>
@@ -163,14 +171,14 @@ export function EnergyWaterKpiStrip({
           className="text-[11px] font-medium text-[#E25822] truncate"
           title="Mức nền 0,20 m³/h — nghi rò rỉ"
         >
-          Confirm lại giá trị mức nền nghi rò rỉ
+          Mức nền 0,20 m³/h — nghi rò rỉ
         </div>
       </div>
 
-      {/* Slot 6: Mực bể chứa (Mockup baseline as requested - Image 02) */}
+      {/* Slot 6: Mực bể chứa*/}
       <div
         role="article"
-        aria-label="Mực bể chứa: xx %, Bể mái ~ xx m³"
+        aria-label="Mực bể chứa: 72 %, Bể mái · ~ 29 m³"
         className="flex flex-col justify-between p-4 rounded-xl border transition-all min-h-[136px]"
         style={{
           backgroundColor: 'var(--panel-bg)',
@@ -180,10 +188,14 @@ export function EnergyWaterKpiStrip({
         <div className="flex items-center gap-1.5 text-xs font-semibold text-[#A5B0B9]">
           <span className="w-2 h-2 rounded-full bg-[#3182CE] shrink-0" aria-hidden="true" />
           <span>Mực bể chứa</span>
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-[#ED8936]/15 text-[#ED8936] border border-[#ED8936]/30">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#ED8936]" />
+            Demo
+          </span>
         </div>
         <div className="my-1.5 flex items-baseline gap-1.5">
           <span className="text-3xl font-bold font-mono tracking-tight text-[#E6EDF1]">
-            xx
+            72
           </span>
           <span className="text-xs font-medium text-[#A5B0B9]">%</span>
         </div>
@@ -191,7 +203,7 @@ export function EnergyWaterKpiStrip({
           className="text-[11px] text-[#A5B0B9] truncate"
           title="Bể mái · ~ 29 m³"
         >
-          Bể mái ~ xx m³
+          Bể mái · ~ 29 m³
         </div>
       </div>
     </div>

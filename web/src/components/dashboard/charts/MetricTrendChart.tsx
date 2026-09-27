@@ -49,6 +49,19 @@ export function MetricTrendChart({
   height = 260,
   className = '',
 }: MetricTrendChartProps) {
+  // Convert timeKey to Date objects to enable native continuous time scale & 3-hour tick spacing
+  const chartData = React.useMemo(() => {
+    if (!data) return [];
+    return data.map((d) => {
+      const rawTime = d[timeKey];
+      const dateObj = rawTime instanceof Date ? rawTime : new Date(rawTime as string | number);
+      return {
+        ...d,
+        [timeKey]: isNaN(dateObj.getTime()) ? rawTime : dateObj,
+      };
+    });
+  }, [data, timeKey]);
+
   // 1. Loading state
   if (loading) {
     return (
@@ -116,20 +129,7 @@ export function MetricTrendChart({
     return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())} ${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
   };
 
-  // Convert timeKey to Date objects to enable native continuous time scale & 3-hour tick spacing
-  const chartData = React.useMemo(() => {
-    if (!data) return [];
-    return data.map((d) => {
-      const rawTime = d[timeKey];
-      const dateObj = rawTime instanceof Date ? rawTime : new Date(rawTime as string | number);
-      return {
-        ...d,
-        [timeKey]: isNaN(dateObj.getTime()) ? rawTime : dateObj,
-      };
-    });
-  }, [data, timeKey]);
-
-  // Ant Design Charts Line Config
+  //Ant Design Charts Line Config
   const chartConfig: Record<string, unknown> = {
     data: chartData,
     xField: timeKey,

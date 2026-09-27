@@ -61,11 +61,10 @@ export const WaterMeterList = forwardRef<HTMLInputElement, WaterMeterListProps>(
               <button
                 type="button"
                 onClick={() => setActiveTab('meters')}
-                className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
-                  activeTab === 'meters'
-                    ? 'bg-[#17222C] text-[#E6EDF1] shadow-sm'
-                    : 'text-[#A5B0B9] hover:text-[#E6EDF1]'
-                }`}
+                className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${activeTab === 'meters'
+                  ? 'bg-[#17222C] text-[#E6EDF1] shadow-sm'
+                  : 'text-[#A5B0B9] hover:text-[#E6EDF1]'
+                  }`}
                 aria-pressed={activeTab === 'meters'}
               >
                 Đồng hồ AVC (Live)
@@ -73,11 +72,10 @@ export const WaterMeterList = forwardRef<HTMLInputElement, WaterMeterListProps>(
               <button
                 type="button"
                 onClick={() => setActiveTab('floors')}
-                className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
-                  activeTab === 'floors'
-                    ? 'bg-[#17222C] text-[#E6EDF1] shadow-sm'
-                    : 'text-[#A5B0B9] hover:text-[#E6EDF1]'
-                }`}
+                className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${activeTab === 'floors'
+                  ? 'bg-[#17222C] text-[#E6EDF1] shadow-sm'
+                  : 'text-[#A5B0B9] hover:text-[#E6EDF1]'
+                  }`}
                 aria-pressed={activeTab === 'floors'}
               >
                 Phân bố tầng (Mẫu)
@@ -160,18 +158,16 @@ export const WaterMeterList = forwardRef<HTMLInputElement, WaterMeterListProps>(
                       onSelectMeter('');
                     }
                   }}
-                  className={`p-3 rounded-lg border cursor-pointer transition-all flex items-center justify-between text-left ${
-                    !selectedMeterId
-                      ? 'border-[var(--primary)] bg-[rgba(79,185,173,0.12)]'
-                      : 'border-[rgba(83,109,126,0.25)] hover:border-[rgba(83,109,126,0.5)] bg-[rgba(23,34,44,0.4)]'
-                  }`}
+                  className={`p-3 rounded-lg border cursor-pointer transition-all flex items-center justify-between text-left ${!selectedMeterId
+                    ? 'border-[var(--primary)] bg-[rgba(79,185,173,0.12)]'
+                    : 'border-[rgba(83,109,126,0.25)] hover:border-[rgba(83,109,126,0.5)] bg-[rgba(23,34,44,0.4)]'
+                    }`}
                 >
                   <div className="flex flex-col min-w-0 pr-2">
                     <div className="flex items-center gap-1.5">
                       <span
-                        className={`w-2 h-2 rounded-full shrink-0 ${
-                          !selectedMeterId ? 'bg-[var(--primary)]' : 'bg-[#7E8B96]'
-                        }`}
+                        className={`w-2 h-2 rounded-full shrink-0 ${!selectedMeterId ? 'bg-[var(--primary)]' : 'bg-[#7E8B96]'
+                          }`}
                         aria-hidden="true"
                       />
                       <span className="text-xs font-semibold truncate text-[#E6EDF1]">
@@ -185,11 +181,10 @@ export const WaterMeterList = forwardRef<HTMLInputElement, WaterMeterListProps>(
 
                   <div className="shrink-0 flex items-center gap-2">
                     <span
-                      className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${
-                        !selectedMeterId
-                          ? 'bg-[rgba(67,192,172,0.12)] text-[#43C0AC] border-[rgba(67,192,172,0.3)]'
-                          : 'bg-white/5 text-[#7E8B96] border-white/10'
-                      }`}
+                      className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${!selectedMeterId
+                        ? 'bg-[rgba(67,192,172,0.12)] text-[#43C0AC] border-[rgba(67,192,172,0.3)]'
+                        : 'bg-white/5 text-[#7E8B96] border-white/10'
+                        }`}
                     >
                       Tổng hợp
                     </span>
@@ -201,71 +196,68 @@ export const WaterMeterList = forwardRef<HTMLInputElement, WaterMeterListProps>(
 
                 {filteredMeters.length === 0 && searchTerm ? (
                   <div className="py-4 text-center text-xs text-[#7E8B96]">
-                    Không tìm thấy đồng hồ khớp với "{searchTerm}"
+                    Không tìm thấy đồng hồ khớp với &quot;{searchTerm}&quot;
                   </div>
                 ) : (
                   filteredMeters.map((meter) => {
-                  const isSelected = selectedMeterId === meter.deviceId;
-                  const floorLabel = meter.displayFloorId
-                    ? `Tầng ${meter.displayFloorId}`
-                    : meter.sourceLocation.floorLevel === 0
-                    ? 'Chưa gán tầng (Tầng 0)'
-                    : `Tầng nguồn ${meter.sourceLocation.floorLevel}`;
+                    const isSelected = selectedMeterId === meter.deviceId;
+                    const floorLabel = meter.displayFloorId
+                      ? `Tầng ${meter.displayFloorId}`
+                      : meter.sourceLocation.floorLevel === 0
+                        ? 'Chưa gán tầng (Tầng 0)'
+                        : `Tầng nguồn ${meter.sourceLocation.floorLevel}`;
 
-                  return (
-                    <div
-                      key={meter.deviceId}
-                      tabIndex={0}
-                      role="button"
-                      aria-pressed={isSelected}
-                      onClick={() => onSelectMeter(isSelected ? '' : meter.deviceId)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          onSelectMeter(isSelected ? '' : meter.deviceId);
-                        }
-                      }}
-                      className={`p-3 rounded-lg border cursor-pointer transition-all flex items-center justify-between text-left ${
-                        isSelected
+                    return (
+                      <div
+                        key={meter.deviceId}
+                        tabIndex={0}
+                        role="button"
+                        aria-pressed={isSelected}
+                        onClick={() => onSelectMeter(isSelected ? '' : meter.deviceId)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            onSelectMeter(isSelected ? '' : meter.deviceId);
+                          }
+                        }}
+                        className={`p-3 rounded-lg border cursor-pointer transition-all flex items-center justify-between text-left ${isSelected
                           ? 'border-[var(--primary)] bg-[rgba(79,185,173,0.12)]'
                           : 'border-[rgba(83,109,126,0.25)] hover:border-[rgba(83,109,126,0.5)] bg-[rgba(23,34,44,0.4)]'
-                      }`}
-                    >
-                      <div className="flex flex-col min-w-0 pr-2">
-                        <div className="flex items-center gap-1.5">
-                          <span
-                            className={`w-2 h-2 rounded-full shrink-0 ${
-                              isSelected ? 'bg-[var(--primary)]' : 'bg-[#7E8B96]'
-                            }`}
-                            aria-hidden="true"
-                          />
-                          <span className="font-mono text-xs font-semibold truncate text-[#E6EDF1]">
-                            {meter.deviceId}
+                          }`}
+                      >
+                        <div className="flex flex-col min-w-0 pr-2">
+                          <div className="flex items-center gap-1.5">
+                            <span
+                              className={`w-2 h-2 rounded-full shrink-0 ${isSelected ? 'bg-[var(--primary)]' : 'bg-[#7E8B96]'
+                                }`}
+                              aria-hidden="true"
+                            />
+                            <span className="font-mono text-xs font-semibold truncate text-[#E6EDF1]">
+                              {meter.deviceId}
+                            </span>
+                          </div>
+                          <span className="text-[11px] text-[#A5B0B9] mt-0.5 ml-3.5 truncate">
+                            {floorLabel}
                           </span>
                         </div>
-                        <span className="text-[11px] text-[#A5B0B9] mt-0.5 ml-3.5 truncate">
-                          {floorLabel}
-                        </span>
-                      </div>
 
-                      <div className="shrink-0 flex items-center gap-2">
-                        <span
-                          className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${
-                            meter.catalogueActive
+                        <div className="shrink-0 flex items-center gap-2">
+                          <span
+                            className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${meter.catalogueActive
                               ? 'bg-[rgba(67,192,172,0.12)] text-[#43C0AC] border-[rgba(67,192,172,0.3)]'
                               : 'bg-white/5 text-[#7E8B96] border-white/10'
-                          }`}
-                          title="Trạng thái đăng ký trong danh mục thiết bị (không phải trạng thái online)"
-                        >
-                          {meter.catalogueActive ? 'Đăng ký' : 'Chưa bật'}
-                        </span>
-                        {isSelected && (
-                          <span className="text-xs text-[var(--primary)] font-bold">✓</span>
-                        )}
+                              }`}
+                            title="Trạng thái đăng ký trong danh mục thiết bị (không phải trạng thái online)"
+                          >
+                            {meter.catalogueActive ? 'Đăng ký' : 'Chưa bật'}
+                          </span>
+                          {isSelected && (
+                            <span className="text-xs text-[var(--primary)] font-bold">✓</span>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  );
-                }))}
+                    );
+                  }))}
               </div>
             )}
           </div>
@@ -300,11 +292,10 @@ export const WaterMeterList = forwardRef<HTMLInputElement, WaterMeterListProps>(
               })}
             </div>
 
-            <div className="mt-3 pt-2 border-t border-[rgba(83,109,126,0.2)]">
-              <p className="text-[11px] text-[#E4BF55] leading-relaxed">
-                * Dữ liệu minh họa theo mockup. Cần đồng hồ theo tầng (RFT-LC02 + smart meter) để có số liệu này. Hiện chỉ có đồng hồ tổng.
-              </p>
-            </div>
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-[#ED8936]/15 text-[#ED8936] border border-[#ED8936]/30">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#ED8936]" />
+              Demo
+            </span>
           </div>
         )}
 

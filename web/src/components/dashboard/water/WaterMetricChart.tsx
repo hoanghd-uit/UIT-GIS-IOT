@@ -72,7 +72,7 @@ export function WaterMetricChart({
               </span>
             ) : (
               <span className="text-xs text-[var(--primary)] bg-[rgba(79,185,173,0.12)] px-2 py-0.5 rounded border border-[rgba(79,185,173,0.3)]">
-                Toàn bộ đồng hồ AVC (Tổng hợp)
+                Derived
               </span>
             )}
           </div>
@@ -81,11 +81,10 @@ export function WaterMetricChart({
             type="button"
             disabled={isLoading || isRefreshing}
             onClick={onRefresh}
-            className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg border transition-all ${
-              isLoading || isRefreshing
-                ? 'opacity-50 cursor-not-allowed bg-white/5 text-[#7E8B96] border-white/10'
-                : 'text-[#E6EDF1] hover:text-white bg-[rgba(23,34,44,0.6)] hover:bg-[rgba(23,34,44,0.9)] border-[rgba(83,109,126,0.3)]'
-            }`}
+            className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg border transition-all ${isLoading || isRefreshing
+              ? 'opacity-50 cursor-not-allowed bg-white/5 text-[#7E8B96] border-white/10'
+              : 'text-[#E6EDF1] hover:text-white bg-[rgba(23,34,44,0.6)] hover:bg-[rgba(23,34,44,0.9)] border-[rgba(83,109,126,0.3)]'
+              }`}
             title="Tải lại dữ liệu mới nhất (không tự động lặp)"
             aria-label="Tải lại dữ liệu telemetry"
           >
@@ -119,11 +118,10 @@ export function WaterMetricChart({
                 key={tab.key}
                 type="button"
                 onClick={() => onMetricChange(tab.key)}
-                className={`px-3 py-1 text-xs font-medium rounded-lg border whitespace-nowrap transition-all ${
-                  isActive
-                    ? 'bg-[var(--primary)] text-[#0C1319] border-[var(--primary)] font-semibold shadow-sm'
-                    : 'text-[#A5B0B9] hover:text-[#E6EDF1] bg-[rgba(23,34,44,0.5)] border-[rgba(83,109,126,0.25)] hover:bg-white/5'
-                }`}
+                className={`px-3 py-1 text-xs font-medium rounded-lg border whitespace-nowrap transition-all ${isActive
+                  ? 'bg-[var(--primary)] text-[#0C1319] border-[var(--primary)] font-semibold shadow-sm'
+                  : 'text-[#A5B0B9] hover:text-[#E6EDF1] bg-[rgba(23,34,44,0.5)] border-[rgba(83,109,126,0.25)] hover:bg-white/5'
+                  }`}
                 aria-pressed={isActive}
               >
                 {tab.label} ({tab.unit})

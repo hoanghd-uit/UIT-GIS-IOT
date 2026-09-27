@@ -2,6 +2,7 @@
 
 > **Project:** GIS — UIT Building E Digital Twin  
 > **Plan date:** 2026-09-26  
+> **Updated:** 2026-09-27 — defer selected report-data PostgreSQL persistence to the last implementation subphase; earlier phases continue with bounded raw fetch and in-memory calculation.
 > **Target:** Implement the current `Dashboard_Knowledge_Base.md` without expanding its frozen scope.  
 > **Priority rule:** Deliver real, currently available data first; then derived data; then application-owned manual data; and deterministic demo-only content last.  
 > **Authoritative requirements:** `Dashboard_Knowledge_Base.md`  
@@ -44,7 +45,7 @@ Repository inspection on 2026-09-26 found:
 | Priority | Data class | Current examples | Implementation treatment |
 | --- | --- | --- | --- |
 | P0 | Real and contract-available | Device catalogue, device type, floor/source coordinates, `is_active`, timestamps, gateway ID, RSSI/SNR, solar current/lux, AVC readings, NFC history | Implement first and label `live`; preserve provenance and uncertainty. |
-| P1 | Derived from real data | Water summaries, report aggregates, IoT health, alert state | Implement only after calculation rules, freshness policy, and source windows are explicit. Label `derived`. |
+| P1 | Derived from real data | Water summaries, report aggregates, IoT health, alert state | Before the deferred persistence phase, fetch approved raw ranges and calculate only the bounded result needed for the current request in NestJS memory. Persist selected report data only in Small Phase 21 after the IoT schema/semantics gate is closed. Label `derived`. |
 | P2 | Application-owned manual data | Fire extinguisher and fire drill/document records | Implement after identity and CASL enforcement exist. Label `manual`. |
 | P3 | Conditional or missing upstream data | CO2, VOC, pressure, room mapping, firmware, OTA, calibration, gateway health, fire-zone state | Use live data only after contract confirmation; otherwise use the approved deterministic demo fallback. |
 | P4 | Explicit demo scope | Energy and all Parking data | Implement last with versioned deterministic fixtures and visible `demo` provenance. |
@@ -170,39 +171,12 @@ Implement the Water portion with the real `avc` source while preserving uncertai
 
 ---
 
-## Small Phase 13 — Selected report-data pipeline for available metrics
-
-**Priority:** P1 derived from real data.  
-**Primary consumers:** Pages 01, 02, 03, 06, and 07.  
-**Depends on:** Small Phases 11 and 12.
-
-### Goal
-
-Add the minimum PostgreSQL report-data capability required by Dashboard summaries without mirroring the raw IoT time series.
-
-### Steps
-
-1. Freeze report keys and aggregation windows only for metrics already supported by an approved source.
-2. Design PostgreSQL entities/migration for selected aggregates/snapshots with metric key, dimensions, window start/stop, value/unit, source, calculated time, data mode, and provenance.
-3. Define idempotent refresh jobs/services, retry behavior, TTL/retention, invalidation, and recovery.
-4. Keep raw telemetry in the IoT-side source; store only selected values needed by Dashboard.
-5. Add on-demand rebuild/admin-safe operation without exposing the upstream bearer token.
-6. Add tests for duplicate jobs, partial windows, late data, truncation, failure recovery, and provenance.
-7. Document operational cadence and expected database growth.
-
-### Exit criteria
-
-- At least one real Water or IoT aggregate is produced end-to-end and read by a Dashboard component.
-- Every stored aggregate can explain its source and time window.
-- No full raw-history mirror is introduced.
-
----
-
-## Small Phase 14 — Page 03 available environmental metrics
+## Small Phase 13 — Page 03 available environmental metrics
 
 **Priority:** P0/P1 when semantics are confirmed; otherwise conditional.  
 **Primary page:** Page 03 — Môi trường (IAQ).  
-**Depends on:** Small Phases 11 and 13.
+**Depends on:** Small Phase 11.
+**Detailed handover plan:** `web/doc/bp2_phase05_page03_environmental_metrics.md`.
 
 ### Entry gate
 
@@ -215,22 +189,24 @@ Re-check the IoT confirmation backlog for temperature/humidity meaning and units
 3. Build heatmap, ranking, compliance percentage, and threshold table only for metrics and room/floor dimensions with confirmed mappings.
 4. If room mapping is absent, add an application-owned mapping design before claiming room-level results.
 5. Use deterministic demo adapters for approved missing metrics such as CO2 rather than mixing demo rows into a live series.
-6. Ensure each widget independently exposes `live`, `derived`, or `demo` mode.
-7. Add tests preventing mixed-provenance aggregation and false unit/room claims.
+6. Fetch bounded raw history through NestJS and perform only request-scoped/in-memory calculation required by the current widget; do not persist telemetry or derived report rows in PostgreSQL.
+7. Ensure each widget independently exposes `live`, `derived`, or `demo` mode.
+8. Add tests preventing mixed-provenance aggregation, false unit/room claims, unbounded source reads, and accidental persistence.
 
 ### Exit criteria
 
 - Confirmed real environment data is used wherever available.
 - CO2/VOC/pressure and room-level views follow the documented fallback if their contracts remain missing.
 - No unconfirmed metric is used for a compliance or safety conclusion.
+- No report-data PostgreSQL schema/job is introduced in this phase.
 
 ---
 
-## Small Phase 15 — Alert configuration and evaluation engine
+## Small Phase 14 — Alert configuration and evaluation engine
 
 **Priority:** P1 derived from real data.  
 **Primary page:** Page 06 — Trung tâm cảnh báo.  
-**Depends on:** Small Phases 13 and 14 where relevant.
+**Depends on:** Small Phase 13 where relevant.
 
 ### Entry gate
 
@@ -244,7 +220,7 @@ Freeze the first numeric baseline set, `alert_time_threshold` storage unit, eval
 4. Persist or reconstruct current device alert state and alert history with source timestamps.
 5. Expose Page 06 list/filter/summary/timeline APIs and frontend.
 6. Implement the left-menu badge as the number of distinct devices currently Warning or Danger.
-7. Keep alert configuration read-only until Small Phase 17 establishes identity/CASL; alternatively hide editing behind a disabled capability with an explicit reason.
+7. Keep alert configuration read-only until Small Phase 16 establishes identity/CASL; alternatively hide editing behind a disabled capability with an explicit reason.
 8. Add boundary, duration, recovery, missing-data, duplicate-sample, and distinct-device badge tests.
 
 ### Exit criteria
@@ -255,11 +231,11 @@ Freeze the first numeric baseline set, `alert_time_threshold` storage unit, eval
 
 ---
 
-## Small Phase 16 — Page 01 Overview composition
+## Small Phase 15 — Page 01 Overview composition
 
 **Priority:** P1 composition of real/derived data.  
 **Primary page:** Page 01 — Tổng quan.  
-**Depends on:** Small Phases 10, 13, and 15.
+**Depends on:** Small Phases 10 and 14.
 
 ### Goal
 
@@ -274,7 +250,8 @@ Compose the Overview from shared real/derived services, using demo only where th
 5. Keep room mapping/config separate from device coordinates; do not infer rooms from X/Y/Z.
 6. Implement click-cell CO2 detail using live data only if confirmed; otherwise use the versioned demo adapter.
 7. Add the hourly Energy chart with visibly demo provenance.
-8. Test floor switching, stable cell identity, popup provenance, mixed-mode KPIs, and alert consistency.
+8. Use bounded raw fetch plus in-memory calculation for any currently available Water/IoT summary; do not require or create report-data persistence.
+9. Test floor switching, stable cell identity, popup provenance, mixed-mode KPIs, and alert consistency.
 
 ### Exit criteria
 
@@ -284,7 +261,7 @@ Compose the Overview from shared real/derived services, using demo only where th
 
 ---
 
-## Small Phase 17 — Identity decision and CASL authorization foundation
+## Small Phase 16 — Identity decision and CASL authorization foundation
 
 **Priority:** Required before protected manual writes.  
 **Primary consumers:** Pages 06 and 11.  
@@ -312,11 +289,11 @@ Establish trustworthy identity and enforce CASL abilities in NestJS and Next.js.
 
 ---
 
-## Small Phase 18 — Page 11 manual PCCC records
+## Small Phase 17 — Page 11 manual PCCC records
 
 **Priority:** P2 real application-owned data.  
 **Primary page:** Page 11 — PCCC.  
-**Depends on:** Small Phase 17.
+**Depends on:** Small Phase 16.
 
 ### Goal
 
@@ -339,11 +316,11 @@ Implement authorized PostgreSQL CRUD for fire extinguisher expiry/inspection and
 
 ---
 
-## Small Phase 19 — Page 11 fire grid and conditional live adapter
+## Small Phase 18 — Page 11 fire grid and conditional live adapter
 
 **Priority:** P3 conditional; UI can use demo fallback.  
 **Primary page:** Page 11 — PCCC.  
-**Depends on:** Shared grid from Small Phase 16 and manual records from Small Phase 18.
+**Depends on:** Shared grid from Small Phase 15 and manual records from Small Phase 17.
 
 ### Steps
 
@@ -362,7 +339,7 @@ Implement authorized PostgreSQL CRUD for fire extinguisher expiry/inspection and
 
 ---
 
-## Small Phase 20 — Explicit demo completion: Energy, Parking, and missing optional IoT cards
+## Small Phase 19 — Explicit demo completion: Energy, Parking, and missing optional IoT cards
 
 **Priority:** P4 demo-only; deliberately last.  
 **Primary pages:** Page 02 Energy, Page 09 Parking, and approved Page 07 fallbacks.  
@@ -384,7 +361,76 @@ Implement authorized PostgreSQL CRUD for fire extinguisher expiry/inspection and
 
 ---
 
-## Small Phase 21 — Big Phase integration, resilience, and acceptance
+## Small Phase 20 — Cross-page integration without report-data persistence
+
+**Priority:** Integration before the deferred persistence boundary.
+**Depends on:** All required Small Phases 09–19.
+
+### Goal
+
+Integrate the seven Dashboard pages using live raw reads, bounded NestJS in-memory calculations, application-owned manual data, and approved deterministic demo data while keeping the selected report-data PostgreSQL pipeline deferred.
+
+### Steps
+
+1. Verify cross-page navigation, shared components, data-mode labels, and UI alignment across exactly seven pages.
+2. Verify loading, empty, partial, unavailable, upstream error, authorization denial, and demo states.
+3. Verify alert state consistency across Pages 01, 03, 06, and 07 using the phase-approved source/evaluator path.
+4. Verify every live/derived widget declares its raw source window and calculation time even when the calculation is request-scoped/in-memory.
+5. Verify no browser/Unity request targets the upstream IoT host and no bearer token appears in bundles, logs, responses, or PostgreSQL.
+6. Verify no report/aggregate/snapshot table, refresh job, TTL, or raw telemetry mirror has been introduced early.
+7. Record the remaining report persistence consumers and contract assumptions for Small Phase 21.
+
+### Exit criteria
+
+- Seven pages work together without depending on persisted report data.
+- Bounded raw fetch and in-memory calculations are explicit and test-covered.
+- The report persistence backlog is isolated behind adapters rather than partially implemented.
+
+---
+
+## Small Phase 21 — Deferred selected report-data PostgreSQL pipeline
+
+**Priority:** Last implementation subphase of Big Phase 02.
+**Primary consumers:** Pages 01, 02, 03, 06, and 07 only where persisted aggregates are still justified.
+**Depends on:** Small Phase 20 and the report-data entry gate below.
+
+### Entry gate
+
+Do not start this phase until all of the following are true:
+
+1. The relevant IoT schema/field semantics and units are stable enough to freeze report keys.
+2. Device population and live-data volume justify persistence instead of request-scoped calculation.
+3. Telemetry cadence, retention, truncation and source load guidance are documented sufficiently to define refresh windows.
+4. Stakeholder confirms which Dashboard widgets actually require persisted aggregates.
+
+If the gate is not satisfied, keep bounded raw fetch/in-memory calculation and do not create placeholder report tables.
+
+### Goal
+
+Add only the minimum PostgreSQL report-data capability proven necessary by the implemented Dashboard, without mirroring raw IoT time series.
+
+### Steps
+
+1. Re-audit actual consumers built in Small Phases 13–20; remove report keys that are not needed.
+2. Freeze report keys, units, dimensions and aggregation windows only for metrics with an approved stable source contract.
+3. Design PostgreSQL entities/migrations for selected aggregates/snapshots with source window, calculated time, data mode, provenance, freshness and quality state.
+4. Define idempotent refresh jobs/services, bounded source reads, retry behavior, TTL/retention, invalidation, late-data recomputation and recovery.
+5. Keep raw telemetry in the IoT-side source; store only selected values needed by Dashboard.
+6. Add an operator-safe rebuild mechanism without exposing the upstream bearer token or adding unauthenticated mutation endpoints.
+7. Replace only the in-memory paths whose persistence value is proven; preserve honest fallback when stored data is empty/stale.
+8. Add tests for duplicate jobs, partial windows, late data, truncation, failure recovery, provenance and database growth.
+9. Document operational cadence and expected database growth.
+
+### Exit criteria
+
+- At least one justified real Water/IoT aggregate is persisted end-to-end and read by a Dashboard component, or the entry-gate review records an explicit stakeholder decision that no persisted report metric is yet justified.
+- Every stored aggregate can explain its source, calculation version and time window.
+- No full raw-history mirror is introduced.
+- Existing raw/in-memory behavior remains available as an honest empty/stale fallback where approved.
+
+---
+
+## Small Phase 22 — Big Phase final acceptance and hardening
 
 **Priority:** Final integration.  
 **Depends on:** All required previous Small Phases.
@@ -416,21 +462,24 @@ Implement authorized PostgreSQL CRUD for fire extinguisher expiry/inspection and
 | 2 | 10 | Real device catalogue API/UI | P0 live |
 | 3 | 11 | Page 07 live telemetry core | P0 live |
 | 4 | 12 | Page 02 live Water | P0 live |
-| 5 | 13 | Selected report data | P1 derived |
-| 6 | 14 | Page 03 confirmed environmental data | P0/P1 conditional |
-| 7 | 15 | Alert config/evaluator and Page 06 | P1 derived |
-| 8 | 16 | Page 01 Overview and shared grid | P1 mixed |
-| 9 | 17 | Identity + CASL | Protected-write foundation |
-| 10 | 18 | Page 11 manual records | P2 manual |
-| 11 | 19 | Page 11 fire grid | P3 conditional/demo |
-| 12 | 20 | Energy, Parking, missing-field demo content | P4 demo |
-| 13 | 21 | Integrated acceptance and hardening | Final |
+| 5 | 13 | Page 03 environmental data using raw reads/in-memory calculation | P0/P1 conditional |
+| 6 | 14 | Alert config/evaluator and Page 06 | P1 derived |
+| 7 | 15 | Page 01 Overview and shared grid | P1 mixed |
+| 8 | 16 | Identity + CASL | Protected-write foundation |
+| 9 | 17 | Page 11 manual records | P2 manual |
+| 10 | 18 | Page 11 fire grid | P3 conditional/demo |
+| 11 | 19 | Energy, Parking, missing-field demo content | P4 demo |
+| 12 | 20 | Cross-page integration without persisted report data | Integration |
+| 13 | 21 | Deferred selected report-data PostgreSQL pipeline | P1 derived, last implementation phase |
+| 14 | 22 | Big Phase final acceptance and hardening | Final closeout |
 
 ---
 
 ## 5. Decisions and external answers that can change sequencing
 
-The implementation can begin through Small Phase 13 with current evidence. The following gates must be resolved before claiming the affected feature is authoritative:
+The implementation can begin with Small Phase 13 using bounded raw reads and request-scoped/in-memory calculation. Selected report-data persistence is explicitly deferred to Small Phase 21 because the current device/data volume is small and the IoT schema/semantics are not stable enough to freeze durable report keys. Small Phase 22 is acceptance-only and follows that last implementation phase.
+
+The following gates must be resolved before claiming the affected feature is authoritative:
 
 - Temperature/humidity/voltage/state semantics and units.
 - AVC counter reset/rollover and flag domains.
@@ -441,8 +490,9 @@ The implementation can begin through Small Phase 13 with current evidence. The f
 - CO2/VOC/pressure availability.
 - Gateway health, firmware, OTA, calibration, standardized battery, and packet aggregates.
 - Fire-zone API and mapping.
+- Report-data persistence gate: stable source schema/units, sufficient device/data volume, known cadence/retention/load behavior, and confirmed Dashboard consumers.
 
-An unresolved item must not block unrelated earlier phases. Keep its adapter boundary and render an explicit unavailable or approved deterministic demo state.
+An unresolved item must not block unrelated earlier phases. Keep its adapter boundary, fetch only bounded approved raw ranges, calculate in NestJS memory where needed, and render an explicit unavailable or approved deterministic demo state. Do not create report-data PostgreSQL tables/jobs before Small Phase 21.
 
 ---
 
@@ -455,6 +505,7 @@ An unresolved item must not block unrelated earlier phases. Keep its adapter bou
 - No direct browser/Unity access to the IoT backend.
 - No upstream IoT mutation.
 - No raw TSDB mirror in PostgreSQL.
+- No selected report/aggregate PostgreSQL persistence before Small Phase 21; earlier phases use bounded raw fetch and in-memory calculation.
 - No invented IoT fields, units, thresholds, online state, room mapping, or fire state.
 - No full CMMS/document-control expansion for PCCC.
 - No second chart library.

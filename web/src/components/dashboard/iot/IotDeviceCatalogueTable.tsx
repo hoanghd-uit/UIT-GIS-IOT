@@ -99,9 +99,9 @@ export function IotDeviceCatalogueTable({
             <th scope="col" className="py-3 px-3 font-semibold text-[11px] uppercase tracking-wider text-center" style={{ color: 'var(--text-muted)' }}>
               Trạng thái
             </th>
-            <th scope="col" className="py-3 px-2.5 font-semibold text-[11px] uppercase tracking-wider text-center" style={{ color: 'var(--text-muted)' }}>
+            {/* <th scope="col" className="py-3 px-2.5 font-semibold text-[11px] uppercase tracking-wider text-center" style={{ color: 'var(--text-muted)' }}>
               Thao tác
-            </th>
+            </th> */}
             <th scope="col" className="py-3 px-2 font-semibold text-[11px] uppercase tracking-wider text-center" style={{ color: 'var(--text-muted)' }}>
               Chi tiết
             </th>
@@ -133,11 +133,10 @@ export function IotDeviceCatalogueTable({
                   role="button"
                   aria-pressed={isSelected}
                   aria-label={`Thiết bị ${device.externalDeviceId}, loại ${device.sourceDeviceType}`}
-                  className={`transition-colors cursor-pointer select-none ${
-                    isSelected
-                      ? 'bg-[rgba(79,185,173,0.1)] ring-1 ring-[rgba(79,185,173,0.35)]'
-                      : 'hover:bg-[rgba(255,255,255,0.03)]'
-                  }`}
+                  className={`transition-colors cursor-pointer select-none ${isSelected
+                    ? 'bg-[rgba(79,185,173,0.1)] ring-1 ring-[rgba(79,185,173,0.35)]'
+                    : 'hover:bg-[rgba(255,255,255,0.03)]'
+                    }`}
                 >
                   {/* Mã thiết bị */}
                   <td className="py-3 px-3.5">
@@ -237,7 +236,7 @@ export function IotDeviceCatalogueTable({
                         title="Thiết bị được ghi nhận đang hoạt động trong danh mục IoT. Không phản ánh tình trạng kết nối mạng thời gian thực."
                       >
                         <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: 'var(--success)' }} />
-                        Đang hoạt động trong danh mục
+                        Trực tuyến trong API
                       </span>
                     ) : (
                       <span
@@ -256,7 +255,7 @@ export function IotDeviceCatalogueTable({
                   </td>
 
                   {/* Thao tác: Xem telemetry */}
-                  <td className="py-3 px-2.5 text-center" onClick={(e) => e.stopPropagation()}>
+                  {/* <td className="py-3 px-2.5 text-center" onClick={(e) => e.stopPropagation()}>
                     <button
                       type="button"
                       onClick={() => onSelectDevice?.(device)}
@@ -271,7 +270,7 @@ export function IotDeviceCatalogueTable({
                     >
                       {isSelected ? 'Đang xem' : 'Xem telemetry'}
                     </button>
-                  </td>
+                  </td> */}
 
                   {/* Chi tiết kĩ thuật Toggle */}
                   <td className="py-3 px-2 text-center" onClick={(e) => e.stopPropagation()}>

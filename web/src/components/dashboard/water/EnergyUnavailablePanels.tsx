@@ -29,15 +29,14 @@ export function EnergyUnavailablePanels() {
 
         <div className="my-auto py-8">
           <UnavailableDataState
-            title="Chưa có nguồn smart-meter được phê duyệt"
+            title="Unavailable"
             description="Biểu đồ phụ tải điện theo giờ và đường mức nền 4 tuần cùng thứ sẽ được kết nối khi có dữ liệu đồng hồ điện thông minh."
-            phaseNote="Small Phase 20: Energy deterministic demo."
           />
         </div>
 
         <div className="pt-2 border-t border-[rgba(83,109,126,0.15)] flex items-center justify-between text-[11px] text-[#7E8B96]">
           <span>Nguồn: Smart meter tổng (chờ tích hợp)</span>
-          <span>Dữ liệu thực tế: Chưa kết nối</span>
+          {/* <span>Dữ liệu thực tế: Chưa kết nối</span> */}
         </div>
       </div>
 
@@ -64,14 +63,13 @@ export function EnergyUnavailablePanels() {
 
         <div className="my-auto py-8">
           <UnavailableDataState
-            title="Chưa có nguồn smart-meter được phê duyệt"
+            title="Unavailable"
             description="Biểu đồ cột tiêu thụ điện 7 ngày gần nhất sẽ được cung cấp trong giai đoạn tích hợp hệ thống điện."
-            phaseNote="Small Phase 20: Energy deterministic demo."
           />
         </div>
 
         <div className="pt-2 border-t border-[rgba(83,109,126,0.15)] flex items-center justify-between text-[11px] text-[#7E8B96]">
-          <span>Phạm vi: 7 ngày</span>
+          {/* <span>Phạm vi: 7 ngày</span> */}
           <span>Trạng thái: Chưa có nguồn</span>
         </div>
       </div>

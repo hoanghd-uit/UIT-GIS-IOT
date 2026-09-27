@@ -42,11 +42,10 @@ export function WaterMeterDetail({
             <button
               type="button"
               onClick={() => setActiveTab('details')}
-              className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
-                activeTab === 'details'
-                  ? 'bg-[#17222C] text-[#E6EDF1] shadow-sm'
-                  : 'text-[#A5B0B9] hover:text-[#E6EDF1]'
-              }`}
+              className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${activeTab === 'details'
+                ? 'bg-[#17222C] text-[#E6EDF1] shadow-sm'
+                : 'text-[#A5B0B9] hover:text-[#E6EDF1]'
+                }`}
               aria-pressed={activeTab === 'details'}
             >
               Chi tiết kỹ thuật (Live)
@@ -54,14 +53,13 @@ export function WaterMeterDetail({
             <button
               type="button"
               onClick={() => setActiveTab('ai')}
-              className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
-                activeTab === 'ai'
-                  ? 'bg-[#17222C] text-[#E6EDF1] shadow-sm'
-                  : 'text-[#A5B0B9] hover:text-[#E6EDF1]'
-              }`}
+              className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${activeTab === 'ai'
+                ? 'bg-[#17222C] text-[#E6EDF1] shadow-sm'
+                : 'text-[#A5B0B9] hover:text-[#E6EDF1]'
+                }`}
               aria-pressed={activeTab === 'ai'}
             >
-              Bất thường AI (Mẫu)
+              Bất thường AI (Demo)
             </button>
           </div>
 
@@ -243,17 +241,16 @@ export function WaterMeterDetail({
             </div>
           </div>
 
-          <div className="pt-2 border-t border-[rgba(83,109,126,0.2)]">
-            <p className="text-[11px] text-[#E4BF55] leading-relaxed">
-              * Dữ liệu minh họa từ mockup AI concept. Chưa có mô hình phát hiện bất thường kết nối vào hệ thống.
-            </p>
-          </div>
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-[#ED8936]/15 text-[#ED8936] border border-[#ED8936]/30">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#ED8936]" />
+            Demo
+          </span>
         </div>
       )}
 
       {/* Card Footer */}
       <div className="pt-2.5 mt-2 border-t border-[rgba(83,109,126,0.15)] flex items-center justify-between text-[11px] text-[#7E8B96]">
-        <span>{activeTab === 'details' ? 'Trạng thái: Trực tiếp' : 'Trạng thái: Minh họa mockup'}</span>
+        <span>{activeTab === 'details' ? 'Trạng thái: Trực tiếp' : 'Trạng thái: Demo'}</span>
         <span>{activeTab === 'details' ? 'Nguồn: AVC telemetry' : 'AI model: Chưa tích hợp'}</span>
       </div>
     </div>
