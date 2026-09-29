@@ -292,8 +292,8 @@ export const WaterMeterList = forwardRef<HTMLInputElement, WaterMeterListProps>(
               })}
             </div>
 
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-[#ED8936]/15 text-[#ED8936] border border-[#ED8936]/30">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#ED8936]" />
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-[#FF2121]/15 text-[#FF2121] border border-[#FF2121]/30">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#FF2121]" />
               Demo
             </span>
           </div>
@@ -301,7 +301,7 @@ export const WaterMeterList = forwardRef<HTMLInputElement, WaterMeterListProps>(
 
         {/* Card Footer Helper */}
         <div className="pt-2.5 mt-2 border-t border-[rgba(83,109,126,0.15)] flex items-center justify-between text-[11px] text-[#7E8B96]">
-          <span>{activeTab === 'meters' ? 'Nguồn: Danh mục AVC' : 'Chế độ: Minh họa mockup'}</span>
+          <span>{activeTab === 'meters' ? 'Nguồn: Danh mục AVC' : 'Chế độ: Demo mockup'}</span>
           <span>{activeTab === 'meters' ? 'Phân loại: Water' : 'Chưa có cảm biến tầng'}</span>
         </div>
       </div>

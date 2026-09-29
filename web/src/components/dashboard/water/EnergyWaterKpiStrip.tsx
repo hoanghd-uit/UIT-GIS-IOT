@@ -85,8 +85,8 @@ export function EnergyWaterKpiStrip({
         <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[#A5B0B9]">
           <span className="w-1.5 h-1.5 rounded-full bg-[#E4BF55]" aria-hidden="true" />
           <span>Phụ tải nền ban đêm</span>
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-[#ED8936]/15 text-[#ED8936] border border-[#ED8936]/30">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#ED8936]" />
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-[#FF2121]/15 text-[#FF2121] border border-[#FF2121]/30">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#FF2121]" />
             Demo
           </span>
         </div>
@@ -154,10 +154,10 @@ export function EnergyWaterKpiStrip({
         }}
       >
         <div className="flex items-center gap-1.5 text-xs font-semibold text-[#A5B0B9]">
-          <span className="w-2 h-2 rounded-full bg-[#ED8936] shrink-0" aria-hidden="true" />
+          <span className="w-2 h-2 rounded-full bg-[#FF2121] shrink-0" aria-hidden="true" />
           <span>Lưu lượng nước đêm</span>
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-[#ED8936]/15 text-[#ED8936] border border-[#ED8936]/30">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#ED8936]" />
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-[#FF2121]/15 text-[#FF2121] border border-[#FF2121]/30">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#FF2121]" />
             Demo
           </span>
         </div>
@@ -188,8 +188,8 @@ export function EnergyWaterKpiStrip({
         <div className="flex items-center gap-1.5 text-xs font-semibold text-[#A5B0B9]">
           <span className="w-2 h-2 rounded-full bg-[#3182CE] shrink-0" aria-hidden="true" />
           <span>Mực bể chứa</span>
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-[#ED8936]/15 text-[#ED8936] border border-[#ED8936]/30">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#ED8936]" />
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-[#FF2121]/15 text-[#FF2121] border border-[#FF2121]/30">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#FF2121]" />
             Demo
           </span>
         </div>

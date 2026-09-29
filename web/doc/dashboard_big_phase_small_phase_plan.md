@@ -2,7 +2,7 @@
 
 > **Project:** GIS — UIT Building E Digital Twin  
 > **Plan date:** 2026-09-26  
-> **Updated:** 2026-09-27 — defer selected report-data PostgreSQL persistence to the last implementation subphase; earlier phases continue with bounded raw fetch and in-memory calculation.
+> **Updated:** 2026-09-29 — defer selected report-data and IoT-derived alert PostgreSQL persistence to the last implementation subphase; earlier phases continue with bounded raw fetch, in-memory calculation/evaluation, explicit unavailable states, and approved deterministic demo data.
 > **Target:** Implement the current `Dashboard_Knowledge_Base.md` without expanding its frozen scope.  
 > **Priority rule:** Deliver real, currently available data first; then derived data; then application-owned manual data; and deterministic demo-only content last.  
 > **Authoritative requirements:** `Dashboard_Knowledge_Base.md`  
@@ -202,32 +202,34 @@ Re-check the IoT confirmation backlog for temperature/humidity meaning and units
 
 ---
 
-## Small Phase 14 — Alert configuration and evaluation engine
+## Small Phase 14 — Page 06 alert-center baseline and in-memory evaluator boundary
 
 **Priority:** P1 derived from real data.  
 **Primary page:** Page 06 — Trung tâm cảnh báo.  
 **Depends on:** Small Phase 13 where relevant.
+**Detailed handover plan:** `web/doc/bp2_phase06_page06_alert_center_baseline.md`.
 
 ### Entry gate
 
-Freeze the first numeric baseline set, `alert_time_threshold` storage unit, evaluation cadence, and whether `STALE`/`NO_DATA` are explicit states. Do not invent these values in code.
+Re-check whether the first numeric baseline set, metric semantics/units, telemetry cadence, `alert_time_threshold` behavior, and `STALE`/`NO_DATA` policy have been confirmed. Until they are confirmed, the authoritative runtime rule registry must remain empty and Page 06 must not produce live-looking alerts.
 
 ### Steps
 
-1. Add PostgreSQL alert-configuration entities/migration with baseline/custom provenance and audit fields.
-2. Seed the approved baselines in the database, not React code.
-3. Implement one authoritative NestJS evaluator for Normal/Warning/Danger and duration-above-threshold behavior.
-4. Persist or reconstruct current device alert state and alert history with source timestamps.
-5. Expose Page 06 list/filter/summary/timeline APIs and frontend.
-6. Implement the left-menu badge as the number of distinct devices currently Warning or Danger.
-7. Keep alert configuration read-only until Small Phase 16 establishes identity/CASL; alternatively hide editing behind a disabled capability with an explicit reason.
-8. Add boundary, duration, recovery, missing-data, duplicate-sample, and distinct-device badge tests.
+1. Define a pure NestJS alert-evaluator boundary for Normal/Warning/Danger that accepts explicit typed samples and configuration but performs no database writes.
+2. Keep the runtime authoritative rule registry empty while numeric baselines, units and cadence remain unresolved; use synthetic unit-test inputs only to verify evaluator boundaries.
+3. Expose a read-only Page 06 capability/status response that explains why live alert evaluation is unavailable; do not fetch upstream data when no authoritative rule is active.
+4. Build the Page 06 list/filter/detail/KPI/chart/rules visual structure with one versioned deterministic demo adapter and visible `demo` provenance.
+5. Keep acknowledge/assign/close, notification delivery, BIM navigation, rule add/edit, SLA enforcement and user identities disabled; those need identity, mapping and persistence.
+6. Keep the left-menu notification badge absent while no authoritative evaluated state exists. A demo event count must never become the global badge.
+7. Perform only request-scoped/in-memory evaluation if a rule is explicitly confirmed during implementation; do not persist alert config, current state or history in this phase.
+8. Add tests for evaluator boundaries, empty authoritative registry, demo consistency, no mutation endpoints, no database dependency and no fabricated sidebar badge.
 
 ### Exit criteria
 
-- Page 06 uses backend-evaluated state consistently.
-- The menu badge is not a historical-event count.
-- Thresholds are not duplicated across frontend components.
+- Page 06 is visually complete and every operational value is unmistakably demo or unavailable.
+- The evaluator boundary exists, but no unconfirmed metric/threshold produces an authoritative alert.
+- The menu badge remains absent until it can represent distinct currently Warning/Danger devices from authoritative backend state.
+- No alert PostgreSQL schema/entity/migration/history is introduced before the deferred persistence phase.
 
 ---
 
@@ -244,7 +246,7 @@ Compose the Overview from shared real/derived services, using demo only where th
 ### Steps
 
 1. Connect top KPI cards to available live/derived data and show per-card provenance.
-2. Add latest-alert and IoT-health components from the shared alert/device domains.
+2. Add latest-alert and IoT-health components from the shared alert/device domains, rendering alert content as demo/unavailable until authoritative rules exist.
 3. Define IoT-health rules only from confirmed activity/freshness semantics; until cadence is confirmed, avoid authoritative online/offline labels.
 4. Add `FloorCatalog`, the logical `InteractiveFloorGrid`, and `FloorMetadataPanel` using stable configured cell IDs.
 5. Keep room mapping/config separate from device coordinates; do not infer rooms from X/Y/Z.
@@ -388,11 +390,11 @@ Integrate the seven Dashboard pages using live raw reads, bounded NestJS in-memo
 
 ---
 
-## Small Phase 21 — Deferred selected report-data PostgreSQL pipeline
+## Small Phase 21 — Deferred IoT-derived report and alert PostgreSQL persistence
 
 **Priority:** Last implementation subphase of Big Phase 02.
-**Primary consumers:** Pages 01, 02, 03, 06, and 07 only where persisted aggregates are still justified.
-**Depends on:** Small Phase 20 and the report-data entry gate below.
+**Primary consumers:** Pages 01, 02, 03, 06, and 07 only where persisted aggregates or alert state are still justified.
+**Depends on:** Small Phase 20, Small Phase 16 identity/CASL for protected alert configuration, and the persistence entry gate below.
 
 ### Entry gate
 
@@ -402,29 +404,33 @@ Do not start this phase until all of the following are true:
 2. Device population and live-data volume justify persistence instead of request-scoped calculation.
 3. Telemetry cadence, retention, truncation and source load guidance are documented sufficiently to define refresh windows.
 4. Stakeholder confirms which Dashboard widgets actually require persisted aggregates.
+5. Alert metric baselines, units, duration semantics and `STALE`/`NO_DATA` policy are frozen before alert configuration/state/history tables are designed.
+6. Verified application identity and the role-to-ability matrix exist before any alert-configuration mutation is enabled.
 
-If the gate is not satisfied, keep bounded raw fetch/in-memory calculation and do not create placeholder report tables.
+If the relevant gate is not satisfied, keep bounded raw fetch/in-memory calculation and do not create placeholder report or alert tables for that domain.
 
 ### Goal
 
-Add only the minimum PostgreSQL report-data capability proven necessary by the implemented Dashboard, without mirroring raw IoT time series.
+Add only the minimum PostgreSQL report-data and authoritative alert persistence proven necessary by the implemented Dashboard, without mirroring raw IoT time series.
 
 ### Steps
 
 1. Re-audit actual consumers built in Small Phases 13–20; remove report keys that are not needed.
 2. Freeze report keys, units, dimensions and aggregation windows only for metrics with an approved stable source contract.
 3. Design PostgreSQL entities/migrations for selected aggregates/snapshots with source window, calculated time, data mode, provenance, freshness and quality state.
-4. Define idempotent refresh jobs/services, bounded source reads, retry behavior, TTL/retention, invalidation, late-data recomputation and recovery.
-5. Keep raw telemetry in the IoT-side source; store only selected values needed by Dashboard.
-6. Add an operator-safe rebuild mechanism without exposing the upstream bearer token or adding unauthenticated mutation endpoints.
-7. Replace only the in-memory paths whose persistence value is proven; preserve honest fallback when stored data is empty/stale.
-8. Add tests for duplicate jobs, partial windows, late data, truncation, failure recovery, provenance and database growth.
-9. Document operational cadence and expected database growth.
+4. If the alert gate is closed, design alert configuration, current distinct-device state and event history with audit/ability enforcement; do not reuse demo rules/events.
+5. Define idempotent refresh/evaluation jobs, bounded source reads, retry behavior, TTL/retention, invalidation, late-data recomputation and recovery.
+6. Keep raw telemetry in the IoT-side source; store only selected report values and justified alert state/events needed by Dashboard.
+7. Add an operator-safe rebuild mechanism without exposing the upstream bearer token or adding unauthenticated mutation endpoints.
+8. Replace only in-memory paths whose persistence value is proven; preserve honest unavailable/empty/stale fallback.
+9. Add tests for duplicate jobs/events, partial windows, duration boundaries, late data, truncation, authorization, failure recovery, provenance and database growth.
+10. Document operational cadence and expected database growth.
 
 ### Exit criteria
 
 - At least one justified real Water/IoT aggregate is persisted end-to-end and read by a Dashboard component, or the entry-gate review records an explicit stakeholder decision that no persisted report metric is yet justified.
 - Every stored aggregate can explain its source, calculation version and time window.
+- Any persisted alert can explain its metric configuration version, source samples, duration evaluation and device identity; protected configuration writes are authorized server-side.
 - No full raw-history mirror is introduced.
 - Existing raw/in-memory behavior remains available as an honest empty/stale fallback where approved.
 
@@ -463,21 +469,21 @@ Add only the minimum PostgreSQL report-data capability proven necessary by the i
 | 3 | 11 | Page 07 live telemetry core | P0 live |
 | 4 | 12 | Page 02 live Water | P0 live |
 | 5 | 13 | Page 03 environmental data using raw reads/in-memory calculation | P0/P1 conditional |
-| 6 | 14 | Alert config/evaluator and Page 06 | P1 derived |
+| 6 | 14 | Page 06 demo baseline + in-memory evaluator boundary | P1 conditional/demo |
 | 7 | 15 | Page 01 Overview and shared grid | P1 mixed |
 | 8 | 16 | Identity + CASL | Protected-write foundation |
 | 9 | 17 | Page 11 manual records | P2 manual |
 | 10 | 18 | Page 11 fire grid | P3 conditional/demo |
 | 11 | 19 | Energy, Parking, missing-field demo content | P4 demo |
 | 12 | 20 | Cross-page integration without persisted report data | Integration |
-| 13 | 21 | Deferred selected report-data PostgreSQL pipeline | P1 derived, last implementation phase |
+| 13 | 21 | Deferred IoT-derived report + alert PostgreSQL persistence | P1 derived, last implementation phase |
 | 14 | 22 | Big Phase final acceptance and hardening | Final closeout |
 
 ---
 
 ## 5. Decisions and external answers that can change sequencing
 
-The implementation can begin with Small Phase 13 using bounded raw reads and request-scoped/in-memory calculation. Selected report-data persistence is explicitly deferred to Small Phase 21 because the current device/data volume is small and the IoT schema/semantics are not stable enough to freeze durable report keys. Small Phase 22 is acceptance-only and follows that last implementation phase.
+The implementation can begin with Small Phase 13 using bounded raw reads and request-scoped/in-memory calculation. Selected report-data and IoT-derived alert persistence are explicitly deferred to Small Phase 21 because the current device/data volume is small and the IoT schema/semantics/baselines are not stable enough to freeze durable report keys or authoritative alert records. Small Phase 22 is acceptance-only and follows that last implementation phase.
 
 The following gates must be resolved before claiming the affected feature is authoritative:
 
@@ -492,7 +498,7 @@ The following gates must be resolved before claiming the affected feature is aut
 - Fire-zone API and mapping.
 - Report-data persistence gate: stable source schema/units, sufficient device/data volume, known cadence/retention/load behavior, and confirmed Dashboard consumers.
 
-An unresolved item must not block unrelated earlier phases. Keep its adapter boundary, fetch only bounded approved raw ranges, calculate in NestJS memory where needed, and render an explicit unavailable or approved deterministic demo state. Do not create report-data PostgreSQL tables/jobs before Small Phase 21.
+An unresolved item must not block unrelated earlier phases. Keep its adapter boundary, fetch only bounded approved raw ranges, calculate in NestJS memory where needed, and render an explicit unavailable or approved deterministic demo state. Do not create IoT-derived report/alert PostgreSQL tables or jobs before Small Phase 21.
 
 ---
 
@@ -505,7 +511,7 @@ An unresolved item must not block unrelated earlier phases. Keep its adapter bou
 - No direct browser/Unity access to the IoT backend.
 - No upstream IoT mutation.
 - No raw TSDB mirror in PostgreSQL.
-- No selected report/aggregate PostgreSQL persistence before Small Phase 21; earlier phases use bounded raw fetch and in-memory calculation.
+- No IoT-derived report/aggregate or alert config/state/history PostgreSQL persistence before Small Phase 21; earlier phases use bounded raw fetch, in-memory evaluation, unavailable states, or approved deterministic demo adapters.
 - No invented IoT fields, units, thresholds, online state, room mapping, or fire state.
 - No full CMMS/document-control expansion for PCCC.
 - No second chart library.

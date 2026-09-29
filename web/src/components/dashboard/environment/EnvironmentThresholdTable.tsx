@@ -20,7 +20,7 @@ const THRESHOLD_ROWS: ThresholdRow[] = [
     warningThreshold: '> 1.000 ppm',
     dangerThreshold: '> 1.500 ppm',
     sourceType: 'demo',
-    statusLabel: 'Minh họa (page03-co2-demo-v1)',
+    statusLabel: 'Demo (page03-co2-demo-v1)',
   },
   {
     parameter: 'Nhiệt độ',
@@ -41,7 +41,7 @@ const THRESHOLD_ROWS: ThresholdRow[] = [
     warningThreshold: '> 0.1 mg/m³',
     dangerThreshold: '> 0.3 mg/m³',
     sourceType: 'demo',
-    statusLabel: 'Minh họa tham khảo',
+    statusLabel: 'Demo tham khảo',
   },
   {
     parameter: 'PM2.5',
@@ -56,7 +56,7 @@ export function EnvironmentThresholdTable({ className = '' }: EnvironmentThresho
   const getBadgeStyle = (type: 'demo' | 'pending' | 'unavailable') => {
     switch (type) {
       case 'demo':
-        return 'bg-[#ED8936]/15 text-[#ED8936] border-[#ED8936]/30';
+        return 'bg-[#FF2121]/15 text-[#FF2121] border-[#FF2121]/30';
       case 'pending':
         return 'bg-[var(--primary)]/15 text-[var(--primary)] border-[var(--primary)]/30';
       case 'unavailable':
@@ -79,8 +79,8 @@ export function EnvironmentThresholdTable({ className = '' }: EnvironmentThresho
             Ngưỡng cảnh báo
           </h2>
           <span className="text-xs text-[#7E8B96]">(Read-only)</span>
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-[#ED8936]/15 text-[#ED8936] border border-[#ED8936]/30">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#ED8936]" />
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-[#FF2121]/15 text-[#FF2121] border border-[#FF2121]/30">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#FF2121]" />
             Demo
           </span>
         </div>
@@ -123,7 +123,7 @@ export function EnvironmentThresholdTable({ className = '' }: EnvironmentThresho
                 <td className="py-2.5 px-3 font-mono text-[#E4BF55]">
                   {row.warningThreshold}
                 </td>
-                <td className="py-2.5 px-3 font-mono text-[#ED8936]">
+                <td className="py-2.5 px-3 font-mono text-[#FF2121]">
                   {row.dangerThreshold}
                 </td>
                 <td className="py-2.5 px-3 text-right">

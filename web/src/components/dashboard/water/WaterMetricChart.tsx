@@ -72,7 +72,7 @@ export function WaterMetricChart({
               </span>
             ) : (
               <span className="text-xs text-[var(--primary)] bg-[rgba(79,185,173,0.12)] px-2 py-0.5 rounded border border-[rgba(79,185,173,0.3)]">
-                Derived
+                Toàn bộ đồng hồ AVC (Tổng hợp)
               </span>
             )}
           </div>

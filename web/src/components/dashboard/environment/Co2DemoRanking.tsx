@@ -18,7 +18,7 @@ export function Co2DemoRanking({ className = '' }: Co2DemoRankingProps) {
       case 'moderate':
         return { text: '#E4BF55', bg: '#E4BF55', label: 'Theo dõi' };
       case 'warning':
-        return { text: '#ED8936', bg: '#ED8936', label: 'Cảnh báo' };
+        return { text: '#FF2121', bg: '#FF2121', label: 'Cảnh báo' };
     }
   };
 
@@ -35,8 +35,8 @@ export function Co2DemoRanking({ className = '' }: Co2DemoRankingProps) {
         <h2 className="text-base font-semibold text-[#E6EDF1]">
           Phòng CO₂ cao nhất lúc này
         </h2>
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-[#ED8936]/15 text-[#ED8936] border border-[#ED8936]/30">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#ED8936]" />
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-[#FF2121]/15 text-[#FF2121] border border-[#FF2121]/30">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#FF2121]" />
           Demo
         </span>
       </div>

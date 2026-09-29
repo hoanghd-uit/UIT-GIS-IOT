@@ -782,6 +782,43 @@
           "Dashboard"
         ]
       }
+    },
+    "/api/v1/dashboard/buildings/{buildingId}/alerts/evaluation-status": {
+      "get": {
+        "description": "Returns the current capability, blockers, and authoritative rule count of the in-memory alert evaluator boundary. Read-only, zero database persistence, zero upstream calls when registry is empty.",
+        "operationId": "DashboardAlertController_getEvaluationStatus",
+        "parameters": [
+          {
+            "name": "buildingId",
+            "required": true,
+            "in": "path",
+            "description": "Building identifier (currently E only)",
+            "schema": {
+              "example": "E",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Alert evaluation status returned successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardAlertEvaluationStatusResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid buildingId (only building E is supported)"
+          }
+        },
+        "summary": "Get Dashboard alert evaluator status and blockers (read-only)",
+        "tags": [
+          "Dashboard"
+        ]
+      }
     }
   },
   "info": {
@@ -2525,6 +2562,168 @@
           "coverage",
           "latestSample",
           "readings"
+        ]
+      },
+      "AlertEvaluationStatusProvenanceDto": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "example": "derived",
+            "enum": [
+              "derived"
+            ]
+          },
+          "sourceType": {
+            "type": "string",
+            "example": "application_alert_evaluator"
+          },
+          "evaluatedAt": {
+            "type": "string",
+            "example": "2026-09-29T12:00:00.000Z"
+          },
+          "caveats": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "mode",
+          "sourceType",
+          "evaluatedAt",
+          "caveats"
+        ]
+      },
+      "AlertEvaluationStatusCapabilitiesDto": {
+        "type": "object",
+        "properties": {
+          "evaluatorAvailable": {
+            "type": "boolean",
+            "example": true
+          },
+          "authoritativeRuleCount": {
+            "type": "number",
+            "example": 0
+          },
+          "eventPersistenceAvailable": {
+            "type": "boolean",
+            "example": false
+          },
+          "lifecycleActionsAvailable": {
+            "type": "boolean",
+            "example": false
+          },
+          "notificationDeliveryAvailable": {
+            "type": "boolean",
+            "example": false
+          },
+          "authorizationAvailable": {
+            "type": "boolean",
+            "example": false
+          },
+          "spatialNavigationAvailable": {
+            "type": "boolean",
+            "example": false
+          }
+        },
+        "required": [
+          "evaluatorAvailable",
+          "authoritativeRuleCount",
+          "eventPersistenceAvailable",
+          "lifecycleActionsAvailable",
+          "notificationDeliveryAvailable",
+          "authorizationAvailable",
+          "spatialNavigationAvailable"
+        ]
+      },
+      "AlertEvaluationStatusBlockerDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "example": "ALERT_RULES_NOT_CONFIRMED"
+          },
+          "message": {
+            "type": "string",
+            "example": "Chưa có quy tắc authoritative do semantics, baseline, cadence và duration policy chưa được xác nhận."
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ]
+      },
+      "AlertEvaluationCurrentStateDto": {
+        "type": "object",
+        "properties": {
+          "distinctWarningDeviceCount": {
+            "type": "number",
+            "example": null,
+            "nullable": true
+          },
+          "distinctDangerDeviceCount": {
+            "type": "number",
+            "example": null,
+            "nullable": true
+          },
+          "notificationBadgeCount": {
+            "type": "number",
+            "example": null,
+            "nullable": true
+          }
+        },
+        "required": [
+          "distinctWarningDeviceCount",
+          "distinctDangerDeviceCount",
+          "notificationBadgeCount"
+        ]
+      },
+      "DashboardAlertEvaluationStatusResponseDto": {
+        "type": "object",
+        "properties": {
+          "schemaVersion": {
+            "type": "number",
+            "example": 1
+          },
+          "buildingId": {
+            "type": "string",
+            "example": "E"
+          },
+          "availability": {
+            "type": "string",
+            "example": "no_active_rules",
+            "enum": [
+              "no_active_rules",
+              "ready",
+              "partial"
+            ]
+          },
+          "provenance": {
+            "$ref": "#/components/schemas/AlertEvaluationStatusProvenanceDto"
+          },
+          "capabilities": {
+            "$ref": "#/components/schemas/AlertEvaluationStatusCapabilitiesDto"
+          },
+          "blockers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AlertEvaluationStatusBlockerDto"
+            }
+          },
+          "currentState": {
+            "$ref": "#/components/schemas/AlertEvaluationCurrentStateDto"
+          }
+        },
+        "required": [
+          "schemaVersion",
+          "buildingId",
+          "availability",
+          "provenance",
+          "capabilities",
+          "blockers",
+          "currentState"
         ]
       }
     }

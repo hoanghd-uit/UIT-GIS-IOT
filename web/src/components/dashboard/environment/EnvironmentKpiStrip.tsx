@@ -56,7 +56,7 @@ export function EnvironmentKpiStrip({
       {/* Slot 2: CO2 trung bình (Demo) */}
       <div
         role="article"
-        aria-label={`CO2 trung bình: ${CO2_DEMO_FIXTURE.kpis.averageCo2} ppm (Minh họa)`}
+        aria-label={`CO2 trung bình: ${CO2_DEMO_FIXTURE.kpis.averageCo2} ppm (Demo)`}
         className="flex flex-col justify-between p-4 rounded-xl border transition-all min-h-[136px]"
         style={{
           backgroundColor: 'var(--panel-bg)',
@@ -67,7 +67,7 @@ export function EnvironmentKpiStrip({
           <span className="text-xs font-semibold uppercase tracking-wider text-[#A5B0B9] truncate">
             CO₂ trung bình
           </span>
-          <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#ED8936]/10 text-[#ED8936] font-medium border border-[#ED8936]/30 shrink-0">
+          <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#FF2121]/10 text-[#FF2121] font-medium border border-[#FF2121]/30 shrink-0">
             Demo
           </span>
         </div>
@@ -94,7 +94,7 @@ export function EnvironmentKpiStrip({
       >
         <div className="flex items-center justify-between gap-1">
           <span className="text-xs font-semibold uppercase tracking-wider text-[#A5B0B9] truncate">
-            Nhiệt độ trung bình
+            Raw temperature
           </span>
           <span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--primary)]/10 text-[var(--primary)] font-medium border border-[var(--primary)]/30 shrink-0">
             Derived
@@ -103,7 +103,7 @@ export function EnvironmentKpiStrip({
         <div className="my-1.5 flex items-baseline gap-1.5">
           {isSummaryReady && tempSummary?.mean != null ? (
             <span className="text-3xl font-bold font-mono tracking-tight text-[#E6EDF1]">
-              {formatVal(tempSummary.mean)} °C
+              {formatVal(tempSummary.mean)}
             </span>
           ) : (
             <span className="text-2xl font-light font-mono text-[#7E8B96]">
@@ -111,21 +111,9 @@ export function EnvironmentKpiStrip({
             </span>
           )}
         </div>
-        {/* <div
-          className="text-[11px] text-[#7E8B96] truncate"
-          title={
-            isSummaryReady && tempSummary?.contributingSourceCount
-              ? `${tempSummary.contributingSourceCount} nguồn Solar · chưa xác nhận unit`
-              : 'Chờ xác nhận semantics/unit'
-          }
-        >
-          {isSummaryReady && tempSummary?.contributingSourceCount
-            ? `${tempSummary.contributingSourceCount} nguồn Solar · chưa xác nhận unit`
-            : 'Chờ xác nhận semantics/unit'}
-        </div> */}
       </div>
 
-      {/* Slot 4: Raw humidity · trung bình mẫu (Derived, Unit là %) */}
+      {/* Slot 4: Raw humidity · trung bình mẫu (Derived, NO unit) */}
       <div
         role="article"
         aria-label={`Raw humidity trung bình mẫu: ${isSummaryReady && humidSummary?.mean != null ? humidSummary.mean : 'Chưa có dữ liệu'}`}
@@ -137,7 +125,7 @@ export function EnvironmentKpiStrip({
       >
         <div className="flex items-center justify-between gap-1">
           <span className="text-xs font-semibold uppercase tracking-wider text-[#A5B0B9] truncate">
-            Độ ẩm trung bình
+            Raw humidity
           </span>
           <span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--primary)]/10 text-[var(--primary)] font-medium border border-[var(--primary)]/30 shrink-0">
             Derived
@@ -146,7 +134,7 @@ export function EnvironmentKpiStrip({
         <div className="my-1.5 flex items-baseline gap-1.5">
           {isSummaryReady && humidSummary?.mean != null ? (
             <span className="text-3xl font-bold font-mono tracking-tight text-[#E6EDF1]">
-              {formatVal(humidSummary.mean)} %
+              {formatVal(humidSummary.mean)}
             </span>
           ) : (
             <span className="text-2xl font-light font-mono text-[#7E8B96]">
@@ -154,24 +142,12 @@ export function EnvironmentKpiStrip({
             </span>
           )}
         </div>
-        {/* <div
-          className="text-[11px] text-[#7E8B96] truncate"
-          title={
-            isSummaryReady && humidSummary?.contributingSourceCount
-              ? `${humidSummary.contributingSourceCount} nguồn Solar · chưa xác nhận unit`
-              : 'Chờ xác nhận semantics/unit'
-          }
-        >
-          {isSummaryReady && humidSummary?.contributingSourceCount
-            ? `${humidSummary.contributingSourceCount} nguồn Solar · chưa xác nhận unit`
-            : 'Chờ xác nhận semantics/unit'}
-        </div> */}
       </div>
 
       {/* Slot 5: VOC xu hướng (Demo) */}
       <div
         role="article"
-        aria-label={`VOC xu hướng: ${CO2_DEMO_FIXTURE.kpis.vocIndex} mg/m3 (Minh họa)`}
+        aria-label={`VOC xu hướng: ${CO2_DEMO_FIXTURE.kpis.vocIndex} mg/m3 (Demo)`}
         className="flex flex-col justify-between p-4 rounded-xl border transition-all min-h-[136px]"
         style={{
           backgroundColor: 'var(--panel-bg)',
@@ -182,7 +158,7 @@ export function EnvironmentKpiStrip({
           <span className="text-xs font-semibold uppercase tracking-wider text-[#A5B0B9] truncate">
             VOC xu hướng
           </span>
-          <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#ED8936]/10 text-[#ED8936] font-medium border border-[#ED8936]/30 shrink-0">
+          <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#FF2121]/10 text-[#FF2121] font-medium border border-[#FF2121]/30 shrink-0">
             Demo
           </span>
         </div>
@@ -192,7 +168,7 @@ export function EnvironmentKpiStrip({
           </span>
           <span className="text-xs font-medium text-[#A5B0B9]">mg/m³</span>
         </div>
-        <div className="text-[11px] text-[#A5B0B9] truncate" title="Fixture minh họa · không sensor thật">
+        <div className="text-[11px] text-[#A5B0B9] truncate" title="Fixture Demo · không sensor thật">
           {CO2_DEMO_FIXTURE.kpis.vocLabel} · Demo
         </div>
       </div>

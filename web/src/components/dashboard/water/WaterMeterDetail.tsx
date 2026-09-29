@@ -221,7 +221,7 @@ export function WaterMeterDetail({
             </div>
 
             {/* Anomaly 2: Night electricity baseline */}
-            <div className="p-3 rounded-lg bg-[rgba(23,34,44,0.5)] border-l-4 border-l-[#ED8936] border border-[rgba(83,109,126,0.2)] space-y-1">
+            <div className="p-3 rounded-lg bg-[rgba(23,34,44,0.5)] border-l-4 border-l-[#FF2121] border border-[rgba(83,109,126,0.2)] space-y-1">
               <h5 className="text-xs font-semibold text-[#E6EDF1]">
                 Phụ tải nền ban đêm tăng 13% trong 5 đêm liên tiếp
               </h5>
@@ -241,8 +241,8 @@ export function WaterMeterDetail({
             </div>
           </div>
 
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-[#ED8936]/15 text-[#ED8936] border border-[#ED8936]/30">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#ED8936]" />
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-[#FF2121]/15 text-[#FF2121] border border-[#FF2121]/30">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#FF2121]" />
             Demo
           </span>
         </div>
