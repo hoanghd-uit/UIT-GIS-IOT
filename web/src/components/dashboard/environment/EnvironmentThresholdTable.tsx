@@ -20,7 +20,7 @@ const THRESHOLD_ROWS: ThresholdRow[] = [
     warningThreshold: '> 1.000 ppm',
     dangerThreshold: '> 1.500 ppm',
     sourceType: 'demo',
-    statusLabel: 'Demo (page03-co2-demo-v1)',
+    statusLabel: 'Demo',
   },
   {
     parameter: 'Nhiệt độ',
@@ -41,14 +41,14 @@ const THRESHOLD_ROWS: ThresholdRow[] = [
     warningThreshold: '> 0.1 mg/m³',
     dangerThreshold: '> 0.3 mg/m³',
     sourceType: 'demo',
-    statusLabel: 'Demo tham khảo',
+    statusLabel: 'Demo',
   },
   {
     parameter: 'PM2.5',
     warningThreshold: 'Chưa có ngưỡng',
     dangerThreshold: 'Chưa có ngưỡng',
     sourceType: 'unavailable',
-    statusLabel: 'Chưa có nguồn được phê duyệt',
+    statusLabel: 'Chưa có nguồn',
   },
 ];
 
@@ -56,7 +56,7 @@ export function EnvironmentThresholdTable({ className = '' }: EnvironmentThresho
   const getBadgeStyle = (type: 'demo' | 'pending' | 'unavailable') => {
     switch (type) {
       case 'demo':
-        return 'bg-[#FF2121]/15 text-[#FF2121] border-[#FF2121]/30';
+        return 'bg-[#FFB121]/15 text-[#FFB121] border-[#FFB121]/30';
       case 'pending':
         return 'bg-[var(--primary)]/15 text-[var(--primary)] border-[var(--primary)]/30';
       case 'unavailable':

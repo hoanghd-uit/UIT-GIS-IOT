@@ -97,7 +97,7 @@ export function Co2DemoRanking({ className = '' }: Co2DemoRankingProps) {
       {/* Footer */}
       <div className="pt-3 border-t border-[var(--border)] flex items-center justify-between text-xs text-[#7E8B96]">
         <span>Sắp xếp theo nồng độ CO₂ thời điểm mới nhất</span>
-        <span className="font-mono text-[11px]">Nguồn: {CO2_DEMO_FIXTURE.fixtureId}</span>
+        {/* <span className="font-mono text-[11px]">Nguồn: {CO2_DEMO_FIXTURE.fixtureId}</span> */}
       </div>
     </div>
   );

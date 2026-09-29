@@ -8,9 +8,9 @@ import { DataModeBadge } from '@/components/dashboard/cards/DataModeBadge';
 export default function OverviewPage() {
   return (
     <DashboardPageShell
-      pageNumber="01"
+      //pageNumber="01"
       title="Tổng quan"
-      description="Tổng quan vận hành và các chỉ số trung tâm tòa nhà E — UIT Digital Twin"
+      description="Tổng quan vận hành và các chỉ số trung tâm tòa nhà E - UIT Digital Twin"
       badge={<DataModeBadge mode="derived" availability="unavailable" size="sm" />}
     >
       {/* KPI Cards Summary Section (Unconnected in Phase 01) */}

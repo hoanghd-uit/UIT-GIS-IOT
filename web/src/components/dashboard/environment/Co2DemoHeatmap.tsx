@@ -63,7 +63,7 @@ export function Co2DemoHeatmap({ className = '' }: Co2DemoHeatmapProps) {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 border-b border-[var(--border)]">
         <div className="flex items-center gap-2.5">
           <h2 className="text-base font-semibold text-[#E6EDF1]">
-            CO₂ theo phòng × giờ
+            CO₂ theo phòng x giờ
           </h2>
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-[#FFB121]/15 text-[#FFB121] border border-[#FFB121]/30">
             <span className="w-1.5 h-1.5 rounded-full bg-[#FFB121]" />
@@ -275,9 +275,9 @@ export function Co2DemoHeatmap({ className = '' }: Co2DemoHeatmapProps) {
             <span>&gt; 1.000 ppm (Cảnh báo)</span>
           </div>
         </div>
-        <p className="text-[11px] text-[#7E8B96]">
+        {/* <p className="text-[11px] text-[#7E8B96]">
           * Dữ liệu mô phỏng theo giờ làm việc tiêu chuẩn
-        </p>
+        </p> */}
       </div>
     </div>
   );

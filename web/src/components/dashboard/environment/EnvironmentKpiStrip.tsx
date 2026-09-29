@@ -94,7 +94,7 @@ export function EnvironmentKpiStrip({
       >
         <div className="flex items-center justify-between gap-1">
           <span className="text-xs font-semibold uppercase tracking-wider text-[#A5B0B9] truncate">
-            Raw temperature
+            Nhiệt độ trung bình
           </span>
           <span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--primary)]/10 text-[var(--primary)] font-medium border border-[var(--primary)]/30 shrink-0">
             Derived
@@ -103,7 +103,7 @@ export function EnvironmentKpiStrip({
         <div className="my-1.5 flex items-baseline gap-1.5">
           {isSummaryReady && tempSummary?.mean != null ? (
             <span className="text-3xl font-bold font-mono tracking-tight text-[#E6EDF1]">
-              {formatVal(tempSummary.mean)}
+              {formatVal(tempSummary.mean)} °C
             </span>
           ) : (
             <span className="text-2xl font-light font-mono text-[#7E8B96]">
@@ -125,7 +125,7 @@ export function EnvironmentKpiStrip({
       >
         <div className="flex items-center justify-between gap-1">
           <span className="text-xs font-semibold uppercase tracking-wider text-[#A5B0B9] truncate">
-            Raw humidity
+            Độ ẩm trung bình
           </span>
           <span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--primary)]/10 text-[var(--primary)] font-medium border border-[var(--primary)]/30 shrink-0">
             Derived
@@ -134,7 +134,7 @@ export function EnvironmentKpiStrip({
         <div className="my-1.5 flex items-baseline gap-1.5">
           {isSummaryReady && humidSummary?.mean != null ? (
             <span className="text-3xl font-bold font-mono tracking-tight text-[#E6EDF1]">
-              {formatVal(humidSummary.mean)}
+              {formatVal(humidSummary.mean)} %
             </span>
           ) : (
             <span className="text-2xl font-light font-mono text-[#7E8B96]">

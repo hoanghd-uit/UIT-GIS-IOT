@@ -29,9 +29,8 @@ export function EnergyUnavailablePanels() {
 
         <div className="my-auto py-8">
           <UnavailableDataState
-            title="Chưa có nguồn smart-meter được phê duyệt"
+            title="Unavailable"
             description="Biểu đồ phụ tải điện theo giờ và đường mức nền 4 tuần cùng thứ sẽ được kết nối khi có dữ liệu đồng hồ điện thông minh."
-            phaseNote="Small Phase 20: Energy deterministic demo."
           />
         </div>
 

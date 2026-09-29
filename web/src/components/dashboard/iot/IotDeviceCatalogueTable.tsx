@@ -236,7 +236,7 @@ export function IotDeviceCatalogueTable({
                         title="Thiết bị được ghi nhận đang hoạt động trong danh mục IoT. Không phản ánh tình trạng kết nối mạng thời gian thực."
                       >
                         <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: 'var(--success)' }} />
-                        Đang hoạt động trong danh mục
+                        Trực tuyến trong API
                       </span>
                     ) : (
                       <span
