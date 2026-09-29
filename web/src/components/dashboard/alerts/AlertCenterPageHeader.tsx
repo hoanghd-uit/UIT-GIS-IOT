@@ -47,10 +47,10 @@ export function AlertCenterPageHeader({
       <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap">
         {/* Global Demo Badge with Tooltip */}
         <span
-          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-[#FF2121]/15 text-[#FF2121] border border-[#FF2121]/30 cursor-help shrink-0"
+          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-[#FFB121]/15 text-[#FFB121] border border-[#FFB121]/30 cursor-help shrink-0"
           title={`Chế độ dữ liệu Demo · Fixture ${ALERT_DEMO_FIXTURE_ID}`}
         >
-          <span className="w-1.5 h-1.5 rounded-full bg-[#FF2121]" />
+          <span className="w-1.5 h-1.5 rounded-full bg-[#FFB121]" />
           Demo
         </span>
 

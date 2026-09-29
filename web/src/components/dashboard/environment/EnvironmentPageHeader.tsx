@@ -67,11 +67,11 @@ export function EnvironmentPageHeader({
             style={{
               backgroundColor: 'rgba(237, 137, 54, 0.12)',
               borderColor: 'rgba(237, 137, 54, 0.35)',
-              color: '#FF2121',
+              color: '#FFB121',
             }}
             title="Dữ liệu CO2 và VOC phòng hiển thị từ fixture mẫu"
           >
-            <span className="w-1.5 h-1.5 rounded-full bg-[#FF2121]" />
+            <span className="w-1.5 h-1.5 rounded-full bg-[#FFB121]" />
             <span>CO₂ / VOC · Demo</span>
           </div>
         </div>

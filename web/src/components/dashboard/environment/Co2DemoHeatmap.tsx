@@ -43,9 +43,9 @@ export function Co2DemoHeatmap({ className = '' }: Co2DemoHeatmapProps) {
     } else {
       // Warning (> 1000 ppm): dark orange/coral tint
       return {
-        bg: 'rgba(237, 137, 54, 0.25)',
+        bg: 'rgba(237, 54, 54, 0.25)',
         text: '#FF2121',
-        border: 'rgba(237, 137, 54, 0.45)',
+        border: 'rgba(237, 54, 54, 0.45)',
         status: 'Cảnh báo (> 1000 ppm)',
       };
     }
@@ -65,8 +65,8 @@ export function Co2DemoHeatmap({ className = '' }: Co2DemoHeatmapProps) {
           <h2 className="text-base font-semibold text-[#E6EDF1]">
             CO₂ theo phòng × giờ
           </h2>
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-[#FF2121]/15 text-[#FF2121] border border-[#FF2121]/30">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#FF2121]" />
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-[#FFB121]/15 text-[#FFB121] border border-[#FFB121]/30">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#FFB121]" />
             Demo
           </span>
         </div>
@@ -271,7 +271,7 @@ export function Co2DemoHeatmap({ className = '' }: Co2DemoHeatmapProps) {
             <span>800–1.000 ppm (Theo dõi)</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-sm bg-[rgba(237,137,54,0.5)] border border-[#FF2121]" />
+            <span className="w-2.5 h-2.5 rounded-sm bg-[rgba(237,137,54,0.5)] border border-[#FFB121]" />
             <span>&gt; 1.000 ppm (Cảnh báo)</span>
           </div>
         </div>

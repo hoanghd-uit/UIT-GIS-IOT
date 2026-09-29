@@ -105,8 +105,8 @@ export function DemoAlertDetail({ alert, className = '' }: DemoAlertDetailProps)
           {/* `          <span className="text-xs font-mono text-[#7E8B96]">
             Demo: <span className="text-[#E6EDF1] font-semibold">{alert.alertId}</span>
           </span>` */}
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-[#FF2121]/15 text-[#FF2121] border border-[#FF2121]/30">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#FF2121]" />
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-[#FFB121]/15 text-[#FFB121] border border-[#FFB121]/30">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#FFB121]" />
             Demo
           </span>
           {getSeverityBadge(alert.severity)}

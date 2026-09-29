@@ -67,7 +67,7 @@ export function EnvironmentKpiStrip({
           <span className="text-xs font-semibold uppercase tracking-wider text-[#A5B0B9] truncate">
             CO₂ trung bình
           </span>
-          <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#FF2121]/10 text-[#FF2121] font-medium border border-[#FF2121]/30 shrink-0">
+          <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#FFB121]/10 text-[#FFB121] font-medium border border-[#FFB121]/30 shrink-0">
             Demo
           </span>
         </div>
@@ -158,7 +158,7 @@ export function EnvironmentKpiStrip({
           <span className="text-xs font-semibold uppercase tracking-wider text-[#A5B0B9] truncate">
             VOC xu hướng
           </span>
-          <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#FF2121]/10 text-[#FF2121] font-medium border border-[#FF2121]/30 shrink-0">
+          <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#FFB121]/10 text-[#FFB121] font-medium border border-[#FFB121]/30 shrink-0">
             Demo
           </span>
         </div>

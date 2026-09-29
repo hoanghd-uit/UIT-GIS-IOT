@@ -23,8 +23,8 @@ export function Co2DemoCompliance({ className = '' }: Co2DemoComplianceProps) {
         <h2 className="text-base font-semibold text-[#E6EDF1]">
           % thời gian đạt chuẩn CO₂ (7 ngày)
         </h2>
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-[#FF2121]/15 text-[#FF2121] border border-[#FF2121]/30">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#FF2121]" />
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-[#FFB121]/15 text-[#FFB121] border border-[#FFB121]/30">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#FFB121]" />
           Demo
         </span>
       </div>
