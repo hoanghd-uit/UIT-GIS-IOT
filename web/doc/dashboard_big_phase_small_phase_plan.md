@@ -2,7 +2,7 @@
 
 > **Project:** GIS — UIT Building E Digital Twin  
 > **Plan date:** 2026-09-26  
-> **Updated:** 2026-09-29 — defer selected report-data and IoT-derived alert PostgreSQL persistence to the last implementation subphase; earlier phases continue with bounded raw fetch, in-memory calculation/evaluation, explicit unavailable states, and approved deterministic demo data.
+> **Updated:** 2026-09-30 — add the detailed Page 01 Overview handover; selected report-data and IoT-derived alert PostgreSQL persistence remain deferred to Small Phase 21, and completed-page stakeholder text/labels are protected from unrelated edits.
 > **Target:** Implement the current `Dashboard_Knowledge_Base.md` without expanding its frozen scope.  
 > **Priority rule:** Deliver real, currently available data first; then derived data; then application-owned manual data; and deterministic demo-only content last.  
 > **Authoritative requirements:** `Dashboard_Knowledge_Base.md`  
@@ -238,6 +238,7 @@ Re-check whether the first numeric baseline set, metric semantics/units, telemet
 **Priority:** P1 composition of real/derived data.  
 **Primary page:** Page 01 — Tổng quan.  
 **Depends on:** Small Phases 10 and 14.
+**Detailed handover plan:** `web/doc/bp2_phase07_page01_overview_composition.md`.
 
 ### Goal
 
@@ -254,6 +255,7 @@ Compose the Overview from shared real/derived services, using demo only where th
 7. Add the hourly Energy chart with visibly demo provenance.
 8. Use bounded raw fetch plus in-memory calculation for any currently available Water/IoT summary; do not require or create report-data persistence.
 9. Test floor switching, stable cell identity, popup provenance, mixed-mode KPIs, and alert consistency.
+10. Treat completed Page 02/03/06/07 routes, fixtures and stakeholder-edited text labels as protected; reuse them read-only and modify them only for a verified blocking bug with regression evidence.
 
 ### Exit criteria
 
