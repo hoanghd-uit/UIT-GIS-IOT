@@ -2,7 +2,7 @@
 
 > **Project:** GIS — UIT Building E Digital Twin  
 > **Plan date:** 2026-09-26  
-> **Updated:** 2026-09-30 — add the detailed Page 01 Overview handover; selected report-data and IoT-derived alert PostgreSQL persistence remain deferred to Small Phase 21, and completed-page stakeholder text/labels are protected from unrelated edits.
+> **Updated:** 2026-10-01 — temporarily hold Small Phase 16 Identity/CASL and its dependent Page 11 phases; narrow the detailed Small Phase 19 handover to Page 09 Parking only as the next executable target. Selected report-data and IoT-derived alert PostgreSQL persistence remain deferred to Small Phase 21, and completed-page stakeholder text/labels remain protected from unrelated edits.
 > **Target:** Implement the current `Dashboard_Knowledge_Base.md` without expanding its frozen scope.  
 > **Priority rule:** Deliver real, currently available data first; then derived data; then application-owned manual data; and deterministic demo-only content last.  
 > **Authoritative requirements:** `Dashboard_Knowledge_Base.md`  
@@ -270,6 +270,15 @@ Compose the Overview from shared real/derived services, using demo only where th
 **Priority:** Required before protected manual writes.  
 **Primary consumers:** Pages 06 and 11.  
 **Depends on:** A stakeholder decision for application authentication/identity and the role-to-ability matrix.
+**Execution status:** `TEMPORARILY ON HOLD` by stakeholder decision on 2026-10-01. Do not install CASL, create placeholder identity, or invent roles while this hold is active.
+
+### Temporary sequencing rule
+
+- Keep Small Phase 16 in Big Phase 02 scope, but do not implement it until the stakeholder resumes it and supplies or approves the identity mechanism and role-to-ability matrix.
+- Small Phase 17 remains blocked because protected PCCC writes require verified identity and backend authorization.
+- Small Phase 18 remains blocked under the current dependency chain because its final Page 11 composition requires the Small Phase 17 manual-record components.
+- Advance to **Small Phase 19** as the next executable planning target.
+- This is a sequencing change only. It does not authorize unauthenticated writes, fake users/roles, or removal of the Page 11 requirements.
 
 ### Goal
 
@@ -298,6 +307,7 @@ Establish trustworthy identity and enforce CASL abilities in NestJS and Next.js.
 **Priority:** P2 real application-owned data.  
 **Primary page:** Page 11 — PCCC.  
 **Depends on:** Small Phase 16.
+**Execution status:** `BLOCKED BY TEMPORARY HOLD ON SMALL PHASE 16`; do not implement unauthenticated CRUD as a workaround.
 
 ### Goal
 
@@ -325,6 +335,7 @@ Implement authorized PostgreSQL CRUD for fire extinguisher expiry/inspection and
 **Priority:** P3 conditional; UI can use demo fallback.  
 **Primary page:** Page 11 — PCCC.  
 **Depends on:** Shared grid from Small Phase 15 and manual records from Small Phase 17.
+**Execution status:** `DEFERRED WITH THE PAGE 11 CHAIN` while Small Phases 16–17 are held; resume after their dependency gate is restored or the roadmap is explicitly restructured.
 
 ### Steps
 
@@ -343,25 +354,28 @@ Implement authorized PostgreSQL CRUD for fire extinguisher expiry/inspection and
 
 ---
 
-## Small Phase 19 — Explicit demo completion: Energy, Parking, and missing optional IoT cards
+## Small Phase 19 — Explicit demo completion: Parking
 
 **Priority:** P4 demo-only; deliberately last.  
-**Primary pages:** Page 02 Energy, Page 09 Parking, and approved Page 07 fallbacks.  
+**Primary page:** Page 09 Parking only.
 **Depends on:** Small Phase 09.
+**Execution status:** `NEXT EXECUTABLE PLANNING TARGET` under the temporary 2026-10-01 sequencing override.
+**Detailed handover plan:** `web/doc/bp2_phase08_demo_completion_energy_parking.md`.
 
 ### Steps
 
-1. Create versioned deterministic Energy fixtures and complete the Page 02 Energy visual structure.
-2. Create versioned deterministic Parking fixtures for occupancy, density, entries by hour, AI-camera/device list, and KPIs.
-3. For Page 07 fields the IoT team has explicitly confirmed unavailable, replace unavailable placeholders with approved demo adapters where required by the Dashboard KB.
-4. Never combine demo samples into live aggregates or alert evaluation.
-5. Show demo provenance in the data contract and UI.
-6. Add snapshot/fixture stability tests and checks that reloads produce identical values.
+1. Create versioned deterministic Parking fixtures for occupancy, density, entries by hour, demo camera/device list, and KPIs.
+2. Build Page 09 Parking UI from the approved mockup hierarchy while following the Knowledge Base data rules.
+3. Never combine demo samples into live aggregates or alert evaluation.
+4. Show demo provenance in the data contract and UI.
+5. Add snapshot/fixture stability tests and checks that reloads produce identical values.
+6. Treat Page 02, Page 07 and every other completed page as no-touch; this phase must not implement or revise them.
 
 ### Exit criteria
 
-- Energy and all Page 09 widgets are complete and unmistakably demo.
+- All Page 09 widgets are complete and unmistakably demo.
 - No random or live-looking fabricated value is present.
+- The implementation diff contains no Page 02 or Page 07 changes.
 
 ---
 
@@ -473,10 +487,10 @@ Add only the minimum PostgreSQL report-data and authoritative alert persistence 
 | 5 | 13 | Page 03 environmental data using raw reads/in-memory calculation | P0/P1 conditional |
 | 6 | 14 | Page 06 demo baseline + in-memory evaluator boundary | P1 conditional/demo |
 | 7 | 15 | Page 01 Overview and shared grid | P1 mixed |
-| 8 | 16 | Identity + CASL | Protected-write foundation |
-| 9 | 17 | Page 11 manual records | P2 manual |
-| 10 | 18 | Page 11 fire grid | P3 conditional/demo |
-| 11 | 19 | Energy, Parking, missing-field demo content | P4 demo |
+| 8 | 16 | Identity + CASL — temporarily on hold | Protected-write foundation; resume by stakeholder decision |
+| 9 | 17 | Page 11 manual records — blocked by Small Phase 16 hold | P2 manual |
+| 10 | 18 | Page 11 fire grid — deferred with Page 11 chain | P3 conditional/demo |
+| 11 | 19 | Page 09 Parking demo completion — next executable target | P4 demo |
 | 12 | 20 | Cross-page integration without persisted report data | Integration |
 | 13 | 21 | Deferred IoT-derived report + alert PostgreSQL persistence | P1 derived, last implementation phase |
 | 14 | 22 | Big Phase final acceptance and hardening | Final closeout |
@@ -485,7 +499,7 @@ Add only the minimum PostgreSQL report-data and authoritative alert persistence 
 
 ## 5. Decisions and external answers that can change sequencing
 
-The implementation can begin with Small Phase 13 using bounded raw reads and request-scoped/in-memory calculation. Selected report-data and IoT-derived alert persistence are explicitly deferred to Small Phase 21 because the current device/data volume is small and the IoT schema/semantics/baselines are not stable enough to freeze durable report keys or authoritative alert records. Small Phase 22 is acceptance-only and follows that last implementation phase.
+The implementation can begin with Small Phase 13 using bounded raw reads and request-scoped/in-memory calculation. On 2026-10-01 the stakeholder temporarily held Small Phase 16; therefore Small Phases 17–18 remain blocked/deferred and Small Phase 19 becomes the next executable target. The held phases remain required before cross-page integration/final acceptance unless a later stakeholder decision explicitly restructures their scope or dependencies. Selected report-data and IoT-derived alert persistence are explicitly deferred to Small Phase 21 because the current device/data volume is small and the IoT schema/semantics/baselines are not stable enough to freeze durable report keys or authoritative alert records. Small Phase 22 is acceptance-only and follows that last implementation phase.
 
 The following gates must be resolved before claiming the affected feature is authoritative:
 
