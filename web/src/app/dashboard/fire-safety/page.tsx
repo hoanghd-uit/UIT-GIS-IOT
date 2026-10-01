@@ -5,13 +5,15 @@ import { UnavailableDataState } from '@/components/dashboard/states/UnavailableD
 import { KpiMetadataCard } from '@/components/dashboard/cards/KpiMetadataCard';
 import { DataModeBadge } from '@/components/dashboard/cards/DataModeBadge';
 import { createManualProvenance } from '@/lib/dashboard/provenance';
+import { requireDashboardSession } from '@/lib/auth/session.server';
 
 const FIRE_SAFETY_PROVENANCE = createManualProvenance({
   sourceId: 'pccc-inspection-registry',
   caveats: ['Dữ liệu kiểm tra kỹ thuật định kỳ do ban quản lý nhập tay'],
 });
 
-export default function FireSafetyPage() {
+export default async function FireSafetyPage() {
+  await requireDashboardSession('/dashboard/fire-safety');
   return (
     <DashboardPageShell
       pageNumber="11"

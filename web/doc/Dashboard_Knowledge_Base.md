@@ -1,8 +1,9 @@
 ---
 document_id: GIS-UIT-DASHBOARD-KB
 filename: Dashboard_Knowledge_Base.md
-version: "1.0.0"
+version: "1.1.0"
 compiled_on: "2026-09-25"
+updated_on: "2026-10-01"
 language: vi
 project: "GIS - UIT Building E Digital Twin"
 audience: "Project owner, ChatGPT/Work Mode, planner agents, coding agents, QA agents"
@@ -39,7 +40,8 @@ status: CURRENT
 | Unity | Unity WebGL tiếp tục là Digital Twin viewer của dự án. Riêng **Page 01 Dashboard** không dùng interactive BIM 3D trong proposal; panel đó được thay bằng **Interactive 2D Grid**. |
 | IoT upstream | Next.js/Unity không gọi IoT backend trực tiếp. NestJS dùng contract trong `IoTBackend_API_HandOver.md`. |
 | DataMode | Chuẩn hóa thành `live`, `derived`, `manual`, `demo`. Không được trình bày dummy như dữ liệu thật. |
-| Authorization | Dùng **CASL** cho authorization/ability. Cơ chế identity/login authentication cụ thể chưa được chốt bởi decision Dashboard này. |
+| Authorization | Dùng **CASL**, chỉ hai roles `viewer`/`manager`. Viewer xem Dashboard; Manager có PCCC create/update/delete và future AlertConfig update. Cả hai bị chặn device display-position update/delete. |
+| Identity foundation | Small Phase 16 đã hoàn thành: hai application accounts `beiviewer`/`beimanager`; local NestJS login + PostgreSQL users/opaque sessions (`application_users`, `application_sessions`) + same-origin HttpOnly cookie (`bei_session`) + strict CSRF (`Origin` + `X-BEI-Request`) + CASL authorization. |
 | Chart | Dùng **ant-design-charts** cho chart của Dashboard. Không thêm chart library thứ hai nếu chưa có lý do và approval. |
 | Alert | Threshold/baseline config lưu PostgreSQL; user có quyền phù hợp được chỉnh; NestJS đánh giá Warning/Danger. Có `alert_time_threshold`. |
 | Report data | Approved principle: NestJS tạo dữ liệu report cần thiết từ upstream IoT/historical data rồi lưu PostgreSQL. Schema/job/TTL/retention sẽ được thiết kế trong Small Phase riêng. |
@@ -570,7 +572,7 @@ Stakeholder chọn **CASL**.
 
 Lưu ý thuật ngữ:
 - CASL được dùng cho **authorization/ability**.
-- Cơ chế **authentication/identity/login/session/token** của user chưa được quyết định trong Dashboard KB này. Không tự coi CASL là authentication provider.
+- Cơ chế authentication tối thiểu được lập kế hoạch trong `bp2_phase09_minimal_identity_casl_foundation.md`: local NestJS username/password, PostgreSQL application users/opaque sessions, same-origin HttpOnly cookie. Đây là implementation design của Small Phase 16, **chưa triển khai**; CASL không phải authentication provider.
 
 ### 14.2 Minimum protected domains trong Big Phase
 
@@ -592,7 +594,28 @@ Exact naming phải theo repository convention.
 
 - Backend NestJS phải enforce authorization; không chỉ hide button ở frontend.
 - Frontend dùng CASL/ability state để render/disable action phù hợp.
-- Viewer/Editor/Manager là role baseline lịch sử của project, nhưng exact role-to-ability matrix cho Dashboard chưa được freeze trong file này.
+- Baseline ba roles lịch sử không áp dụng cho Dashboard minimum phase hiện tại. Stakeholder ngày 2026-10-01 chốt **chỉ hai roles Viewer và Manager**, với matrix ở section 14.4.
+
+### 14.4 Minimal two-role decision — 2026-10-01
+
+| Subject / action | Viewer (`viewer`) | Manager (`manager`) |
+| --- | --- | --- |
+| Dashboard read | Allow | Allow |
+| AlertConfig read | Allow | Allow |
+| AlertConfig update | Deny | Allow khi Small Phase 21 có approved config domain |
+| AlertConfig create/delete | Deny | Deny trong minimum phase |
+| FireExtinguisher / FireDrill read | Allow | Allow khi domain có dữ liệu |
+| FireExtinguisher / FireDrill create/update/delete | Deny | Allow khi Small Phase 17 triển khai domain |
+| Device display-position update/delete | Deny | Deny |
+| Account/role administration và unknown actions/subjects | Deny | Deny |
+
+- Stakeholder đã xác nhận Manager được tạo/sửa/xóa bản ghi PCCC; quyền nhập dữ liệu không bao gồm chỉnh vị trí thiết bị.
+- Không thêm Admin/Editor hoặc `manage/all`; rule definitions ở code, PostgreSQL lưu user role và session.
+- Two application accounts: `beiviewer` -> Viewer; `beimanager` -> Manager. Initial-password/explicit-local-seed specification ở detailed Small Phase 16 plan; không tạo PostgreSQL LOGIN role cho mỗi account.
+- Anonymous/inactive/unknown identity không có Dashboard access. Backend xác minh current active user/current DB role trước ability check.
+- Permission không tự bật feature chưa có API/persistence/semantics. Phase 16 chỉ auth/CASL foundation; PCCC CRUD ở Phase 17, alert configuration persistence ở Phase 21.
+- Existing display-position PUT/DELETE cần verified identity và CASL enforcement để cả hai roles không có direct HTTP/proxy bypass. Public campus/device read workflow giữ policy hiện hữu.
+- Authentication checks và shared account controls là necessary integration; không sửa labels/layout/fixtures của completed pages ngoài thay đổi tối thiểu được liệt kê trong detailed plan.
 
 ---
 
@@ -758,6 +781,12 @@ Chưa freeze:
 
 Current Big Phase không tự mở lại drag/drop custom dashboard JSONB. Nếu feature này được đưa trở lại scope, cập nhật KB trước khi coding.
 
+### 17.5 Application identity/session foundation
+
+Small Phase 16 dùng PostgreSQL application users (username, password hash, role, active flag, timestamps) và opaque sessions (user FK, token digest, expiry/revocation). Đây là planned auth persistence, chưa claim tables/accounts đã tồn tại. Code-defined two-role CASL matrix không cần dynamic permissions/role-management tables.
+
+Identity/session persistence ở Small Phase 16 và PCCC manual data ở Small Phase 17 không thay đổi việc IoT-derived report/alert persistence được deferred tới Small Phase 21. Tiếp tục bounded raw reads/request-scoped calculation cho các live/derived widgets trong các phase trước đó.
+
 ---
 
 ## 18. Việc có thể bắt đầu trong lúc chờ IoT team
@@ -773,7 +802,7 @@ Current Big Phase không tự mở lại drag/drop custom dashboard JSONB. Nếu
 - ant-design-charts wrapper components.
 - Page 02 Energy UI với deterministic demo data.
 - Page 09 toàn bộ UI + deterministic demo data.
-- Page 11 manual PCCC data model/API/UI + CASL ability framework, sau khi inspect auth/account code hiện tại.
+- Minimal two-account identity/session + CASL framework ở Small Phase 16 theo plan mới; Page 11 manual PCCC data model/API/UI sau khi foundation này đã implement/verify.
 - Page 11 fire-grid UI với fixture adapter.
 - Page 06 alert configuration domain/API/UI skeleton, baseline seed mechanism và evaluator abstraction mà không cần freeze numeric baseline ngay.
 - Menu notification-badge component contract.
@@ -792,7 +821,7 @@ Current Big Phase không tự mở lại drag/drop custom dashboard JSONB. Nếu
 
 - Detailed Report Data Pipeline: schemas, jobs, aggregation, TTL, retention, recovery.
 - Exact alert baseline numeric recommendation set.
-- Full authorization role matrix nếu current auth system chưa có.
+- Authorization mở rộng ngoài hai roles hiện tại, chỉ khi có stakeholder decision mới; minimum role matrix đã chốt ở section 14.4.
 
 ---
 
@@ -842,8 +871,8 @@ Không hỏi lại các quyết định đã freeze ở trên. Các mục mở h
 - Numeric baseline recommendation cho từng metric/device type.
 - Exact unit/schema của `alert_time_threshold` trong DB/API.
 - Whether/when `STALE` và `NO_DATA` trở thành explicit alert/device states.
-- Exact authentication/login/session mechanism; CASL chỉ giải quyết authorization.
-- Exact role-to-ability matrix.
+- Implementation/verification của planned local-account/login/session mechanism; minimum design đã được ghi trong Small Phase 16 plan, CASL vẫn chỉ giải quyết authorization.
+- Future role/policy expansion ngoài approved Viewer/Manager matrix; minimum matrix không còn là open decision.
 - Room-grid layout source/persistence nếu cần layout ổn định theo từng floor.
 - Exact floor metadata fields ở Page 01 nếu data source chưa đủ.
 - Exact report-data schema/job/TTL/retention.
@@ -928,6 +957,9 @@ Current Dashboard Big Phase decisions captured in project conversation and compi
 | DASH-DEC-18 | Page 11 fire-zone -> 2D grid + floor catalog | DECIDED |
 | DASH-DEC-19 | Shared Dashboard component system ưu tiên reuse | DECIDED |
 | DASH-DEC-20 | Không hỏi lại IoT field đã có trong current API handover | DECIDED WORKING RULE |
+| DASH-DEC-21 | Minimal Dashboard roles = Viewer/Manager; Manager PCCC create/update/delete; không Admin/Editor/manage-all | DECIDED — stakeholder 2026-10-01 |
+| DASH-DEC-22 | Small Phase 16 resumed; hai application accounts beiviewer/beimanager; local login/PG opaque-session implementation design ở detailed Phase 09 plan | DECIDED ACCOUNTS + PLANNED IMPLEMENTATION |
+| DASH-DEC-23 | Viewer và Manager đều không được update/delete device display positions; backend phải enforce | DECIDED — stakeholder clarification 2026-10-01 |
 
 ---
 
@@ -965,6 +997,9 @@ thay thế Unity viewer toàn dự án.
 
 DataMode: live / derived / manual / demo.
 Authorization: CASL.
+Minimal roles: viewer / manager. Viewer read-only; Manager PCCC CRUD theo
+domain phase; cả hai denied device display-position writes. Authentication
+foundation có plan Phase 09 / Small Phase 16 nhưng chưa claim implemented.
 Charts: ant-design-charts.
 
 Không tự invent IoT field, threshold, unit, role permission, report schema,
@@ -978,8 +1013,9 @@ fallback/demo rule đã chốt.
 
 ```text
 status: CURRENT
-version: 1.0.0
+version: 1.1.0
 compiled_on: 2026-09-25
+updated_on: 2026-10-01
 role: single authoritative Dashboard knowledge base
 supersedes: dashboard scope assumptions from older proposal/project KB where conflicting
 exact_iot_api_authority: IoTBackend_API_HandOver.md

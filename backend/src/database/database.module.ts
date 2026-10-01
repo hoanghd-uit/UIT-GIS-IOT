@@ -5,6 +5,8 @@ import { FloorEntity } from './entities/floor.entity';
 import { DeviceBindingEntity } from './entities/device-binding.entity';
 import { DeviceDisplayOverrideEntity } from './entities/device-display-override.entity';
 import { CatalogueSyncStateEntity } from './entities/catalogue-sync-state.entity';
+import { ApplicationUserEntity } from './entities/application-user.entity';
+import { ApplicationSessionEntity } from './entities/application-session.entity';
 
 @Module({
   imports: [
@@ -23,6 +25,8 @@ import { CatalogueSyncStateEntity } from './entities/catalogue-sync-state.entity
           DeviceBindingEntity,
           DeviceDisplayOverrideEntity,
           CatalogueSyncStateEntity,
+          ApplicationUserEntity,
+          ApplicationSessionEntity,
         ],
         synchronize: false,
         logging: config.get<string>('env') === 'local' ? ['error', 'warn'] : false,
@@ -33,6 +37,8 @@ import { CatalogueSyncStateEntity } from './entities/catalogue-sync-state.entity
       DeviceBindingEntity,
       DeviceDisplayOverrideEntity,
       CatalogueSyncStateEntity,
+      ApplicationUserEntity,
+      ApplicationSessionEntity,
     ]),
   ],
   exports: [TypeOrmModule],

@@ -5,6 +5,8 @@ import { DeviceDisplayOverrideEntity } from '../database/entities/device-display
 import { CatalogueSyncStateEntity } from '../database/entities/catalogue-sync-state.entity';
 import { FloorEntity } from '../database/entities/floor.entity';
 import { IotModule } from '../iot/iot.module';
+import { AuthModule } from '../auth/auth.module';
+import { AuthorizationModule } from '../authorization/authorization.module';
 import { DevicesService } from './devices.service';
 import { DevicesController } from './devices.controller';
 
@@ -17,6 +19,8 @@ import { DevicesController } from './devices.controller';
       FloorEntity,
     ]),
     IotModule,
+    AuthModule,
+    AuthorizationModule,
   ],
   controllers: [DevicesController],
   providers: [DevicesService],

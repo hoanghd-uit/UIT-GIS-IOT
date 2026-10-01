@@ -14,6 +14,10 @@ import { CatalogueImporterService } from '../src/fixtures/catalogue-importer.ser
 import { getFixtureScenario } from '../src/fixtures/fixture-scenarios';
 import { DataSource } from 'typeorm';
 
+import { CsrfGuard } from '../src/auth/csrf.guard';
+import { SessionAuthGuard } from '../src/auth/session-auth.guard';
+import { PoliciesGuard } from '../src/authorization/policies.guard';
+
 describe('GIS-UIT Small Phase 04 - E2E Test Suite (Real PostgreSQL)', () => {
   let app: INestApplication;
   let dataSource: DataSource;
@@ -22,7 +26,14 @@ describe('GIS-UIT Small Phase 04 - E2E Test Suite (Real PostgreSQL)', () => {
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile();
+    })
+      .overrideGuard(CsrfGuard)
+      .useValue({ canActivate: () => true })
+      .overrideGuard(SessionAuthGuard)
+      .useValue({ canActivate: () => true })
+      .overrideGuard(PoliciesGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
 
     app = moduleFixture.createNestApplication();
     app.useGlobalPipes(

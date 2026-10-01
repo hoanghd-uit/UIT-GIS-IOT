@@ -1,10 +1,15 @@
-import { Controller, Get, Param, Header } from '@nestjs/common';
+import { Controller, Get, Param, Header, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
+import { SessionAuthGuard } from '../../auth/session-auth.guard';
+import { PoliciesGuard } from '../../authorization/policies.guard';
+import { RequireAbility } from '../../authorization/require-ability.decorator';
 import { DashboardAlertStatusService } from './dashboard-alert-status.service';
 import { DashboardAlertEvaluationStatusResponseDto } from './dto/dashboard-alert-evaluation-status-response.dto';
 
 @ApiTags('Dashboard')
 @Controller('api/v1/dashboard')
+@UseGuards(SessionAuthGuard, PoliciesGuard)
+@RequireAbility('read', 'Dashboard')
 export class DashboardAlertController {
   constructor(private readonly alertStatusService: DashboardAlertStatusService) {}
 

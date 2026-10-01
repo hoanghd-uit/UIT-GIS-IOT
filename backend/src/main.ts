@@ -21,12 +21,15 @@ for (const envCandidate of candidateEnvPaths) {
   }
 }
 
+const cookieParser = require('cookie-parser');
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  app.use(cookieParser());
 
   const config = app.get(ConfigService);
   const host = config.get<string>('host', '127.0.0.1');
@@ -52,6 +55,7 @@ async function bootstrap() {
     .setVersion('1.0.0')
     .addTag('Health')
     .addTag('Devices')
+    .addTag('Authentication')
     .build();
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);
@@ -67,12 +71,14 @@ async function bootstrap() {
   // Enable CORS for Next.js web application
   app.enableCors({
     origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
+    credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: [
       'Content-Type',
       'Authorization',
       'X-Expected-Placement-Revision',
       'X-Request-Id',
+      'X-BEI-Request',
     ],
   });
 

@@ -12,8 +12,11 @@ import { DashboardAlertController } from './alerts/dashboard-alert.controller';
 import { DashboardAlertStatusService } from './alerts/dashboard-alert-status.service';
 import { AlertRuleRegistry } from './alerts/alert-rule-registry';
 
+import { AuthModule } from '../auth/auth.module';
+import { AuthorizationModule } from '../authorization/authorization.module';
+
 @Module({
-  imports: [IotModule],
+  imports: [IotModule, AuthModule, AuthorizationModule],
   controllers: [
     DashboardIotController,
     DashboardWaterController,

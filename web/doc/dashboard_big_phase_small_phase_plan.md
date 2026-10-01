@@ -2,7 +2,7 @@
 
 > **Project:** GIS — UIT Building E Digital Twin  
 > **Plan date:** 2026-09-26  
-> **Updated:** 2026-10-01 — temporarily hold Small Phase 16 Identity/CASL and its dependent Page 11 phases; narrow the detailed Small Phase 19 handover to Page 09 Parking only as the next executable target. Selected report-data and IoT-derived alert PostgreSQL persistence remain deferred to Small Phase 21, and completed-page stakeholder text/labels remain protected from unrelated edits.
+> **Updated:** 2026-10-01 — stakeholder resumed Small Phase 16 planning with exactly two roles, Viewer and Manager; the detailed Phase 09 identity/CASL plan is ready for implementation. Small Phase 19 Parking has a completed implementation handoff. Small Phases 17–18 await the identity/manual-data dependencies. Selected report-data and IoT-derived alert PostgreSQL persistence remain deferred to Small Phase 21, and completed-page stakeholder text/labels remain protected from unrelated edits.
 > **Target:** Implement the current `Dashboard_Knowledge_Base.md` without expanding its frozen scope.  
 > **Priority rule:** Deliver real, currently available data first; then derived data; then application-owned manual data; and deterministic demo-only content last.  
 > **Authoritative requirements:** `Dashboard_Knowledge_Base.md`  
@@ -268,17 +268,22 @@ Compose the Overview from shared real/derived services, using demo only where th
 ## Small Phase 16 — Identity decision and CASL authorization foundation
 
 **Priority:** Required before protected manual writes.  
-**Primary consumers:** Pages 06 and 11.  
-**Depends on:** A stakeholder decision for application authentication/identity and the role-to-ability matrix.
-**Execution status:** `TEMPORARILY ON HOLD` by stakeholder decision on 2026-10-01. Do not install CASL, create placeholder identity, or invent roles while this hold is active.
+**Primary consumers:** All Dashboard reads; future protected inputs on Pages 06 and 11.
+**Depends on:** Small Phase 09 and the two-role stakeholder decisions recorded below.
+**Execution status:** `COMPLETED`. Implementation verified on 2026-10-01 under `web/doc/bp2_phase09_minimal_identity_casl_foundation_handoff.md`.
+**Detailed handover plan:** `web/doc/bp2_phase09_minimal_identity_casl_foundation.md`.
+**Detailed handover report:** `web/doc/bp2_phase09_minimal_identity_casl_foundation_handoff.md`.
 
-### Temporary sequencing rule
+### Approved minimum roles and sequencing
 
-- Keep Small Phase 16 in Big Phase 02 scope, but do not implement it until the stakeholder resumes it and supplies or approves the identity mechanism and role-to-ability matrix.
-- Small Phase 17 remains blocked because protected PCCC writes require verified identity and backend authorization.
-- Small Phase 18 remains blocked under the current dependency chain because its final Page 11 composition requires the Small Phase 17 manual-record components.
-- Advance to **Small Phase 19** as the next executable planning target.
-- This is a sequencing change only. It does not authorize unauthenticated writes, fake users/roles, or removal of the Page 11 requirements.
+- Exactly two application roles: `viewer` and `manager`; no Admin/Editor or broad `manage/all` grant.
+- Viewer reads Dashboard only; Manager also receives explicit PCCC create/update/delete abilities and future AlertConfig update ability, gated by the later domain implementations.
+- Both roles are denied device display-position update/delete; enforce this on the existing backend mutation routes.
+- Create application accounts `beiviewer` and `beimanager`, each with stakeholder-requested initial password `bei1234`, through explicit local/test seeding and hashed storage. These are not PostgreSQL database LOGIN roles.
+- Planned authentication uses local NestJS credentials, PostgreSQL users/opaque sessions, and a same-origin HttpOnly cookie; CASL handles authorization.
+- Small Phase 16 is now the next implementation target; Small Phase 19 Parking already has a completed handoff.
+- Small Phase 17 awaits verified Small Phase 16 completion; Small Phase 18 still awaits Small Phase 17.
+- Keep existing alert/environment write controls disabled until their domain/persistence gates are met. Authentication/session persistence does not advance IoT report/alert persistence from Small Phase 21.
 
 ### Goal
 
@@ -286,19 +291,23 @@ Establish trustworthy identity and enforce CASL abilities in NestJS and Next.js.
 
 ### Steps
 
-1. Inspect any newly added identity/session implementation and freeze the authentication mechanism; CASL itself is not authentication.
-2. Freeze role-to-ability mapping for `AlertConfig`, `FireExtinguisher`, and `FireDrill` actions.
-3. Install CASL packages appropriate to the existing Next.js/NestJS versions.
-4. Build the server ability factory, guards/decorators, and denial responses.
-5. Build the client ability context for rendering/disabling protected actions.
-6. Enforce authorization on the backend even when the frontend hides a control.
-7. Add allow/deny tests for every protected operation and role.
+1. Re-audit identity, mutation routes, protected files and the resolved PostgreSQL target; read the detailed Phase 09 plan.
+2. Implement minimal users/session persistence and idempotent explicit local/test seeding for the two approved accounts.
+3. Implement login/me/logout and the same-origin session boundary, preserving the existing public campus read workflow.
+4. Install compatible CASL packages and implement the explicit two-role action/subject matrix, server ability factory and guards/decorators.
+5. Authenticate Dashboard reads and enforce backend denial for device-placement mutations for both roles, including direct HTTP and proxy paths.
+6. Add the server route/DAL checks, client ability context, minimal aligned login screen and shared-shell account/logout controls.
+7. Preserve completed-page stakeholder labels/layouts and leave future PCCC/config domain controls unavailable until their own phases.
+8. Verify session/seed/migration/authorization behavior, including Manager PCCC CRUD policies through test-only boundaries; create the mandatory implementation handoff.
 
 ### Exit criteria
 
 - A request has a verified application identity before an ability is evaluated.
 - Backend authorization tests prove denied writes cannot succeed through direct HTTP calls.
-- Page 06 configuration editing can be enabled only for approved abilities.
+- Both requested accounts can log in, read Dashboard and log out using persisted opaque sessions.
+- Viewer has no domain-write permission; Manager has explicit future PCCC CRUD permission, and neither role can mutate device display positions.
+- Page 06 configuration editing remains unavailable until both approved abilities and its later persistence/semantics dependencies exist.
+- No report/alert persistence or PCCC CRUD/grid implementation is introduced in this foundation phase.
 
 ---
 
@@ -307,7 +316,7 @@ Establish trustworthy identity and enforce CASL abilities in NestJS and Next.js.
 **Priority:** P2 real application-owned data.  
 **Primary page:** Page 11 — PCCC.  
 **Depends on:** Small Phase 16.
-**Execution status:** `BLOCKED BY TEMPORARY HOLD ON SMALL PHASE 16`; do not implement unauthenticated CRUD as a workaround.
+**Execution status:** `WAITING FOR SMALL PHASE 16 IMPLEMENTATION/HANDOFF`; the identity hold is lifted, but verified identity/CASL is not yet implemented. Manager PCCC create/update/delete permission is approved; do not implement unauthenticated CRUD as a workaround.
 
 ### Goal
 
@@ -335,7 +344,7 @@ Implement authorized PostgreSQL CRUD for fire extinguisher expiry/inspection and
 **Priority:** P3 conditional; UI can use demo fallback.  
 **Primary page:** Page 11 — PCCC.  
 **Depends on:** Shared grid from Small Phase 15 and manual records from Small Phase 17.
-**Execution status:** `DEFERRED WITH THE PAGE 11 CHAIN` while Small Phases 16–17 are held; resume after their dependency gate is restored or the roadmap is explicitly restructured.
+**Execution status:** `WAITING FOR SMALL PHASE 17`; Small Phase 16 planning is resumed, and the shared grid/manual-record dependencies must be implemented and verified before final Page 11 composition.
 
 ### Steps
 
@@ -359,7 +368,7 @@ Implement authorized PostgreSQL CRUD for fire extinguisher expiry/inspection and
 **Priority:** P4 demo-only; deliberately last.  
 **Primary page:** Page 09 Parking only.
 **Depends on:** Small Phase 09.
-**Execution status:** `NEXT EXECUTABLE PLANNING TARGET` under the temporary 2026-10-01 sequencing override.
+**Execution status:** `COMPLETED PER IMPLEMENTATION HANDOFF` dated 2026-10-01: `web/doc/bp2_phase08_demo_completion_energy_parking_handoff.md`. This planning update does not re-run the historical acceptance tests.
 **Detailed handover plan:** `web/doc/bp2_phase08_demo_completion_energy_parking.md`.
 
 ### Steps
@@ -487,10 +496,10 @@ Add only the minimum PostgreSQL report-data and authoritative alert persistence 
 | 5 | 13 | Page 03 environmental data using raw reads/in-memory calculation | P0/P1 conditional |
 | 6 | 14 | Page 06 demo baseline + in-memory evaluator boundary | P1 conditional/demo |
 | 7 | 15 | Page 01 Overview and shared grid | P1 mixed |
-| 8 | 16 | Identity + CASL — temporarily on hold | Protected-write foundation; resume by stakeholder decision |
-| 9 | 17 | Page 11 manual records — blocked by Small Phase 16 hold | P2 manual |
-| 10 | 18 | Page 11 fire grid — deferred with Page 11 chain | P3 conditional/demo |
-| 11 | 19 | Page 09 Parking demo completion — next executable target | P4 demo |
+| 8 | 16 | Two-account identity + Viewer/Manager CASL — ready for implementation | Protected-write foundation |
+| 9 | 17 | Page 11 authorized manual CRUD — awaits Small Phase 16 completion | P2 manual |
+| 10 | 18 | Page 11 fire grid — awaits Small Phase 17 | P3 conditional/demo |
+| 11 | 19 | Page 09 Parking demo — completed per Phase 08 handoff | P4 demo |
 | 12 | 20 | Cross-page integration without persisted report data | Integration |
 | 13 | 21 | Deferred IoT-derived report + alert PostgreSQL persistence | P1 derived, last implementation phase |
 | 14 | 22 | Big Phase final acceptance and hardening | Final closeout |
@@ -499,7 +508,7 @@ Add only the minimum PostgreSQL report-data and authoritative alert persistence 
 
 ## 5. Decisions and external answers that can change sequencing
 
-The implementation can begin with Small Phase 13 using bounded raw reads and request-scoped/in-memory calculation. On 2026-10-01 the stakeholder temporarily held Small Phase 16; therefore Small Phases 17–18 remain blocked/deferred and Small Phase 19 becomes the next executable target. The held phases remain required before cross-page integration/final acceptance unless a later stakeholder decision explicitly restructures their scope or dependencies. Selected report-data and IoT-derived alert persistence are explicitly deferred to Small Phase 21 because the current device/data volume is small and the IoT schema/semantics/baselines are not stable enough to freeze durable report keys or authoritative alert records. Small Phase 22 is acceptance-only and follows that last implementation phase.
+Small Phases 09–15 and 19 have implementation handoffs. After Parking completion, the stakeholder resumed Small Phase 16 planning on 2026-10-01 with exactly two roles and two local application accounts. Small Phase 16 is ready for implementation under `bp2_phase09_minimal_identity_casl_foundation.md`; Small Phases 17–18 await its verified completion and the subsequent manual-data dependency. These phases remain required before cross-page integration/final acceptance. Identity/session PostgreSQL tables belong to Small Phase 16, and PCCC manual-record tables belong to Small Phase 17. Selected IoT-derived report and alert persistence remain deferred to Small Phase 21 because current device/data volume and unsettled source semantics do not yet justify durable report keys or authoritative alert records. Small Phase 22 is acceptance-only and follows that last implementation phase. Page 02 Energy completion has not been assigned a dedicated current task after Small Phase 19 was narrowed to Parking-only; it is not part of Small Phase 16.
 
 The following gates must be resolved before claiming the affected feature is authoritative:
 
@@ -508,7 +517,7 @@ The following gates must be resolved before claiming the affected feature is aut
 - Room mapping and stable room-grid source.
 - Telemetry cadence and online/stale policy.
 - Numeric alert baselines, `alert_time_threshold` unit, and stale/no-data state policy.
-- Authentication mechanism and role-to-ability matrix.
+- Verified implementation of the planned local-account/session mechanism and approved Viewer/Manager CASL matrix; the two-role decision is now closed, while future role expansion remains out of scope.
 - CO2/VOC/pressure availability.
 - Gateway health, firmware, OTA, calibration, standardized battery, and packet aggregates.
 - Fire-zone API and mapping.

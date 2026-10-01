@@ -4,6 +4,7 @@ import {
   Param,
   Query,
   Header,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -12,6 +13,9 @@ import {
   ApiQuery,
   ApiResponse,
 } from '@nestjs/swagger';
+import { SessionAuthGuard } from '../auth/session-auth.guard';
+import { PoliciesGuard } from '../authorization/policies.guard';
+import { RequireAbility } from '../authorization/require-ability.decorator';
 import { DashboardWaterService } from './dashboard-water.service';
 import { DashboardIotCatalogueQueryDto } from './dto/dashboard-iot-catalogue-query.dto';
 import { DashboardWaterMeterListResponseDto } from './dto/dashboard-water-meter-list-response.dto';
@@ -20,6 +24,8 @@ import { DashboardWaterReadingsResponseDto } from './dto/dashboard-water-reading
 
 @ApiTags('Dashboard')
 @Controller('api/v1/dashboard')
+@UseGuards(SessionAuthGuard, PoliciesGuard)
+@RequireAbility('read', 'Dashboard')
 export class DashboardWaterController {
   constructor(private readonly waterService: DashboardWaterService) {}
 

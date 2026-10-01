@@ -232,6 +232,12 @@
           "200": {
             "description": "Position override saved successfully"
           },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden: device display positions cannot be modified"
+          },
           "409": {
             "description": "Revision conflict or floor context changed"
           }
@@ -290,6 +296,12 @@
           "200": {
             "description": "Position override reset successfully"
           },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden: device display positions cannot be modified"
+          },
           "409": {
             "description": "Revision conflict"
           }
@@ -297,6 +309,73 @@
         "summary": "Reset display position override back to original",
         "tags": [
           "Devices"
+        ]
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "operationId": "AuthController_login",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful"
+          },
+          "401": {
+            "description": "Invalid credentials"
+          },
+          "403": {
+            "description": "CSRF validation failed"
+          },
+          "429": {
+            "description": "Too many login attempts"
+          }
+        },
+        "summary": "Authenticate user with username and password",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/api/v1/auth/me": {
+      "get": {
+        "operationId": "AuthController_getCurrentUser",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Current session user details"
+          },
+          "401": {
+            "description": "Unauthorized / expired session"
+          }
+        },
+        "summary": "Get current authenticated user identity and CASL rules",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "operationId": "AuthController_logout",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Logout successful"
+          }
+        },
+        "summary": "Revoke current session and expire cookie",
+        "tags": [
+          "Authentication"
         ]
       }
     },
@@ -835,6 +914,10 @@
     {
       "name": "Devices",
       "description": ""
+    },
+    {
+      "name": "Authentication",
+      "description": ""
     }
   ],
   "servers": [],
@@ -892,6 +975,10 @@
           "frameVersion",
           "position"
         ]
+      },
+      "LoginDto": {
+        "type": "object",
+        "properties": {}
       },
       "DashboardCatalogueProvenanceDto": {
         "type": "object",

@@ -8,6 +8,7 @@ import {
   isDashboardRouteActive,
   VIEWER_CAMPUS_PATH,
 } from '@/config/dashboard-routes';
+import { DashboardAccountControls } from '@/components/auth/DashboardAccountControls';
 
 export interface DashboardShellProps {
   children: React.ReactNode;
@@ -300,9 +301,10 @@ export function DashboardShell({ children }: DashboardShellProps) {
 
         {/* Dashboard Menu Footer */}
         <div
-          className="p-3 border-t flex flex-col items-center gap-1 shrink-0"
+          className="p-3 border-t flex flex-col gap-2 shrink-0"
           style={{ borderColor: 'var(--border)' }}
         >
+          <DashboardAccountControls />
           <div className="text-[10px] text-center font-mono opacity-50" style={{ color: 'var(--text-muted)' }}>
             Digital Twin · Building E
           </div>
