@@ -17,6 +17,8 @@ import {
   IoTUpstreamSolarResponse,
   IoTUpstreamAvcResponse,
   IoTUpstreamNfcResponse,
+  IoTUpstreamSmartBuildingResponse,
+  IoTUpstreamSmokeResponse,
 } from '../dto/iot-telemetry.dto';
 
 @Injectable()
@@ -112,18 +114,37 @@ export class IotClientService implements IotDeviceGateway {
 
   /**
    * Performs read-only GET /api/v1/devices from the upstream IoT backend.
-   * Optionally accepts floorLevel integer filter.
+   * Optionally accepts floorLevel integer and roomId string filters.
    */
   async fetchRawDevices(filter?: IotDeviceListFilter): Promise<IoTUpstreamDeviceListResponse> {
     let path = '/api/v1/devices';
-    if (filter && filter.floorLevel !== undefined) {
-      if (typeof filter.floorLevel !== 'number' || !Number.isInteger(filter.floorLevel)) {
-        throw new BadRequestException(
-          `Invalid floorLevel filter: must be an integer (received: ${filter.floorLevel})`,
-        );
+    const queryParts: string[] = [];
+
+    if (filter) {
+      if (filter.floorLevel !== undefined) {
+        if (typeof filter.floorLevel !== 'number' || !Number.isInteger(filter.floorLevel)) {
+          throw new BadRequestException(
+            `Invalid floorLevel filter: must be an integer (received: ${filter.floorLevel})`,
+          );
+        }
+        queryParts.push(`floor_level=${filter.floorLevel}`);
       }
-      path = `/api/v1/devices?floor_level=${filter.floorLevel}`;
+
+      if (filter.roomId !== undefined) {
+        if (typeof filter.roomId !== 'string' || filter.roomId.trim().length === 0) {
+          throw new BadRequestException(
+            `Invalid roomId filter: must be a non-empty string`,
+          );
+        }
+        const trimmedRoom = filter.roomId.trim();
+        queryParts.push(`room_id=${encodeURIComponent(trimmedRoom)}`);
+      }
     }
+
+    if (queryParts.length > 0) {
+      path = `/api/v1/devices?${queryParts.join('&')}`;
+    }
+
     return this.executeGet<IoTUpstreamDeviceListResponse>(path);
   }
 
@@ -204,6 +225,78 @@ export class IotClientService implements IotDeviceGateway {
       limit: String(limit),
     });
     return this.executeGet<IoTUpstreamNfcResponse>(`/api/v1/nfc?${params.toString()}`);
+  }
+
+  /**
+   * Performs read-only GET /api/v1/sb (Smart Building sensors) with dev_eui, start, stop, and limit.
+   */
+  async fetchSmartBuildingReadings(
+    devEui: string,
+    start: string,
+    stop: string,
+    limit = 1000,
+  ): Promise<IoTUpstreamSmartBuildingResponse> {
+    if (!devEui || typeof devEui !== 'string' || devEui.trim().length === 0) {
+      throw new BadRequestException('Invalid devEui: must be a non-empty string');
+    }
+    if (!start || !stop || typeof start !== 'string' || typeof stop !== 'string') {
+      throw new BadRequestException('Both start and stop are required strings');
+    }
+    const startDate = new Date(start);
+    const endDate = new Date(stop);
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      throw new BadRequestException('Invalid start or stop date format');
+    }
+    if (startDate.getTime() >= endDate.getTime()) {
+      throw new BadRequestException('Query parameter start must be strictly before stop');
+    }
+    if (typeof limit !== 'number' || !Number.isInteger(limit) || limit < 1 || limit > 10000) {
+      throw new BadRequestException('Limit must be an integer between 1 and 10000');
+    }
+
+    const params = new URLSearchParams({
+      dev_eui: devEui.trim(),
+      start,
+      stop,
+      limit: String(limit),
+    });
+    return this.executeGet<IoTUpstreamSmartBuildingResponse>(`/api/v1/sb?${params.toString()}`);
+  }
+
+  /**
+   * Performs read-only GET /api/v1/smoke with dev_eui, start, stop, and limit.
+   */
+  async fetchSmokeReadings(
+    devEui: string,
+    start: string,
+    stop: string,
+    limit = 1000,
+  ): Promise<IoTUpstreamSmokeResponse> {
+    if (!devEui || typeof devEui !== 'string' || devEui.trim().length === 0) {
+      throw new BadRequestException('Invalid devEui: must be a non-empty string');
+    }
+    if (!start || !stop || typeof start !== 'string' || typeof stop !== 'string') {
+      throw new BadRequestException('Both start and stop are required strings');
+    }
+    const startDate = new Date(start);
+    const endDate = new Date(stop);
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      throw new BadRequestException('Invalid start or stop date format');
+    }
+    if (startDate.getTime() >= endDate.getTime()) {
+      throw new BadRequestException('Query parameter start must be strictly before stop');
+    }
+    if (typeof limit !== 'number' || !Number.isInteger(limit) || limit < 1 || limit > 10000) {
+      throw new BadRequestException('Limit must be an integer between 1 and 10000');
+    }
+
+    const params = new URLSearchParams({
+      dev_eui: devEui.trim(),
+      start,
+      stop,
+      limit: String(limit),
+    });
+    return this.executeGet<IoTUpstreamSmokeResponse>(`/api/v1/smoke?${params.toString()}`);
   }
 }
 

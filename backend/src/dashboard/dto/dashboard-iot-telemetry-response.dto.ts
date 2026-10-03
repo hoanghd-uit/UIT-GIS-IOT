@@ -3,6 +3,8 @@ import {
   TelemetryCoverageSummary,
   SolarTelemetryData,
   AvcTelemetryData,
+  SmartBuildingTelemetryData,
+  SmokeTelemetryData,
 } from '../../iot/dto/iot-telemetry.dto';
 
 export class DashboardTelemetryProvenanceDto {
@@ -66,8 +68,8 @@ export class DashboardDeviceTelemetryResponseDto {
   @ApiProperty({ example: '70B3D57ED0073E9D' })
   deviceId: string;
 
-  @ApiProperty({ enum: ['solar', 'avc'], example: 'solar' })
-  deviceType: 'solar' | 'avc';
+  @ApiProperty({ enum: ['solar', 'avc', 'sb', 'smoke'], example: 'solar' })
+  deviceType: 'solar' | 'avc' | 'sb' | 'smoke';
 
   @ApiProperty({ enum: ['ready', 'empty'], example: 'ready' })
   availability: 'ready' | 'empty';
@@ -85,5 +87,5 @@ export class DashboardDeviceTelemetryResponseDto {
   latestSample: DashboardTelemetryLatestSampleDto | null;
 
   @ApiProperty()
-  telemetry: SolarTelemetryData | AvcTelemetryData;
+  telemetry: SolarTelemetryData | AvcTelemetryData | SmartBuildingTelemetryData | SmokeTelemetryData;
 }

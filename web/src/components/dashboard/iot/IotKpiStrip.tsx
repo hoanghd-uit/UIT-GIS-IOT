@@ -6,12 +6,14 @@ export interface IotKpiStripProps {
   totalDevicesCount: number | null;
   status: 'loading' | 'ready' | 'empty' | 'unavailable' | 'error';
   typeBreakdownText?: string;
+  scopeHint?: string | null;
 }
 
 export function IotKpiStrip({
   totalDevicesCount,
   status,
   typeBreakdownText,
+  scopeHint,
 }: IotKpiStripProps) {
   const isReady = status === 'ready';
   const totalVal = status === 'empty' ? 0 : isReady && totalDevicesCount != null ? totalDevicesCount : null;
@@ -42,8 +44,16 @@ export function IotKpiStrip({
             </span>
           )}
         </div>
-        <div className="text-[11px] text-[#7E8B96] truncate">
-          {isReady ? (typeBreakdownText || 'Danh mục toàn tòa nhà') : status === 'loading' ? 'Đang nạp dữ liệu...' : 'Danh mục thiết bị'}
+        <div className="text-[11px] text-[#7E8B96] truncate" title={scopeHint || undefined}>
+          {scopeHint ? (
+            <span className="text-[#4FB9AD] font-medium">{scopeHint}</span>
+          ) : isReady ? (
+            typeBreakdownText || 'Danh mục toàn tòa nhà'
+          ) : status === 'loading' ? (
+            'Đang nạp dữ liệu...'
+          ) : (
+            'Danh mục thiết bị'
+          )}
         </div>
       </div>
 

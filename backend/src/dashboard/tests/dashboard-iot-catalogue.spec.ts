@@ -420,4 +420,71 @@ describe('DashboardIotCatalogueService & Controller (Big Phase 02 / Phase 02)', 
     expect((service as any).dataSource).toBeUndefined();
     expect((service as any).entityManager).toBeUndefined();
   });
+
+  describe('BP2-SP23: Device catalogue room filter, scope isolation, and metadata upgrade', () => {
+    it('passes roomId to client when provided and emits requestedRoomId in response', async () => {
+      (mockClient.fetchRawDevices as jest.Mock).mockResolvedValueOnce({
+        data: [
+          {
+            device_id: 'DEV-ROOM-1',
+            device_type: 'solar',
+            create_timestamp: '2026-09-20T10:00:00.000Z',
+            last_updated_timestamp: '2026-09-20T10:00:00.000Z',
+            install_location: { install_x: 1, install_y: 2, install_z: 3, install_floor_level: 4, install_room_id: 'E4.08' },
+            is_active: true,
+          },
+        ],
+        meta: { count: 1, truncated: false },
+      });
+
+      const res = await service.getCatalogue('E', '4', 'E4.08');
+      expect(mockClient.fetchRawDevices).toHaveBeenCalledWith({ floorLevel: 4, roomId: 'E4.08' });
+      expect(res.requestedFloorId).toBe('4');
+      expect(res.requestedRoomId).toBe('E4.08');
+      expect(res.devices).toHaveLength(1);
+      expect(res.devices[0].sourceLocation.roomId).toBe('E4.08');
+    });
+
+    it('supports room-only filter without floorId', async () => {
+      (mockClient.fetchRawDevices as jest.Mock).mockResolvedValueOnce({
+        data: [],
+        meta: { count: 0, truncated: false },
+      });
+
+      const res = await service.getCatalogue('E', undefined, 'E4.08');
+      expect(mockClient.fetchRawDevices).toHaveBeenCalledWith({ roomId: 'E4.08' });
+      expect(res.requestedFloorId).toBeNull();
+      expect(res.requestedRoomId).toBe('E4.08');
+      expect(res.availability).toBe('empty');
+    });
+
+    it('BP2-SP23-T13: Does NOT fall back to floor 0 when floor+room query returns empty (strict scope isolation)', async () => {
+      (mockClient.fetchRawDevices as jest.Mock).mockResolvedValueOnce({
+        data: [],
+        meta: { count: 0, truncated: false },
+      });
+
+      const res = await service.getCatalogue('E', '4', 'E4.08');
+      expect(mockClient.fetchRawDevices).toHaveBeenCalledTimes(1);
+      expect(mockClient.fetchRawDevices).toHaveBeenCalledWith({ floorLevel: 4, roomId: 'E4.08' });
+      expect(res.mapping.developmentFallbackApplied).toBe(false);
+      expect(res.availability).toBe('empty');
+      expect(res.devices).toHaveLength(0);
+    });
+
+    it('rejects empty or whitespace-only roomId in service', async () => {
+      await expect(service.getCatalogue('E', '4', '')).rejects.toThrow(BadRequestException);
+      await expect(service.getCatalogue('E', '4', '   ')).rejects.toThrow(BadRequestException);
+    });
+
+    it('rejects duplicate roomId via controller multiplicity check', async () => {
+      const mockReq = {
+        url: '/api/v1/dashboard/buildings/E/iot/devices?floorId=4&roomId=E4.08&roomId=E4.08',
+      } as any;
+
+      await expect(
+        controller.getCatalogue('E', { floorId: '4', roomId: 'E4.08' }, mockReq),
+      ).rejects.toThrow(BadRequestException);
+    });
+  });
 });

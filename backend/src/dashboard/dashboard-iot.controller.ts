@@ -3,9 +3,12 @@ import {
   Get,
   Param,
   Query,
+  Req,
   Header,
   UseGuards,
+  BadRequestException,
 } from '@nestjs/common';
+import type { Request } from 'express';
 import {
   ApiTags,
   ApiOperation,
@@ -38,7 +41,7 @@ export class DashboardIotController {
   @ApiOperation({
     summary: 'Get Dashboard IoT device catalogue (read-only, live provenance)',
     description:
-      'Returns a normalized active device catalogue for Dashboard Page 07. Supports full-building catalogue (omitting floorId) and approved floor-scoped queries (floorId=4, 6). Zero database persistence.',
+      'Returns a normalized active device catalogue for Dashboard Page 07. Supports full-building catalogue (omitting floorId) and approved floor-scoped queries (floorId=4, 6) as well as exact room-level filter (roomId). Zero database persistence.',
   })
   @ApiParam({ name: 'buildingId', example: 'E', description: 'Building identifier (currently E only)' })
   @ApiQuery({
@@ -47,6 +50,12 @@ export class DashboardIotController {
     example: '4',
     description: 'Application floor ID (4, 6). When omitted, returns full unfiltered catalogue.',
   })
+  @ApiQuery({
+    name: 'roomId',
+    required: false,
+    example: 'E4.08',
+    description: 'Exact source room ID filter. When omitted, returns devices across all rooms.',
+  })
   @ApiResponse({
     status: 200,
     description: 'Device catalogue returned successfully with live provenance',
@@ -54,7 +63,7 @@ export class DashboardIotController {
   })
   @ApiResponse({
     status: 400,
-    description: 'Invalid buildingId, unsupported floor, or floor G',
+    description: 'Invalid buildingId, unsupported floor, floor G, or malformed/duplicate roomId',
   })
   @ApiResponse({
     status: 502,
@@ -67,8 +76,14 @@ export class DashboardIotController {
   async getCatalogue(
     @Param('buildingId') buildingId: string,
     @Query() query: DashboardIotCatalogueQueryDto,
+    @Req() req?: Request,
   ): Promise<DashboardDeviceCatalogueResponseDto> {
-    return this.catalogueService.getCatalogue(buildingId, query.floorId);
+    const rawUrl = req?.originalUrl || req?.url || '';
+    const roomMatches = rawUrl.match(/(?:[?&])roomId=/g);
+    if (roomMatches && roomMatches.length > 1) {
+      throw new BadRequestException('Duplicate roomId query parameter is not allowed.');
+    }
+    return this.catalogueService.getCatalogue(buildingId, query.floorId, query.roomId);
   }
 
   @Get('buildings/:buildingId/iot/devices/:deviceId/telemetry')
@@ -76,7 +91,7 @@ export class DashboardIotController {
   @ApiOperation({
     summary: 'Get Dashboard IoT device telemetry (read-only, live provenance)',
     description:
-      'Returns normalized telemetry readings and coherent latest sample for a supported device (solar or avc). Strictly read-only and in-memory.',
+      'Returns normalized telemetry readings and coherent latest sample for a supported device (solar, avc, sb, or smoke). Strictly read-only and in-memory.',
   })
   @ApiParam({ name: 'buildingId', example: 'E', description: 'Building identifier (currently E only)' })
   @ApiParam({ name: 'deviceId', example: '70B3D57ED0073E9D', description: 'Device EUI / ID' })

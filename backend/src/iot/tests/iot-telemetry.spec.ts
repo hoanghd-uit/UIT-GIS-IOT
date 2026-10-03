@@ -19,6 +19,8 @@ describe('IotTelemetryService (Small Phase 07)', () => {
       fetchSolarReadings: jest.fn(),
       fetchAvcReadings: jest.fn(),
       fetchNfcEvents: jest.fn(),
+      fetchSmartBuildingReadings: jest.fn(),
+      fetchSmokeReadings: jest.fn(),
     } as unknown as jest.Mocked<IotClientService>;
 
     service = new IotTelemetryService(mockClient);
@@ -422,6 +424,183 @@ describe('IotTelemetryService (Small Phase 07)', () => {
           stop: '2026-09-22T00:00:00Z',
         }),
       ).rejects.toThrow('All returned upstream telemetry rows were invalid or malformed.');
+    });
+  });
+
+  describe('Smart Building (sb) raw telemetry normalization (Small Phase 24)', () => {
+    it('normalizes valid full reading and preserves zero values', async () => {
+      service.registerDeviceType('dev-sb-1', 'sb');
+      mockClient.fetchSmartBuildingReadings.mockResolvedValueOnce({
+        data: [
+          {
+            dev_eui: 'dev-sb-1',
+            timestamp: '2026-09-22T10:00:00.000Z',
+            device_id: 'SB_Office_1',
+            application_id: 'app-sb-main',
+            gateway_id: 'gw-lora-1',
+            rssi: 0, // valid zero
+            snr: -5.5, // valid negative
+            voltage: 3.29,
+            visible: 0, // valid zero
+            ir: 45,
+            co2: 450,
+            voc: 120,
+            f_cnt: 1024,
+          },
+        ],
+        meta: { count: 1, truncated: false },
+      });
+
+      const res = await service.getDeviceTelemetry('dev-sb-1', {
+        start: '2026-09-19T00:00:00Z',
+        stop: '2026-09-23T00:00:00Z',
+      });
+
+      expect(res.deviceType).toBe('sb');
+      expect(res.coverage.validCount).toBe(1);
+      expect(res.coverage.invalidCount).toBe(0);
+      expect(res.coverage.sourceCount).toBe(1);
+      expect(res.coverage.sourceTruncated).toBe(false);
+
+      const sb = res.telemetry as any;
+      expect(sb.type).toBe('sb');
+      expect(sb.category).toBe('smart_building');
+      expect(sb.latest.rawCo2).toBe(450);
+      expect(sb.latest.rawVoc).toBe(120);
+      expect(sb.latest.rawVoltage).toBe(3.29);
+      expect(sb.latest.rawVisible).toBe(0);
+      expect(sb.latest.rawIr).toBe(45);
+      expect(sb.latest.fCnt).toBe(1024);
+
+      const r = sb.readings[0];
+      expect(r.devEui).toBe('dev-sb-1');
+      expect(r.networkDeviceName).toBe('SB_Office_1');
+      expect(r.rssi).toBe(0);
+      expect(r.snr).toBe(-5.5);
+    });
+
+    it('sparse fields with missing or null values normalize to null without failing row', async () => {
+      service.registerDeviceType('dev-sb-sparse', 'sb');
+      mockClient.fetchSmartBuildingReadings.mockResolvedValueOnce({
+        data: [
+          {
+            dev_eui: 'dev-sb-sparse',
+            timestamp: '2026-09-22T10:00:00.000Z',
+            // all sensor fields missing
+          },
+        ],
+        meta: { count: 1 },
+      });
+
+      const res = await service.getDeviceTelemetry('dev-sb-sparse', {
+        start: '2026-09-19T00:00:00Z',
+        stop: '2026-09-23T00:00:00Z',
+      });
+
+      expect(res.coverage.validCount).toBe(1);
+      const sb = res.telemetry as any;
+      expect(sb.latest.rawCo2).toBeNull();
+      expect(sb.latest.rawVoc).toBeNull();
+      expect(sb.latest.rawVoltage).toBeNull();
+      expect(sb.readings[0].networkDeviceName).toBeNull();
+    });
+
+    it('wrong-typed present field marks row invalid; all-invalid non-empty throws 502', async () => {
+      service.registerDeviceType('dev-sb-bad', 'sb');
+      mockClient.fetchSmartBuildingReadings.mockResolvedValueOnce({
+        data: [
+          {
+            dev_eui: 'dev-sb-bad',
+            timestamp: '2026-09-22T10:00:00.000Z',
+            co2: '450' as any, // String instead of finite number
+          },
+        ],
+      });
+
+      await expect(
+        service.getDeviceTelemetry('dev-sb-bad', {
+          start: '2026-09-19T00:00:00Z',
+          stop: '2026-09-23T00:00:00Z',
+        }),
+      ).rejects.toThrow('All returned upstream telemetry rows were invalid or malformed.');
+    });
+
+    it('enforces exact case-sensitive dev_eui match and rejects timestamp out of range', async () => {
+      service.registerDeviceType('DEV-SB-CASE', 'sb');
+      mockClient.fetchSmartBuildingReadings.mockResolvedValueOnce({
+        data: [
+          {
+            dev_eui: 'dev-sb-case', // mismatched case!
+            timestamp: '2026-09-22T10:00:00.000Z',
+          },
+          {
+            dev_eui: 'DEV-SB-CASE',
+            timestamp: '2026-09-25T00:00:00.000Z', // out of range!
+          },
+          {
+            dev_eui: 'DEV-SB-CASE',
+            timestamp: '2026-09-21T00:00:00.000Z', // valid!
+            co2: 500,
+          },
+        ],
+      });
+
+      const res = await service.getDeviceTelemetry('DEV-SB-CASE', {
+        start: '2026-09-20T00:00:00Z',
+        stop: '2026-09-23T00:00:00Z',
+      });
+
+      expect(res.coverage.validCount).toBe(1);
+      expect(res.coverage.invalidCount).toBe(2);
+    });
+  });
+
+  describe('Smoke (smoke) raw telemetry normalization (Small Phase 24)', () => {
+    it('normalizes valid smoke reading with status and state codes', async () => {
+      service.registerDeviceType('dev-smoke-1', 'smoke');
+      mockClient.fetchSmokeReadings.mockResolvedValueOnce({
+        data: [
+          {
+            dev_eui: 'dev-smoke-1',
+            timestamp: '2026-09-22T10:00:00.000Z',
+            status: 0,
+            state: 1,
+            rssi: -72,
+            snr: 9.8,
+            device_id: 'Smoke_Floor_4',
+            gateway_id: 'gw-e-4',
+          },
+        ],
+        meta: { count: 1, truncated: false },
+      });
+
+      const res = await service.getDeviceTelemetry('dev-smoke-1', {
+        start: '2026-09-19T00:00:00Z',
+        stop: '2026-09-23T00:00:00Z',
+      });
+
+      expect(res.deviceType).toBe('smoke');
+      expect(res.coverage.validCount).toBe(1);
+      const smoke = res.telemetry as any;
+      expect(smoke.type).toBe('smoke');
+      expect(smoke.latest.rawStatus).toBe(0);
+      expect(smoke.latest.rawState).toBe(1);
+      expect(smoke.readings[0].networkDeviceName).toBe('Smoke_Floor_4');
+    });
+
+    it('rejects malformed meta.truncated with 502 Bad Gateway', async () => {
+      service.registerDeviceType('dev-smoke-meta', 'smoke');
+      mockClient.fetchSmokeReadings.mockResolvedValueOnce({
+        data: [],
+        meta: { truncated: 'yes' as any },
+      });
+
+      await expect(
+        service.getDeviceTelemetry('dev-smoke-meta', {
+          start: '2026-09-19T00:00:00Z',
+          stop: '2026-09-23T00:00:00Z',
+        }),
+      ).rejects.toThrow('Malformed smoke response: meta.truncated must be a boolean.');
     });
   });
 });

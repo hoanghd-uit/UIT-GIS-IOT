@@ -13,6 +13,7 @@ export interface IoTUpstreamDeviceDetailResponse {
       install_y?: number;
       install_z?: number;
       install_floor_level?: number;
+      install_room_id?: string | null;
     };
     is_active?: boolean;
     [key: string]: unknown;
@@ -27,12 +28,16 @@ export interface IoTSolarRawReading {
   application_id?: string;
   gateway_id?: string;
   current_uA?: number;
+  /** Measured battery voltage, in volts (V). Pending hardware team review for percentage calculation. */
   voltage?: number;
+  /** Measured ambient temperature, in degrees Celsius (°C). Does not imply room IAQ compliance. */
   temperature?: number;
+  /** Measured relative humidity, in percent (%). Does not imply room IAQ compliance. */
   humidity?: number;
   lux?: number;
   rssi?: number;
   snr?: number;
+  /** Device state/status numeric code; mapping remains unconfirmed by hardware team. */
   state?: number;
   f_cnt?: number;
   [key: string]: unknown;
@@ -55,10 +60,15 @@ export interface IoTAvcRawReading {
   gateway_id?: string;
   meter_sn?: string;
   region?: string;
+  /** Ingestion pipeline/integration identifier that wrote the row. */
   tag_source?: string;
+  /** Cumulative forward (normal-direction) water volume, in cubic meters (m³). Not daily consumption. */
   fwd_volume_m3?: number;
+  /** Cumulative reverse-direction water volume, in cubic meters (m³). Reset/rollover behavior unconfirmed. */
   rev_volume_m3?: number;
+  /** Instantaneous flow rate at reading time, in cubic meters per hour (m³/h). Not leak/burst conclusion. */
   instant_flow_m3h?: number;
+  /** Meter valve status numeric code; mapping remains unconfirmed by hardware team. */
   valve_open?: number;
   pipe_leak?: number;
   pipe_burst?: number;
@@ -103,6 +113,54 @@ export interface IoTUpstreamNfcResponse {
   };
 }
 
+export interface IoTSmartBuildingRawReading {
+  dev_eui: string;
+  timestamp: string;
+  device_id?: string | null;
+  application_id?: string | null;
+  gateway_id?: string | null;
+  rssi?: number | null;
+  snr?: number | null;
+  voltage?: number | null;
+  visible?: number | null;
+  ir?: number | null;
+  co2?: number | null;
+  voc?: number | null;
+  f_cnt?: number | null;
+  [key: string]: unknown;
+}
+
+export interface IoTUpstreamSmartBuildingResponse {
+  data: IoTSmartBuildingRawReading[];
+  meta?: {
+    count?: number;
+    truncated?: boolean;
+    [key: string]: unknown;
+  };
+}
+
+export interface IoTSmokeRawReading {
+  dev_eui: string;
+  timestamp: string;
+  device_id?: string | null;
+  application_id?: string | null;
+  gateway_id?: string | null;
+  rssi?: number | null;
+  snr?: number | null;
+  status?: number | null;
+  state?: number | null;
+  [key: string]: unknown;
+}
+
+export interface IoTUpstreamSmokeResponse {
+  data: IoTSmokeRawReading[];
+  meta?: {
+    count?: number;
+    truncated?: boolean;
+    [key: string]: unknown;
+  };
+}
+
 // --- Application Query DTO ---
 
 export interface DeviceTelemetryQueryDto {
@@ -121,6 +179,8 @@ export interface TelemetryCoverageSummary {
   earliestTimestamp: string | null;
   latestTimestamp: string | null;
   reachedLimit: boolean;
+  sourceCount?: number | null;
+  sourceTruncated?: boolean | null;
 }
 
 export interface NormalizedSolarReading {
@@ -281,16 +341,80 @@ export interface UnknownTelemetryData {
 }
 
 
+export interface NormalizedSmartBuildingReading {
+  timestamp: string;
+  devEui: string;
+  networkDeviceName: string | null;
+  applicationId: string | null;
+  gatewayId: string | null;
+  rssi: number | null;
+  snr: number | null;
+  rawVoltage: number | null;
+  rawVisible: number | null;
+  rawIr: number | null;
+  rawCo2: number | null;
+  rawVoc: number | null;
+  fCnt: number | null;
+}
+
+export interface SmartBuildingTelemetryData {
+  type: 'sb';
+  category: DeviceCategory;
+  latest: {
+    timestamp: string | null;
+    rawVoltage: number | null;
+    rawVisible: number | null;
+    rawIr: number | null;
+    rawCo2: number | null;
+    rawVoc: number | null;
+    fCnt: number | null;
+  };
+  status: {
+    label: string;
+    isConfirmed: false;
+  };
+  readings: NormalizedSmartBuildingReading[];
+}
+
+export interface NormalizedSmokeReading {
+  timestamp: string;
+  devEui: string;
+  networkDeviceName: string | null;
+  applicationId: string | null;
+  gatewayId: string | null;
+  rssi: number | null;
+  snr: number | null;
+  rawStatus: number | null;
+  rawState: number | null;
+}
+
+export interface SmokeTelemetryData {
+  type: 'smoke';
+  category: DeviceCategory;
+  latest: {
+    timestamp: string | null;
+    rawStatus: number | null;
+    rawState: number | null;
+  };
+  status: {
+    label: string;
+    isConfirmed: false;
+  };
+  readings: NormalizedSmokeReading[];
+}
+
 export type NormalizedTelemetryPayload =
   | SolarTelemetryData
   | AvcTelemetryData
   | NfcTelemetryData
+  | SmartBuildingTelemetryData
+  | SmokeTelemetryData
   | UnknownTelemetryData;
 
 export interface DeviceTelemetryResponseDto {
   schemaVersion: 1;
   deviceId: string;
-  deviceType: 'solar' | 'avc' | 'nfc' | 'unknown';
+  deviceType: 'solar' | 'avc' | 'nfc' | 'sb' | 'smoke' | 'unknown';
   fetchedAt: string;
   queryRange: {
     start: string;

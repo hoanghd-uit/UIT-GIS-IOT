@@ -14,7 +14,12 @@ import {
   DashboardDeviceTelemetryResponseDto,
   DashboardTelemetryLatestSampleDto,
 } from './dto/dashboard-iot-telemetry-response.dto';
-import { SolarTelemetryData, AvcTelemetryData } from '../iot/dto/iot-telemetry.dto';
+import {
+  SolarTelemetryData,
+  AvcTelemetryData,
+  SmartBuildingTelemetryData,
+  SmokeTelemetryData,
+} from '../iot/dto/iot-telemetry.dto';
 
 const MAX_DURATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days max for Dashboard Phase 03
 
@@ -64,8 +69,11 @@ export class DashboardIotTelemetryService {
     }
 
     // 4. Validate query range
-    if (!query.start || !query.stop) {
-      throw new BadRequestException('Both start and stop ISO-8601 query parameters are required.');
+    if (!query.start || !query.stop || typeof query.start !== 'string' || typeof query.stop !== 'string') {
+      throw new BadRequestException('Both start and stop ISO-8601 query parameters are required as single strings.');
+    }
+    if (Array.isArray((query as any).limit)) {
+      throw new BadRequestException('Query parameter limit must not be repeated.');
     }
 
     const startDate = new Date(query.start);
@@ -111,9 +119,9 @@ export class DashboardIotTelemetryService {
       throw new BadGatewayException('Failed to resolve device metadata from upstream IoT service.');
     }
 
-    if (resolvedType !== 'solar' && resolvedType !== 'avc') {
+    if (resolvedType !== 'solar' && resolvedType !== 'avc' && resolvedType !== 'sb' && resolvedType !== 'smoke') {
       throw new BadRequestException(
-        `Device '${trimmedDeviceId}' has type '${resolvedType}' which is not supported for Dashboard telemetry (supported: solar, avc).`,
+        `Device '${trimmedDeviceId}' has type '${resolvedType}' which is not supported for Dashboard telemetry (supported: solar, avc, sb, smoke).`,
       );
     }
 
@@ -157,17 +165,21 @@ export class DashboardIotTelemetryService {
       caveats.push(`${rawResult.coverage.invalidCount} bản ghi telemetry không hợp lệ đã bị bỏ qua.`);
     }
     if (resolvedType === 'solar') {
-      caveats.push('Thông số điện áp, nhiệt độ, độ ẩm và mã trạng thái của tấm pin mặt trời đang chờ xác nhận phần cứng.');
+      caveats.push('Mã trạng thái, hiệu chuẩn và chất lượng dữ liệu của tấm pin mặt trời đang chờ xác nhận từ đội ngũ phần cứng.');
     } else if (resolvedType === 'avc') {
-      caveats.push('Ý nghĩa lưu lượng tức thời, thể tích tích lũy và các mã cờ của đồng hồ nước đang chờ xác nhận phần cứng.');
+      caveats.push('Mã cờ van/sự cố, quy tắc reset chỉ số tích lũy và tính toán tiêu thụ theo ngày của đồng hồ nước đang chờ xác nhận từ đội ngũ phần cứng.');
       caveats.push('Nhiệt độ đo được (°C) chưa xác định là nhiệt độ môi trường hay nhiệt độ thân đồng hồ.');
+    } else if (resolvedType === 'sb') {
+      caveats.push('Đơn vị và thang đo cảm biến sb chưa được xác nhận; các giá trị này chưa dùng để đánh giá IAQ hoặc cảnh báo.');
+    } else if (resolvedType === 'smoke') {
+      caveats.push('Chưa xác nhận ý nghĩa mã status/state; không diễn giải thành bình thường, cháy hoặc sự cố.');
     }
 
     return {
       schemaVersion: 1,
       buildingId: normalizedBuilding,
       deviceId: trimmedDeviceId,
-      deviceType: resolvedType as 'solar' | 'avc',
+      deviceType: resolvedType as 'solar' | 'avc' | 'sb' | 'smoke',
       availability,
       provenance: {
         mode: 'live',
@@ -186,7 +198,11 @@ export class DashboardIotTelemetryService {
       },
       coverage: rawResult.coverage,
       latestSample,
-      telemetry: rawResult.telemetry as SolarTelemetryData | AvcTelemetryData,
+      telemetry: rawResult.telemetry as
+        | SolarTelemetryData
+        | AvcTelemetryData
+        | SmartBuildingTelemetryData
+        | SmokeTelemetryData,
     };
   }
 

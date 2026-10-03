@@ -10,6 +10,11 @@ export interface IotCatalogueFiltersProps {
   availableTypes: string[];
   selectedFloor: string;
   onFloorChange: (floor: string) => void;
+  roomDraft: string;
+  onRoomDraftChange: (room: string) => void;
+  onApplyRoom: () => void;
+  appliedRoom?: string | null;
+  onClearAllFilters: () => void;
   totalLoaded: number;
   filteredCount: number;
   disabled?: boolean;
@@ -24,12 +29,22 @@ export function IotCatalogueFilters({
   availableTypes,
   selectedFloor,
   onFloorChange,
+  roomDraft,
+  onRoomDraftChange,
+  onApplyRoom,
+  appliedRoom,
+  onClearAllFilters,
   totalLoaded,
   filteredCount,
   disabled = false,
   searchInputRef,
 }: IotCatalogueFiltersProps) {
-  const hasActiveLocalFilter = searchQuery.trim() !== '' || selectedType !== 'all' || selectedFloor !== 'all';
+  const hasActiveFilter =
+    searchQuery.trim() !== '' ||
+    selectedType !== 'all' ||
+    selectedFloor !== 'all' ||
+    (appliedRoom != null && appliedRoom !== '') ||
+    roomDraft.trim() !== '';
 
   return (
     <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 w-full pb-3 border-b border-[rgba(83,109,126,0.18)]">
@@ -69,7 +84,7 @@ export function IotCatalogueFilters({
         </div>
       </div>
 
-      {/* Right: Secondary Compact Controls (Floor, Type, Search) */}
+      {/* Right: Secondary Compact Controls (Floor, Room, Type, Search) */}
       <div className="flex items-center gap-2 flex-wrap">
         {/* Floor Selection Dropdown */}
         <select
@@ -89,6 +104,45 @@ export function IotCatalogueFilters({
           <option value="4">Tầng 4</option>
           <option value="6">Tầng 6</option>
         </select>
+
+        {/* Room Filter Input + Apply */}
+        <div className="flex items-center gap-1">
+          <input
+            id="iot-room-filter"
+            type="text"
+            value={roomDraft}
+            onChange={(e) => onRoomDraftChange(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                onApplyRoom();
+              }
+            }}
+            placeholder="Nhập mã phòng"
+            aria-label="Phòng nguồn"
+            disabled={disabled}
+            className="w-[140px] sm:w-[160px] max-w-full px-2.5 py-1.5 rounded-lg border text-xs font-medium focus:outline-none focus:ring-1 focus:ring-[var(--primary)] transition-colors"
+            style={{
+              backgroundColor: 'var(--panel-elevated)',
+              borderColor: 'var(--border)',
+              color: 'var(--text-primary)',
+            }}
+          />
+          <button
+            type="button"
+            onClick={onApplyRoom}
+            disabled={disabled}
+            className="px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-colors hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{
+              backgroundColor: 'var(--panel-elevated)',
+              borderColor: 'var(--border)',
+              color: 'var(--text-primary)',
+            }}
+            title="Áp dụng bộ lọc phòng nguồn"
+          >
+            Áp dụng
+          </button>
+        </div>
 
         {/* Type Selection Dropdown */}
         <select
@@ -145,16 +199,12 @@ export function IotCatalogueFilters({
         </div>
 
         {/* Clear Filters */}
-        {hasActiveLocalFilter && (
+        {hasActiveFilter && (
           <button
             type="button"
-            onClick={() => {
-              onSearchChange('');
-              onTypeChange('all');
-              if (selectedFloor !== 'all') onFloorChange('all');
-            }}
+            onClick={onClearAllFilters}
             className="px-2 py-1.5 rounded-lg text-xs font-medium text-[#7E8B96] hover:text-[#E6EDF1] hover:bg-white/5 transition-colors border border-transparent"
-            title="Xóa tất cả bộ lọc tìm kiếm"
+            title="Xóa tất cả bộ lọc tìm kiếm và phòng"
           >
             Xóa lọc
           </button>

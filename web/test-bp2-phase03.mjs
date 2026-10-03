@@ -120,8 +120,14 @@ test('BP2-P03-T05: Frontend sends exact start, stop, and limit=1000; adapter con
 
 test('BP2-P03-T09: NFC and unknown devices are unsupported for Dashboard Phase 03 and trigger no telemetry fetch', () => {
   const panelSrc = readSrcFile('components/dashboard/iot/IotDeviceTelemetryPanel.client.tsx');
-  // Checks sourceDeviceType for solar or avc
-  assert.ok(panelSrc.includes("device.sourceDeviceType === 'solar' || device.sourceDeviceType === 'avc'"), 'Checks supported types for solar and avc only');
+  // Checks sourceDeviceType for supported types (solar, avc, sb, smoke)
+  assert.ok(
+    panelSrc.includes("device.sourceDeviceType === 'solar'") &&
+    panelSrc.includes("device.sourceDeviceType === 'avc'") &&
+    panelSrc.includes("device.sourceDeviceType === 'sb'") &&
+    panelSrc.includes("device.sourceDeviceType === 'smoke'"),
+    'Checks supported types (solar, avc, sb, smoke)'
+  );
   // Returns early before fetch
   assert.ok(panelSrc.includes('if (!isSupportedType) return;'), 'Does not invoke fetch when type is unsupported');
   // Renders UnavailableDataState for unsupported types
@@ -233,23 +239,27 @@ test('BP2-P03-T22: Device or range switching cancels/supersedes prior request an
   assert.ok(panelSrc.includes('currentGen !== requestGenRef.current'), 'Discards response from stale generation');
 });
 
-test('BP2-P03-T23: Manual refresh recomputes rolling window without automatic timer/polling', () => {
+test('BP2-P03-T23: Manual refresh recomputes rolling window; Page 07 enforces 300000 ms cadence without fast/global polling', () => {
   const panelSrc = readSrcFile('components/dashboard/iot/IotDeviceTelemetryPanel.client.tsx');
+  const coordinatorSrc = readSrcFile('components/dashboard/iot/useIotPage07Telemetry.ts');
   assert.ok(panelSrc.includes('handleRefresh'), 'Exposes handleRefresh handler');
   assert.ok(panelSrc.includes('computeTelemetryRange(targetPreset)'), 'Recomputes range on refresh');
-  assert.ok(!panelSrc.includes('setInterval'), 'Must NOT use setInterval for auto-polling');
+  assert.ok(!panelSrc.includes('setInterval'), 'Detail panel itself must NOT use setInterval');
   assert.ok(!panelSrc.includes('useInterval'), 'Must NOT use interval hooks');
+  assert.ok(coordinatorSrc.includes('REFRESH_CADENCE_MS = 300000'), 'Page 07 coordinator enforces bounded 300000 ms cadence');
 });
 
-test('BP2-P03-T24: Selecting a device is the only telemetry trigger; catalogue loading does not perform N+1 requests', () => {
+test('BP2-P03-T24: Bounded visible-page telemetry load, selection-driven detail drawer, no row-local fetching', () => {
   const cataloguePanelSrc = readSrcFile('components/dashboard/iot/IotCataloguePanel.client.tsx');
   const catalogueTableSrc = readSrcFile('components/dashboard/iot/IotDeviceCatalogueTable.tsx');
+  const coordinatorSrc = readSrcFile('components/dashboard/iot/useIotPage07Telemetry.ts');
 
   assert.ok(catalogueTableSrc.includes('onSelectDevice'), 'Catalogue table accepts onSelectDevice prop');
   assert.ok(catalogueTableSrc.includes('Xem telemetry'), 'Action button is Xem telemetry');
   assert.ok(cataloguePanelSrc.includes('<IotDeviceTelemetryPanel'), 'Mounts IotDeviceTelemetryPanel on selection');
   assert.ok(cataloguePanelSrc.includes('{selectedDevice && ('), 'Renders telemetry panel only when device is selected');
   assert.ok(!catalogueTableSrc.includes('fetchDashboardDeviceTelemetry'), 'Table does NOT fetch telemetry per row');
+  assert.ok(coordinatorSrc.includes('MAX_CONCURRENT_REQUESTS = 2'), 'Enforces max 2 active telemetry requests');
 });
 
 test('BP2-P03-T25: Distinct UI states are handled', () => {

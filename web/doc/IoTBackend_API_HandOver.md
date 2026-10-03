@@ -1,14 +1,18 @@
 # IoTBackend API HandOver
 
 > **Project:** GIS — UIT Building E Digital Twin  
-> **Document role:** Single authoritative IoTBackend API handover / knowledge base for planner agents and coding agents.  
-> **Version:** 2026-09-24  
-> **Supersedes:** All earlier copies of `IoTBackend_API_HandOver.md`. Do **not** merge this file with yesterday's handover; this file already contains the complete current contract needed for the active small phase.  
-> **Current small-phase scope:** Device catalogue, per-device metadata lookup, plus type-specific data retrieval for `solar`, `avc`, and `nfc` devices.  
+> **Document role:** Single authoritative IoTBackend API handover / knowledge base for planner agents and coding agents.<br>
+> **Version:** 2026-10-02<br>
+> **Maintenance:** Cumulative single source. Preserve existing API information; add new APIs and update only changed contracts.<br>
+> **Current small-phase scope:** Device catalogue/detail and data retrieval for `solar`, `avc`, `nfc`, `smoke`, and `sb`, plus webhook inspection. Webhook creation/update/deletion/test operations are documented as reference.<br>
 > **Current upstream base URL:** `https://api.ttlab.manhthao.uk`  
-> **Authentication:** Bearer token; project owner holds a Master Bearer Token.  
-> **Integration mode:** Read-only server-to-server calls from NestJS.  
-> **Important:** The public Swagger contains more APIs than this handover. Only the five GET endpoints explicitly documented here are approved for this small phase.
+> **Authentication:** Bearer token; project owner holds a Master Bearer Token.<br>
+> **Integration mode:** Read-only server-to-server calls from NestJS.<br>
+> **Important:** The nine GET endpoints documented here are the read-only integration surface. Documenting webhook POST/PUT/DELETE/test operations does not authorize executing them; the upstream mutation restriction remains in force.
+
+Source update: [live Swagger](https://api.ttlab.manhthao.uk/api-docs/), API `1.5.1-beta`, OpenAPI `3.0.3`, read on 2026-10-02. The complete September 24 handover was recovered from Git commit `47ac2cd4` so the existing solar/AVC/NFC contracts remain intact. New sensor/webhook examples are documented schemas, not authenticated executions. Full earlier device snapshots remain in sections 6.5 and 33.
+
+New endpoint contracts: [smoke](#30-get-apiv1smoke), [smart building](#31-get-apiv1sb--smart-building), [webhooks](#32-webhook-api). The original solar/AVC/NFC blocks are retained verbatim; their current description clarifications are recorded in section 3.6, which takes precedence over older unit/pending-review wording in those blocks.
 
 ---
 
@@ -37,19 +41,27 @@ GET /api/v1/devices/{dev_eui}
 GET /api/v1/solar
 GET /api/v1/avc
 GET /api/v1/nfc
+GET /api/v1/smoke
+GET /api/v1/sb
+GET /api/v1/webhooks
+GET /api/v1/webhooks/{id}
 ```
 
-All five are read operations.
+All nine are read operations. Section 32 additionally documents four webhook operations that cause registration changes or outbound test calls; these remain outside the read-only execution policy.
 
 ### 0.3 Current capability summary
 
 | Endpoint | Device/domain | Required input | Main output | Mutation risk |
 | --- | --- | --- | --- | --- |
-| `GET /api/v1/devices` | Registered active devices | Optional query `floor_level` | Device catalogue + 3D installation metadata (`x/y/z`) | Read-only |
+| `GET /api/v1/devices` | Registered active devices | Optional queries `floor_level`, `room_id` | Device catalogue + 3D installation metadata (`x/y/z`) | Read-only |
 | `GET /api/v1/devices/{dev_eui}` | One registered device | Path `dev_eui` (`device_id`) | One device's metadata | Read-only |
 | `GET /api/v1/solar` | `solar` | `dev_eui`, `start`, `stop`; optional `limit` | Solar/environment/radio readings | Read-only |
 | `GET /api/v1/avc` | `avc` = water meter | `dev_eui`, `start`, `stop`; optional `limit` | Water-meter + LoRaWAN readings | Read-only |
 | `GET /api/v1/nfc` | `nfc` door scanner | `dev_eui`, `start`, `stop`; optional `limit` | NFC door scan events | Read-only |
+| `GET /api/v1/smoke` | Smoke detector | `dev_eui`, `start`, `stop`; optional `limit` | Smoke readings and radio data | Read-only |
+| `GET /api/v1/sb` | Smart building | `dev_eui`, `start`, `stop`; optional `limit` | Air/light/battery/radio readings | Read-only |
+| `GET /api/v1/webhooks` | Webhook registrations | Optional query `device_type` | Webhook list without secrets | Read-only |
+| `GET /api/v1/webhooks/{id}` | One webhook | Path `id` | Webhook metadata without secret | Read-only |
 
 ### 0.4 Authority of this file
 
@@ -63,6 +75,10 @@ GET /api/v1/devices/{dev_eui}
 GET /api/v1/solar
 GET /api/v1/avc
 GET /api/v1/nfc
+GET /api/v1/smoke
+GET /api/v1/sb
+GET /api/v1/webhooks
+GET /api/v1/webhooks/{id}
 ```
 
 If a future API document adds or changes information, update **this same file in place** so that it remains the single source of truth. Do not make agents reconstruct the current contract from a chain of delta documents.
@@ -137,7 +153,7 @@ The request authentication shape is therefore:
 Authorization: Bearer <TOKEN>
 ```
 
-The project owner possesses a **Master Bearer Token** supplied by the IoT team.
+The project owner possesses a **Master Bearer Token** supplied by the IoT team. Swagger `1.5.1-beta` describes authentication as a single static master token shared by all documented endpoints.
 
 ### 2.1 What `Bearer` means
 
@@ -200,7 +216,7 @@ Only the server-side IoT integration client should be allowed to read the token.
 
 ### 2.4 Preferred long-term security improvement
 
-If the IoT backend supports scoped service credentials, request a dedicated GIS **read-only service token** restricted to the five approved GET capabilities.
+If the IoT backend supports scoped service credentials, request a dedicated GIS **read-only service token** restricted to the nine documented GET capabilities.
 
 This is a least-privilege improvement, not a requirement to block the current phase.
 
@@ -210,14 +226,14 @@ This is a least-privilege improvement, not a requirement to block the current ph
 
 ### 3.1 Common telemetry/history query parameters
 
-`/solar`, `/avc`, and `/nfc` share the same query structure.
+`/solar`, `/avc`, `/nfc`, `/smoke`, and `/sb` share the same query structure.
 
 | Parameter | Type | Required | Contract |
 | --- | --- | ---: | --- |
 | `dev_eui` | `string` | Yes | Device identifier used to query the type-specific data endpoint. In this source it corresponds to the device identifier from the catalogue. |
 | `start` | ISO-8601 date-time string | Yes | Inclusive range start. Must be strictly before `stop`. |
 | `stop` | ISO-8601 date-time string | Yes | Inclusive range end. Must be strictly after `start`. |
-| `limit` | integer | No | Max rows. Default `1000`; hard cap `10000`. |
+| `limit` | integer | No | Max rows. Minimum `1`; default `1000`; hard cap `10000`. |
 
 Generic request shape:
 
@@ -229,7 +245,7 @@ Accept: application/json
 
 ### 3.2 Ordering and limit semantics
 
-The source explicitly states for the three type-specific APIs:
+The source explicitly states for the five type-specific APIs:
 
 - results are ordered **newest first**;
 - default `limit` is `1000`;
@@ -298,11 +314,11 @@ and:
 
 Therefore our runtime parser should require `meta` to be an object when supplied by the documented endpoint, but should not fail only because `count` or `truncated` is missing.
 
-The exact semantic guarantee of `meta.truncated` is not separately defined in the source. Do not build critical logic that depends on undocumented behavior of that flag alone.
+Swagger now defines `meta.count` as the number of items in `data`, and `meta.truncated` as whether more rows matched than the limit allows. For time-series responses, the omitted rows are the oldest. Keep these fields optional for compatibility with observed responses. No cursor/offset parameter is documented: use a different/narrower time range to retrieve older readings and handle inclusive boundaries when merging results.
 
 ### 3.5 Common documented errors for type-specific APIs
 
-For `/solar`, `/avc`, and `/nfc`:
+For `/solar`, `/avc`, `/nfc`, `/smoke`, and `/sb`:
 
 ```text
 400 Invalid or missing query parameters
@@ -319,6 +335,28 @@ Error body:
   }
 }
 ```
+
+---
+
+### 3.6 Dated clarification for preserved solar/AVC descriptions — 2026-10-02
+
+The complete original API blocks in sections 7–9 are retained from the September 24 handover. Their methods, parameters, payload fields, and field types remain intact. Current Swagger `1.5.1-beta` clarifies the descriptions below; **these current descriptions take precedence over the older pending-review/unit wording** in those preserved blocks and associated historical warnings.
+
+| Endpoint / field | Current documented description |
+| --- | --- |
+| `solar.voltage` | Measured battery voltage, in volts. |
+| `solar.temperature` | Measured ambient temperature, in degrees Celsius. |
+| `solar.humidity` | Measured relative humidity, in percent. |
+| `solar.state` | Device state/status code; no numeric value mapping is supplied. |
+| `avc.tag_source` | Identifies the ingestion pipeline/integration that wrote the row. |
+| `avc.fwd_volume_m3` | Cumulative forward (normal-direction) water volume, in cubic meters. |
+| `avc.rev_volume_m3` | Cumulative reverse-direction water volume, in cubic meters. |
+| `avc.instant_flow_m3h` | Instantaneous flow rate at reading time, in cubic meters per hour. |
+| `avc.valve_open` | Meter valve status; no numeric value mapping is supplied. |
+
+Those current descriptions no longer carry the older hardware-review warning. They still do not define solar state codes, water-meter flag domains, cumulative-counter reset behavior, calibration guarantees, or an authoritative daily-consumption calculation. Existing identity, opaque-ID, numeric-flag, and reset/data-quality handling rules remain applicable. Smoke/smart building fields and device room/coordinates still carry pending-review descriptions as stated in their current sections.
+
+This clarification is included in the same handover so an agent can use the current contract without reopening another document. It preserves the original information while making the updated source explicit.
 
 ---
 
@@ -401,7 +439,7 @@ If the application later maps a scan to a lecturer, the likely application-side 
 
 ### 5.1 Purpose
 
-List active devices registered in the IoT backend. The endpoint can now optionally filter the upstream catalogue by installation floor.
+List active devices registered in the IoT backend. The endpoint can filter the upstream catalogue by installation floor and/or room.
 
 ### 5.2 Request
 
@@ -426,6 +464,7 @@ Accept: application/json
 | Parameter | Type | Required | Contract |
 | --- | --- | ---: | --- |
 | `floor_level` | integer | No | Filters the returned active-device list to devices installed on that floor. Omit it to list devices on every floor, preserving the previous endpoint behavior. |
+| `room_id` | string | No | Filters devices by room with an exact, case-sensitive match. Leading/trailing spaces are ignored. May be combined with `floor_level`. Omit it to include all rooms. |
 
 Important interpretation rules:
 
@@ -436,7 +475,7 @@ Important interpretation rules:
 
 ### 5.4 Success response — `200`
 
-Current documented shape as of 2026-09-24:
+Current documented shape as of 2026-10-02 (schema example):
 
 ```json
 {
@@ -448,6 +487,7 @@ Current documented shape as of 2026-09-24:
       "last_updated_timestamp": "2026-09-24T10:32:48.075Z",
       "install_location": {
         "install_floor_level": 0,
+        "install_room_id": null,
         "install_x": 0,
         "install_y": 0,
         "install_z": 0
@@ -467,14 +507,17 @@ Current documented shape as of 2026-09-24:
 | Field | Type | Meaning / constraint |
 | --- | --- | --- |
 | `device_id` | `string` | Upstream device identifier; treat as opaque. Used as `dev_eui` when querying the corresponding type-specific API in this small phase. |
-| `device_type` | `string` | Device type. Current small-phase routes cover `solar`, `avc`, `nfc`. Keep parser open to unknown future values. |
-| `create_timestamp` | date-time string | Upstream record creation timestamp. |
-| `last_updated_timestamp` | date-time string | Upstream metadata update timestamp. Not the same as our `fetchedAt`. |
+| `device_type` | `string` | Described categories: `solar`, `avc`, `nfc`, `sb`, `smoke`. Metadata has no formal enum; keep parser open to future values. |
+| `create_timestamp` | date-time string | Time first added to TIA's SQLite registry; may differ from physical installation time. |
+| `last_updated_timestamp` | date-time string | Last registry change, including edit or deactivation; distinct from our `fetchedAt`. |
 | `install_location.install_floor_level` | integer | Upstream building floor on which the device is installed. Negative values are basement levels. Viewer-floor mapping remains an application concern. |
-| `install_location.install_x` | number | Source installation X coordinate. Unit/axis convention is not documented here. |
-| `install_location.install_y` | number | Source installation Y coordinate. Unit/axis convention is not documented here. |
-| `install_location.install_z` | number | Source installation Z coordinate. Unit/axis convention and relation to Unity axes are not documented here. Preserve it without inventing physical semantics. |
+| `install_location.install_x` | number | Horizontal installation coordinate; pending hardware-team review. Units and Unity axis mapping remain unspecified. |
+| `install_location.install_y` | number | Vertical installation coordinate; pending hardware-team review. Units and Unity axis mapping remain unspecified. |
+| `install_location.install_z` | number | Installation height relative to the floor ground; pending hardware-team review. Units and Unity axis mapping remain unspecified. |
+| `install_location.install_room_id` | nullable string | Installed room; null when unset. Room/coordinate meanings are pending hardware-team review. |
 | `is_active` | boolean | Whether the device is active. `false` means soft-deleted/decommissioned; past readings still link to this record, but it will not show up in the default active-device list. |
+
+The current descriptions identify X as horizontal, Y as vertical, and Z as install height relative to the floor ground; all remain pending hardware-team review. These descriptions do not establish units or a mapping to Unity axes.
 
 ### 5.6 Error responses
 
@@ -489,7 +532,7 @@ Current documented shape as of 2026-09-24:
 }
 ```
 
-For this endpoint, the currently documented query parameter is optional `floor_level`; malformed/invalid query input must be treated as a contract/query error. Prevent invalid local values before calling upstream.
+Optional query parameters are `floor_level` and `room_id`. `INVALID_FLOOR_LEVEL` means a non-integer floor. `INVALID_ROOM_ID` means an empty room or a repeated `room_id` parameter. Prevent invalid local values before calling upstream; omit both filters to list every active device.
 
 `401 Missing or invalid bearer token`:
 
@@ -506,7 +549,7 @@ For this endpoint, the currently documented query parameter is optional `floor_l
 
 An actual API execution captured on 2026-09-21 returned 10 active devices (`5 x solar`, `2 x avc`, `3 x nfc`) and demonstrated that catalogue IDs may be EUI-looking strings or `dummy...` identifiers.
 
-That executed snapshot **predates the current 2026-09-24 `/devices` contract**. In particular, the old snapshot did not include `install_z` and was captured before `floor_level` filtering was documented. Therefore:
+That executed snapshot **predates the current `/devices` contract**. Its complete original JSON is retained in section 33. In particular, the old snapshot did not include `install_z` and was captured before `floor_level` filtering was documented. Therefore:
 
 - keep it only as historical evidence for identity/device-type observations;
 - do **not** use the old payload as the authoritative fixture for the current `/devices` response schema;
@@ -565,7 +608,9 @@ Documented schema:
     "install_location": {
       "install_x": 0,
       "install_y": 0,
-      "install_floor_level": 0
+      "install_floor_level": 0,
+      "install_room_id": null,
+      "install_z": 0
     },
     "is_active": true
   },
@@ -576,7 +621,7 @@ Documented schema:
 }
 ```
 
-Use the previously documented detail-device shape for this endpoint. The 2026-09-24 update only supplied a new `/devices` list schema, so do not claim that detail lookup now requires `install_z`. A forward-compatible runtime parser may accept optional numeric `install_z` if the backend starts returning it. Treat `meta` as tolerant/optional-field metadata because the captured executed response returned an empty object.
+Swagger 1.5.1-beta uses the same `Device` schema for list and detail, including nullable `install_room_id` and numeric `install_z`. The older executed snapshot below remains historical evidence. A compatibility parser may accept missing room/height in older payloads; never fabricate a room or height. Treat `meta` as tolerant because the captured executed response returned an empty object.
 
 ### 6.5 Actual executed response captured on 2026-09-21
 
@@ -629,6 +674,8 @@ This is an executed-response snapshot, not a guarantee about the current live va
 Use this endpoint when the feature needs authoritative metadata for one known device without re-fetching/processing the whole catalogue. It is also useful for validating a stored device binding or refreshing one device's source metadata.
 
 Do not brute-force identifiers or enumerate guesses. The normal source of known IDs is the catalogue/application database.
+
+The documented machine-readable codes are `UNAUTHORIZED` for `401` and `DEVICE_NOT_FOUND` for this endpoint's `404`.
 
 ---
 
@@ -906,16 +953,17 @@ Do not use `batch_id` to identify a lecturer, card, room, or access event owner.
 
 ## 10. Source payload status: documented schema vs actual execution
 
-The current authoritative `/devices` contract was updated on 2026-09-24. It documents:
+The `/devices` contract includes the preserved 2026-09-24 changes and the 2026-10-02 Swagger update:
 
 - optional integer query parameter `floor_level`;
+- optional string query parameter `room_id` (exact, case-sensitive, trimmed; combinable with the floor filter);
 - floor-scoped list behavior when that parameter is supplied;
-- `install_location.install_z` in addition to floor/X/Y;
+- `install_location.install_z` and nullable `install_room_id` in addition to floor/X/Y;
 - `400 Invalid or missing query parameters` for invalid query input.
 
 No new real executed `/devices` payload was supplied with this update. Therefore the current list schema above is the **documented contract**, while the 2026-09-21 executed device catalogue remains only a pre-change historical observation.
 
-The current source does **not** provide a new contract block for `GET /api/v1/devices/{dev_eui}`. Keep that endpoint's previously documented contract as authoritative for detail lookup and do not automatically claim that `install_z` is required there until the IoT documentation or an executed response confirms it. Runtime code may be forward-compatible by accepting an optional `install_z` on detail payloads, but the distinction must remain explicit.
+The 2026-10-02 Swagger source confirms a shared `Device` schema for list and detail. Both now document `install_z` and nullable `install_room_id`. Historical executions remain unchanged. Swagger response objects do not declare `required` arrays: any stricter parser requirement is application policy, and historical compatibility must be explicit.
 
 For `/solar`, `/avc`, and `/nfc`, the 2026-09-22 supplied source contains documented `200` response blocks but no separately labeled actual executed payload with real device values. Therefore:
 
@@ -928,7 +976,7 @@ For `/solar`, `/avc`, and `/nfc`, the 2026-09-22 supplied source contains docume
 
 ## 11. Upstream TypeScript schema reference
 
-The following representation reflects the current documented contract and intentionally preserves the difference between the updated catalogue item and the previously documented device-detail item.
+The following representation retains the existing schemas and adds the newly documented fields/types. List and detail share the current Swagger `Device` schema; the detail type remains tolerant of historical room/height omissions. Interface requiredness is application parsing policy because Swagger response objects do not declare `required` arrays.
 
 ```ts
 export interface IoTUpstreamMeta {
@@ -948,9 +996,10 @@ export interface IoTUpstreamInstallLocationBase {
   install_floor_level: number;
   install_x: number;
   install_y: number;
+  install_room_id?: string | null;
 }
 
-// Current /devices list contract (2026-09-24): Z is documented and required.
+// Current /devices list contract: Z is documented; required here by application parsing policy.
 export interface IoTUpstreamDeviceListItem {
   device_id: string;
   device_type: string;
@@ -962,9 +1011,7 @@ export interface IoTUpstreamDeviceListItem {
   is_active: boolean;
 }
 
-// /devices/{dev_eui} has not received a new documented schema in the
-// 2026-09-24 delta. Keep Z optional for forward-compatible parsing rather
-// than falsely claiming it is required by the detail contract.
+// The current detail schema includes Z; keep it optional for explicitly supported historical payloads.
 export interface IoTUpstreamDeviceDetailItem {
   device_id: string;
   device_type: string;
@@ -978,6 +1025,7 @@ export interface IoTUpstreamDeviceDetailItem {
 
 export interface IoTUpstreamDeviceListQuery {
   floor_level?: number;
+  room_id?: string;
 }
 
 export interface IoTUpstreamDeviceListResponse {
@@ -1060,9 +1108,40 @@ export type IoTUpstreamAvcResponse =
 
 export type IoTUpstreamNfcResponse =
   IoTUpstreamListResponse<IoTUpstreamNfcEvent>;
+
+export interface IoTUpstreamSmokeReading {
+  dev_eui: string;
+  timestamp: string;
+  device_id: string;
+  application_id: string;
+  gateway_id: string;
+  status: number;
+  rssi: number;
+  snr: number;
+  state: number;
+}
+
+export interface IoTUpstreamSbReading {
+  dev_eui: string;
+  timestamp: string;
+  device_id: string;
+  application_id: string;
+  gateway_id: string;
+  voltage: number;
+  rssi: number;
+  snr: number;
+  f_cnt: number;
+  visible: number;
+  ir: number;
+  co2: number;
+  voc: number;
+}
+
+export type IoTUpstreamSmokeResponse = IoTUpstreamListResponse<IoTUpstreamSmokeReading>;
+export type IoTUpstreamSbResponse = IoTUpstreamListResponse<IoTUpstreamSbReading>;
 ```
 
-Implementation note: if the repository already has a shared device schema, update it carefully so `/devices` requires `install_z` while `/devices/{dev_eui}` remains tolerant until its contract is explicitly updated. Do not weaken the list parser just to avoid separating the two current evidence levels.
+Implementation note: preserve the existing parsing policy while adding nullable room and the current detail height field. Keep historical compatibility explicit; do not replace missing room/height with fabricated defaults.
 
 ---
 
@@ -1075,6 +1154,8 @@ Current approved routing table:
 | `solar` | `GET /api/v1/solar` | Solar/environment monitoring device data |
 | `avc` | `GET /api/v1/avc` | Water-meter readings via ChirpStack |
 | `nfc` | `GET /api/v1/nfc` | Door NFC scan events |
+| `smoke` | `GET /api/v1/smoke` | Smoke readings; status/state meanings pending review |
+| `sb` | `GET /api/v1/sb` | Smart building sensor readings; units/scales pending review |
 
 Recommended allowlisted dispatch:
 
@@ -1083,6 +1164,8 @@ const DATA_ROUTE_BY_DEVICE_TYPE = {
   solar: 'solar',
   avc: 'avc',
   nfc: 'nfc',
+  smoke: 'smoke',
+  sb: 'sb',
 } as const;
 ```
 
@@ -1116,6 +1199,7 @@ export interface DeviceSourceMetadata {
     y: number;
     z?: number;
     floorLevel: number;
+    roomId?: string | null;
   };
   active: boolean;
   fetchedAt: string;
@@ -1132,8 +1216,9 @@ Mapping:
 | `last_updated_timestamp` | `sourceUpdatedAt` |
 | `install_location.install_x` | `sourceLocation.x` |
 | `install_location.install_y` | `sourceLocation.y` |
-| `install_location.install_z` | `sourceLocation.z` (required for current list responses; optional for detail responses until detail contract is updated) |
+| `install_location.install_z` | `sourceLocation.z` (current list/detail schema; retain explicit historical compatibility) |
 | `install_location.install_floor_level` | `sourceLocation.floorLevel` |
+| `install_location.install_room_id` | `sourceLocation.roomId` (preserve null/absence) |
 | `is_active` | `active` |
 | local successful fetch time | `fetchedAt` |
 
@@ -1143,7 +1228,7 @@ Do not use `z` to infer Unity vertical position or convert axes until the coordi
 
 ### 13.2 Type-specific data should remain type-specific
 
-Do not flatten all three source payloads into a single generic `Record<string, number>` model prematurely.
+Do not flatten all source payloads into a single generic `Record<string, number>` model prematurely.
 
 Recommended discriminated application response concept:
 
@@ -1163,6 +1248,16 @@ export type DeviceDataResult =
       deviceType: 'nfc';
       externalDeviceId: string;
       data: NfcScanEvent[];
+    }
+  | {
+      deviceType: 'smoke';
+      externalDeviceId: string;
+      data: SmokeReading[];
+    }
+  | {
+      deviceType: 'sb';
+      externalDeviceId: string;
+      data: SmartBuildingReading[];
     };
 ```
 
@@ -1184,9 +1279,9 @@ avc.instant_flow_m3h
 avc.valve_open
 ```
 
-are partially or explicitly unconfirmed by the hardware team.
+were partially or explicitly marked unconfirmed in the preserved September source. The current solar units and AVC descriptions are clarified in section 3.6; state/flag value mappings and counter reset behavior remain unspecified.
 
-Until confirmed, prefer names that preserve upstream meaning rather than renaming them to stronger business claims such as:
+For semantics still unconfirmed, prefer names that preserve upstream meaning rather than renaming them to stronger business claims such as:
 
 ```text
 batteryVoltageV
@@ -1197,11 +1292,17 @@ valveIsOpen
 
 unless a later contract validates those semantics and units.
 
+### 13.4 Smoke and smart building normalization
+
+For the new reading types, map `dev_eui` to `externalDeviceId`, reading `device_id` to a friendly `networkDeviceName`, and `timestamp` to recorded time. Preserve `application_id`, `gateway_id`, `rssi`, `snr`, and the sensor-specific numeric values without inventing units or state mappings. For `sb`, `f_cnt` is a frame counter, distinct from sensor values.
+
+The `SmokeReading` and `SmartBuildingReading` types above denote application DTOs derived from the full upstream interfaces in section 11. Preserve optional `meta.count` and `meta.truncated` alongside the returned data; the earlier three variants remain intact. A smoke status/state value must not become an alarm boolean until its value mapping is confirmed.
+
 ---
 
 ## 14. Time-range policy and the meaning of “latest/current data”
 
-All three type-specific endpoints require both `start` and `stop`.
+All five type-specific endpoints require both `start` and `stop`.
 
 There is no documented current-phase endpoint of the form:
 
@@ -1271,6 +1372,7 @@ A practical interface shape:
 ```ts
 export interface IotDeviceListFilter {
   floorLevel?: number;
+  roomId?: string;
 }
 
 export interface IotDeviceGateway {
@@ -1299,6 +1401,16 @@ export interface IotDeviceDataGateway {
     deviceId: string,
     range: IotDataRange,
   ): Promise<IoTUpstreamNfcEvent[]>;
+
+  querySmoke(
+    deviceId: string,
+    range: IotDataRange,
+  ): Promise<IoTUpstreamSmokeReading[]>;
+
+  querySmartBuilding(
+    deviceId: string,
+    range: IotDataRange,
+  ): Promise<IoTUpstreamSbReading[]>;
 }
 ```
 
@@ -1310,7 +1422,7 @@ floorLevel = 6       -> GET /api/v1/devices?floor_level=6
 floorLevel = -1      -> GET /api/v1/devices?floor_level=-1
 ```
 
-Do not send `floor_level=` with an empty string and do not send a viewer label such as `G` directly.
+Do not send `floor_level=` with an empty string or a viewer label such as `G`. Serialize optional `roomId` as `room_id`; trim its ends, reject empty/repeated values, and combine it with the floor filter when supplied.
 
 An application service may then expose:
 
@@ -1319,6 +1431,8 @@ getDeviceData(deviceId, deviceType, range)
 ```
 
 using an allowlisted dispatch table.
+
+The array-returning interfaces above preserve the existing bridge convention. An implementation serving history must also carry optional upstream count/truncation information through its application response rather than discarding it.
 
 ### 15.3 Do not expose a generic unrestricted proxy
 
@@ -1382,6 +1496,10 @@ GET /api/v1/devices/{dev_eui}
 GET /api/v1/solar
 GET /api/v1/avc
 GET /api/v1/nfc
+GET /api/v1/smoke
+GET /api/v1/sb
+GET /api/v1/webhooks
+GET /api/v1/webhooks/{id}
 ```
 
 The optional floor query does not change the read-only safety boundary. Do not implement upstream mutation methods in this integration client.
@@ -1413,7 +1531,7 @@ A malformed floor filter should be rejected locally and should not result in an 
 
 ### 16.3 `start` and `stop`
 
-- required for `solar`, `avc`, `nfc`;
+- required for `solar`, `avc`, `nfc`, `smoke`, `sb`;
 - parse/validate as ISO-8601 date-time strings;
 - require `start < stop`;
 - preserve the source contract that both endpoints are inclusive bounds;
@@ -1427,7 +1545,14 @@ A malformed floor filter should be rejected locally and should not result in an 
 - do not send values above the documented hard cap;
 - omitting the value lets the upstream default of `1000` apply.
 
-The source does not explicitly state a minimum value. Do not invent one as an upstream fact. Our own public API may choose a positive-integer validation policy as an application rule, but label it as our rule.
+Swagger now explicitly defines minimum `1`, maximum `10000`, and default `1000` for `limit`.
+
+### 16.5 `room_id` for `GET /api/v1/devices`
+
+- optional string; trim leading/trailing spaces;
+- preserve case for the exact room match;
+- reject an empty value and repeated `room_id` parameters;
+- combine with `floor_level` when both are supplied, or omit it when no room filter is intended.
 
 ---
 
@@ -1446,18 +1571,19 @@ Validate the current `/devices` list contract:
 - `install_location` is an object;
 - `install_floor_level`, `install_x`, `install_y`, and **`install_z`** are numeric;
 - `is_active` is boolean;
+- `install_room_id` is a string or null when present;
 - `meta` is an object; tolerate missing `count`/`truncated` fields if actual upstream behavior remains looser than the documented example.
 
 `install_z` is part of the current list response contract and should be covered by fixtures/tests. Do not silently replace a missing list `install_z` with `0`; a missing required field should be treated as contract drift unless the implementation deliberately enters a compatibility mode that is documented and tested.
 
 ### 17.2 Device-detail response
 
-The 2026-09-24 update did not provide a new schema for `/devices/{dev_eui}`. Validate the previously documented detail fields and:
+The current Swagger detail uses the same `Device` schema as the list. Validate its documented fields and:
 
 - `data` is one device object rather than an array;
 - `meta` remains an object and may be `{}`;
 - handle upstream `404` as a known device-not-found condition; do not synthesize a placeholder device;
-- optionally accept numeric `install_z` if it appears, for forward compatibility, but do not require it until detail documentation confirms that change.
+- validate numeric `install_z` and nullable string `install_room_id` when present; permit historical omissions only under an explicit compatibility policy.
 
 ### 17.3 Solar response
 
@@ -1469,7 +1595,7 @@ In particular:
 voltage/temperature/humidity/state
 ```
 
-must remain accepted as documented numeric fields even though their detailed semantics are pending review.
+must remain accepted as documented numeric fields. Current voltage/temperature/humidity units are explicitly defined in section 3.6; solar `state` value mappings remain unspecified.
 
 ### 17.4 AVC response
 
@@ -1497,6 +1623,14 @@ out
 
 A strict runtime enum check is appropriate here; any other value should be treated as contract drift rather than guessed.
 
+### 17.6 Smoke and smart building responses
+
+Validate arrays against the new interfaces in section 11 and complete field tables in sections 30–31. Keep smoke `status`/`state` and smart building sensor values numeric. The recorded timestamp is ISO 8601; reading `device_id` is a friendly name while `dev_eui` is the stable join key. Preserve newest-first ordering and optional count/truncation information.
+
+### 17.7 Webhook inspection
+
+Validate list/detail responses against the `Webhook` fields in section 32.8. Inspecting a registration returns no secret. Distinguish nullable test-result fields from optional `error` if test integration is later explicitly authorized; HTTP `200` alone is not proof of delivery.
+
 ---
 
 ## 18. Error handling
@@ -1505,13 +1639,17 @@ A strict runtime enum check is appropriate here; any other value should be treat
 
 | Endpoint family | Status | Upstream meaning | Recommended application handling |
 | --- | ---: | --- | --- |
-| All current endpoints | `200` | Success | Validate and normalize. |
-| `/devices` | `400` | Invalid or missing query parameters | Prefer preventing malformed `floor_level` locally. If still returned, sanitize and map deliberately. |
+| Documented GET endpoints | `200` | Success | Validate and normalize; preserve optional count/truncation. |
+| `/devices` | `400` | Invalid or missing query parameters | Prefer preventing malformed `floor_level`/`room_id` locally. If still returned, sanitize and map deliberately. |
 | `/devices/{dev_eui}` | `404` | No device registered with that `dev_eui` | Map to a deliberate device-not-found condition/our API `404` according to project conventions. |
-| `/solar`, `/avc`, `/nfc` | `400` | Invalid/missing query parameters | Prefer preventing with local validation. If still returned, sanitize and map deliberately. |
+| `/solar`, `/avc`, `/nfc`, `/smoke`, `/sb` | `400` | Invalid/missing query parameters | Prefer preventing with local validation. If still returned, sanitize and map deliberately. |
 | All current endpoints | `401` | Missing/invalid bearer token | Treat as integration/auth failure; do not forward token details to browser. |
 | Network/timeout | Not specified | Upstream unavailable | Map to sanitized dependency failure such as `502`/`503` according to project API conventions. |
 | Schema mismatch | Not specified | Contract drift/unexpected response | Reject/flag; do not invent missing values. |
+
+Webhook status codes differ by operation: registration uses `201`, deletion uses `204` with no documented body, and test attempts use `200` even when delivery fails. See section 32 for all operation-specific responses.
+
+The shared `ErrorResponse` additionally defines `NOT_FOUND` (`404`, unknown route) and `INTERNAL_ERROR` (`500`, unexpected server failure). These are shared schema definitions, not additional success/response guarantees for every endpoint. `UNAUTHORIZED` is the common `401` code; filter, range, and webhook validation codes are documented with their respective contracts.
 
 ### 18.2 Do not mirror upstream auth failure as client auth failure
 
@@ -1552,6 +1690,11 @@ The explicit project requirement is to avoid actions that can affect the other t
 | `GET /api/v1/solar` | Allowed read query. |
 | `GET /api/v1/avc` | Allowed read query. |
 | `GET /api/v1/nfc` | Allowed read query. |
+| `GET /api/v1/smoke` | Allowed bounded read query. |
+| `GET /api/v1/sb` | Allowed bounded read query. |
+| `GET /api/v1/webhooks` | Allowed registration inspection; no secrets in response. |
+| `GET /api/v1/webhooks/{id}` | Allowed inspection for one known webhook ID. |
+| Webhook create/update/delete/test | Documented reference only; no upstream mutation or test delivery authorized by this documentation task. |
 | `POST` | Prohibited in this small phase. |
 | `PUT` | Prohibited. |
 | `PATCH` | Prohibited. |
@@ -1599,6 +1742,7 @@ source_install_x
 source_install_y
 source_install_z
 source_floor_level
+source_room_id (nullable, when provided)
 source_is_active
 source_created_at
 source_updated_at
@@ -1717,7 +1861,7 @@ The device-data endpoint can:
 
 1. resolve/validate the device's known `device_type`;
 2. dispatch through the allowlisted type router;
-3. call exactly one of `/solar`, `/avc`, `/nfc`;
+3. call exactly one of `/solar`, `/avc`, `/nfc`, `/smoke`, `/sb`;
 4. validate the upstream response;
 5. return a discriminated normalized result.
 
@@ -1781,8 +1925,9 @@ GET /devices?floor_level=6
 GET /devices?floor_level=-1
 invalid/non-integer floor_level rejected locally
 upstream /devices 400 response
-device detail success using previously documented shape
-device detail response with optional install_z (forward-compatibility case)
+current shared Device detail response including install_z and nullable install_room_id
+historical device detail success using the original observed shape
+historical detail missing room/height under explicit compatibility policy
 device detail meta = {}
 device detail upstream 404
 device catalogue with solar/avc/nfc
@@ -1796,6 +1941,13 @@ meta = { count: N, truncated: true }
 valid solar response
 valid avc response
 valid nfc response
+valid smoke response (numeric status/state, no inferred alarm mapping)
+valid sb response (numeric sensor values, no invented units)
+combined floor_level/room_id filter; trimmed room; empty/repeated room rejected
+nullable install_room_id; historical missing room/height compatibility
+webhook list/detail response without secret
+mock webhook create/update/delete/test contracts if implementation is later authorized
+mock webhook test 200 with delivered=false, nullable receiver fields, optional error
 nfc moving_direction = in
 nfc moving_direction = out
 400 telemetry/history upstream response
@@ -1837,13 +1989,13 @@ Likewise, the current `/devices` documented example establishes the schema, incl
 - Base host: `https://api.ttlab.manhthao.uk`.
 - Bearer authentication is required by the documented current endpoints.
 - Project owner has a Master Bearer Token.
-- Current small-phase endpoints are `GET /devices`, `GET /devices/{dev_eui}`, `GET /solar`, `GET /avc`, and `GET /nfc`.
-- `/devices` accepts optional integer `floor_level`; omit it to list active devices across all floors.
+- Current read endpoints are device list/detail, `/solar`, `/avc`, `/nfc`, `/smoke`, `/sb`, and webhook list/detail. Section 32 documents additional webhook methods separately from execution permission.
+- `/devices` accepts optional integer `floor_level` and optional string `room_id`; omit both for the complete active catalogue.
 - `/devices?floor_level=<integer>` returns active devices installed on that upstream floor level.
-- Current `/devices` list items contain `install_floor_level`, `install_x`, `install_y`, and `install_z`.
+- Current list/detail schemas contain `install_floor_level`, `install_x`, `install_y`, `install_z`, and nullable `install_room_id`.
 - `/devices` documents `400` for invalid/missing query parameters and `401` for missing/invalid bearer token.
 - `/devices/{dev_eui}` returns one device's metadata for a known device identifier and documents `404` when no device is registered with that identifier.
-- No 2026-09-24 detail-endpoint schema update was supplied, so `install_z` is not claimed as required for `/devices/{dev_eui}` by this handover.
+- Swagger 1.5.1-beta confirms that device list and detail share the `Device` schema; historical compatibility remains explicit.
 - Inactive devices are described as soft-deleted/decommissioned and excluded from the default device list while historical readings remain linked.
 - Negative `install_floor_level` values represent basement floors.
 - `solar`, `avc`, and `nfc` all require `dev_eui`, `start`, and `stop`.
@@ -1856,7 +2008,7 @@ Likewise, the current `/devices` documented example establishes the schema, incl
 - NFC `batch_id` is an upload batch, not a card/person identifier.
 - Solar response `device_id` is a friendly network/application name and differs from `dev_eui`.
 - AVC `dev_addr` is short-lived and differs from `dev_eui`.
-- Several solar/AVC fields are explicitly pending hardware-team review.
+- Older solar/AVC descriptions marked some fields pending review; current description clarifications are documented in section 3.6. Smoke/smart building and room/coordinate descriptions still include hardware-review warnings.
 - Type-specific endpoints document `400` for bad/missing query parameters and `401` for auth failure.
 
 ### 24.2 Confirmed by the 2026-09-21 executed device snapshot
@@ -1874,15 +2026,14 @@ This snapshot predates the 2026-09-24 list-contract update and therefore must no
 - Whether a scoped read-only token is available.
 - Full/formal device-type vocabulary beyond current small-phase types.
 - Rate limits, SLA, recommended polling cadence, and upstream timeout policy.
-- Exact semantic guarantee of `meta.truncated` beyond the documented presence and limit description.
+- Cursor/offset pagination support: none is documented; count/truncation meanings are now defined in section 3.4.
 - Coordinate X/Y/Z units, axes, floor-plan origin, and Unity calibration.
 - Viewer-floor-ID <-> upstream `floor_level` mapping, especially viewer `G` and upstream `0`.
 - Whether current source coordinates are fully populated/calibrated in live data.
-- Whether `install_z` is also guaranteed by `GET /devices/{dev_eui}`; current update only documents it on the list endpoint.
-- Solar `voltage` unit/meaning beyond the pending-review description.
-- Solar temperature/humidity units and confirmed physical source.
+- Object-level response requiredness: Swagger does not declare required arrays; application validation policy and historical compatibility must remain explicit.
+- Solar sensor calibration/data-quality guarantees (the current documented units are volts, Celsius, and percent).
 - Solar `state` enum.
-- AVC `tag_source` semantics.
+- Any ingestion-pipeline naming dictionary beyond the documented meaning of AVC `tag_source`.
 - Final verified semantics/reset behavior for cumulative volume fields.
 - Numeric domains for AVC status/flag fields.
 - Whether AVC `temp_c` is ambient or meter temperature.
@@ -1896,7 +2047,7 @@ This snapshot predates the 2026-09-24 list-contract update and therefore must no
 
 When preparing an implementation phase that uses this handover, the plan should explicitly answer:
 
-1. Which of the five approved GET APIs are needed by the feature?
+1. Which of the nine documented GET APIs are needed by the feature?
 2. Is device catalogue retrieval floor-scoped or intentionally full-catalogue?
 3. How does the application's floor ID map to upstream integer `floor_level`? Do not assume viewer `G == 0` without evidence.
 4. Where in the existing NestJS repository does the IoT integration module belong?
@@ -1905,7 +2056,7 @@ When preparing an implementation phase that uses this handover, the plan should 
 7. If per-floor caching/sync state exists, how is freshness scoped so refreshing one floor does not mark unrelated floors fresh?
 8. How are `start`, `stop`, and `limit` obtained/validated for type-specific data endpoints?
 9. If the UI asks for “latest”, what lookback window has the product/backend owner approved?
-10. How does the backend get/verify the device type before selecting `/solar`, `/avc`, or `/nfc`?
+10. How does the backend get/verify the device type before selecting `/solar`, `/avc`, `/nfc`, `/smoke`, or `/sb`?
 11. What runtime schema library/convention already exists in the repository?
 12. How will `/devices` `400`, all-endpoint `401`, detail `404`, network failures, and schema drift be sanitized/mapped?
 13. What read-call frequency is expected, and how will duplicate/excessive upstream calls be avoided?
@@ -1925,10 +2076,10 @@ Before implementation:
 - inspect existing device bridge/client, DTO/runtime schemas, floor mapping, Phase 04/current database schema, and current catalogue-cache/sync logic before editing;
 - keep the IoT host/token server-side;
 - implement only allowlisted GET methods;
-- update `GET /devices` client support for optional integer `floor_level`;
+- update `GET /devices` client support for optional integer `floor_level` and optional string `room_id`;
 - use floor-scoped upstream reads when the current feature already knows a mapped floor;
 - add `install_z` to current list response validation and source-location normalization/storage as appropriate;
-- do not silently assume `/devices/{dev_eui}` requires `install_z` until its detail contract confirms that;
+- use the now-shared list/detail `Device` schema and preserve explicit compatibility for older room/height omissions;
 - preserve raw identity distinctions;
 - keep source location separate from display override;
 - keep floor mapping centralized; do not hard-code viewer `G -> 0` without project evidence;
@@ -1967,16 +2118,22 @@ GET /api/v1/devices/{dev_eui}
 GET /api/v1/solar?dev_eui=...&start=...&stop=...&limit=...
 GET /api/v1/avc?dev_eui=...&start=...&stop=...&limit=...
 GET /api/v1/nfc?dev_eui=...&start=...&stop=...&limit=...
+GET /api/v1/smoke?dev_eui=...&start=...&stop=...&limit=...
+GET /api/v1/sb?dev_eui=...&start=...&stop=...&limit=...
+GET /api/v1/webhooks[?device_type=<solar|avc|nfc|sb|smoke>]
+GET /api/v1/webhooks/{id}
 ```
 
 ### 27.2 Current `/devices` list contract delta
 
 ```text
 optional query: floor_level : integer
+optional query: room_id : string (exact, case-sensitive, trimmed; combinable)
 omit floor_level -> all active devices
 provide floor_level -> active devices installed on that floor
 install_location now includes:
   install_floor_level
+  install_room_id (nullable string)
   install_x
   install_y
   install_z
@@ -2006,6 +2163,8 @@ ordering: newest first
 solar -> /api/v1/solar
 avc   -> /api/v1/avc   (water meter)
 nfc   -> /api/v1/nfc   (door scans)
+smoke -> /api/v1/smoke (smoke readings)
+sb    -> /api/v1/sb    (smart building readings)
 unknown -> no guessed endpoint
 ```
 
@@ -2047,7 +2206,7 @@ no automatic telemetry mirroring
 
 `IoTBackend_API_HandOver.md` is the **single current API knowledge base** for this integration scope. It supersedes older handover copies. Planner agents and coding agents should query this file directly rather than reconstructing state from prior versions or update/delta documents.
 
-Current authoritative endpoint set:
+Current approved read endpoint set:
 
 ```text
 GET /api/v1/devices[?floor_level=<integer>]
@@ -2055,9 +2214,24 @@ GET /api/v1/devices/{dev_eui}
 GET /api/v1/solar
 GET /api/v1/avc
 GET /api/v1/nfc
+GET /api/v1/smoke
+GET /api/v1/sb
+GET /api/v1/webhooks
+GET /api/v1/webhooks/{id}
 ```
 
 The schemas, field semantics, safety rules, normalized models, bridge guidance, unresolved items, and test guidance in this file are the current project interpretation of those APIs.
+
+Additional documented webhook operations (reference only; execution permission remains separate):
+
+```text
+POST /api/v1/webhooks
+PUT /api/v1/webhooks/{id}
+DELETE /api/v1/webhooks/{id}
+POST /api/v1/webhooks/{id}/test
+```
+
+All six webhook contracts are complete in section 32; agents do not need an external delta document to read them.
 
 ### 28.2 Evidence incorporated into this snapshot
 
@@ -2067,6 +2241,8 @@ This current handover already incorporates the information supplied from:
 - 2026-09-22 updates for `/devices`, `/solar`, `/avc`, and `/nfc`;
 - project-owner clarification that `GET /api/v1/devices/{dev_eui}` remains active;
 - **2026-09-24 `/api/v1/devices` contract update** adding optional `floor_level`, `install_location.install_z`, and documented `400` query errors.
+- **2026-10-02 Swagger 1.5.1-beta** update adding device `room_id`/nullable installed room, current shared list/detail location schema, smoke, smart building, and webhook contracts.
+- Existing solar/AVC/NFC endpoint sections and their schema definitions are preserved verbatim from the complete September 24 handover. No authenticated API executions or webhook registrations/test calls were made for this update.
 
 These provenance notes are for auditability only. **Agents do not need to merge those source documents to use this handover.**
 
@@ -2079,7 +2255,7 @@ When the project owner supplies another API or changes an existing contract, upd
 1. update the current endpoint/capability summary;
 2. update the exact method/path and parameters;
 3. update documented response codes and schemas;
-4. add or replace actual executed-response snapshots when safely supplied;
+4. add new dated executed-response snapshots when safely supplied; retain earlier snapshots as historical evidence;
 5. preserve distinctions between documented schema, observed response, and inferred application mapping;
 6. mark hardware semantics as unresolved when the source says they are pending review;
 7. update identity and device-type routing rules;
@@ -2097,10 +2273,627 @@ If a later source conflicts with this file, resolve the current-contract section
 
 ```text
 status: CURRENT
-version: 2026-09-24
+version: 2026-10-02
 role: single authoritative IoTBackend API handover / knowledge base
 supersedes: earlier IoTBackend_API_HandOver.md copies
 approved upstream mode: read-only GET
-approved endpoint count: 5
-latest contract change: /api/v1/devices optional floor_level + install_z + 400 query error
+approved read endpoint count: 9
+documented operation count: 13 (9 GET + 4 webhook POST/PUT/DELETE/test)
+latest contract change: devices room filter/shared location schema; smoke, sb, full webhook reference added
+```
+
+---
+
+## 30. `GET /api/v1/smoke`
+
+### 30.1 Purpose and request
+
+Smoke detector readings for one device in a bounded time range. This is a read-only JSON endpoint.
+
+```http
+GET /api/v1/smoke?dev_eui=<DEVICE_ID>&start=2026-10-01T00:00:00.000Z&stop=2026-10-02T00:00:00.000Z&limit=1000
+Authorization: Bearer <TOKEN>
+Accept: application/json
+```
+
+### 30.2 Query parameters
+
+| Parameter | Type | Required | Contract |
+| --- | --- | --- | --- |
+| `dev_eui` | string | Yes | Catalogue device identifier; opaque string. |
+| `start` | ISO 8601 date-time string | Yes | Inclusive start; must be strictly before `stop`. |
+| `stop` | ISO 8601 date-time string | Yes | Inclusive end; must be strictly after `start`. |
+| `limit` | integer | No | Default `1000`, minimum `1`, maximum `10000`. Newest first; truncation omits the oldest matching rows. |
+
+### 30.3 Code 200 — Smoke detector readings in the requested time range
+
+Illustrative schema example; zero values are placeholders, not actual measurements or confirmed state mappings.
+
+```json
+{
+  "data": [
+    {
+      "dev_eui": "string",
+      "timestamp": "2026-10-02T00:00:00.000Z",
+      "device_id": "string",
+      "application_id": "string",
+      "gateway_id": "string",
+      "status": 0,
+      "rssi": 0,
+      "snr": 0,
+      "state": 0
+    }
+  ],
+  "meta": {
+    "count": 1,
+    "truncated": false
+  }
+}
+```
+
+| Field | Type | Documented meaning |
+| --- | --- | --- |
+| `dev_eui` | `string` | Device's LoRaWAN identifier. |
+| `timestamp` | `string` | When this reading was recorded. |
+| `device_id` | `string` | Friendly device name assigned in the LoRaWAN network/application server (different from dev_eui). |
+| `application_id` | `string` | LoRaWAN application/integration this device is registered under. |
+| `gateway_id` | `string` | Identifier of the LoRaWAN gateway that received this uplink. |
+| `status` | `number` | Smoke detection status. ⚠ Unconfirmed. Pending hardware team review (see docs/field-reference.csv). |
+| `rssi` | `number` | Received Signal Strength Indicator of the LoRaWAN uplink, in dBm. More negative = weaker signal. |
+| `snr` | `number` | Signal-to-Noise Ratio of the LoRaWAN uplink, in dB. |
+| `state` | `number` | Device state/status code. ⚠ Unconfirmed. Pending hardware team review (see docs/field-reference.csv). |
+
+### 30.4 Code 400 — Invalid or missing query parameters
+
+```json
+{
+  "error": {
+    "code": "string",
+    "message": "string"
+  }
+}
+```
+
+| Error code | Meaning |
+| --- | --- |
+| `MISSING_PARAM` | Required `dev_eui`, `start`, or `stop` was not provided. |
+| `INVALID_TIMESTAMP` | `start` or `stop` is not valid ISO 8601. |
+| `INVALID_TIME_RANGE` | `start` is not strictly before `stop`. |
+| `INVALID_LIMIT` | `limit` is not a positive integer. The parameter schema also sets maximum `10000`. |
+
+### 30.5 Code 401 — Missing or invalid bearer token
+
+```json
+{
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "string"
+  }
+}
+```
+
+### 30.6 Planner/coding interpretation
+
+- Join reading `dev_eui` to catalogue `device_id`. The reading's `device_id` is a friendly network/application-server name.
+- Keep `timestamp` as recorded time, separate from registry timestamps and local `fetchedAt`.
+- Preserve all documented numeric fields; do not coerce them to booleans or invent units, enums, conversions, or alarm thresholds.
+- Keep `meta.count`/`meta.truncated` optional and propagate truncation when returning history to clients.
+- Reuse the bounded range policy and fixed type routing above. No endpoint-specific `404` response is documented for this endpoint.
+
+---
+
+## 31. `GET /api/v1/sb` — smart building
+
+### 31.1 Purpose and request
+
+Smart building sensor readings for one device in a bounded time range. This is a read-only JSON endpoint.
+
+```http
+GET /api/v1/sb?dev_eui=<DEVICE_ID>&start=2026-10-01T00:00:00.000Z&stop=2026-10-02T00:00:00.000Z&limit=1000
+Authorization: Bearer <TOKEN>
+Accept: application/json
+```
+
+### 31.2 Query parameters
+
+| Parameter | Type | Required | Contract |
+| --- | --- | --- | --- |
+| `dev_eui` | string | Yes | Catalogue device identifier; opaque string. |
+| `start` | ISO 8601 date-time string | Yes | Inclusive start; must be strictly before `stop`. |
+| `stop` | ISO 8601 date-time string | Yes | Inclusive end; must be strictly after `start`. |
+| `limit` | integer | No | Default `1000`, minimum `1`, maximum `10000`. Newest first; truncation omits the oldest matching rows. |
+
+### 31.3 Code 200 — Smart building sensor readings in the requested time range
+
+Illustrative schema example; zero values are placeholders, not actual measurements or confirmed state mappings.
+
+```json
+{
+  "data": [
+    {
+      "dev_eui": "string",
+      "timestamp": "2026-10-02T00:00:00.000Z",
+      "device_id": "string",
+      "application_id": "string",
+      "gateway_id": "string",
+      "voltage": 0,
+      "rssi": 0,
+      "snr": 0,
+      "f_cnt": 0,
+      "visible": 0,
+      "ir": 0,
+      "co2": 0,
+      "voc": 0
+    }
+  ],
+  "meta": {
+    "count": 1,
+    "truncated": false
+  }
+}
+```
+
+| Field | Type | Documented meaning |
+| --- | --- | --- |
+| `dev_eui` | `string` | Device's LoRaWAN identifier. |
+| `timestamp` | `string` | When this reading was recorded. |
+| `device_id` | `string` | Friendly device name assigned in the LoRaWAN network/application server (different from dev_eui). |
+| `application_id` | `string` | LoRaWAN application/integration this device is registered under. |
+| `gateway_id` | `string` | Identifier of the LoRaWAN gateway that received this uplink. |
+| `voltage` | `number` | Measured battery voltage. ⚠ Unconfirmed. Pending hardware team review (see docs/field-reference.csv). |
+| `rssi` | `number` | Received Signal Strength Indicator of the LoRaWAN uplink, in dBm. More negative = weaker signal. |
+| `snr` | `number` | Signal-to-Noise Ratio of the LoRaWAN uplink, in dB. |
+| `f_cnt` | `number` | LoRaWAN uplink frame counter. It goes up by one with every message the device sends. Used to keep messages in order and to block replay attacks. |
+| `visible` | `number` | Visible light reading from the LTR303 sensor. ⚠ Unconfirmed. Pending hardware team review (see docs/field-reference.csv). |
+| `ir` | `number` | Infrared light reading from the LTR303 sensor. ⚠ Unconfirmed. Pending hardware team review (see docs/field-reference.csv). |
+| `co2` | `number` | CO2 reading from the SCD40 sensor. ⚠ Unconfirmed. Pending hardware team review (see docs/field-reference.csv). |
+| `voc` | `number` | VOC (volatile organic compounds) reading from the SGP41 sensor. ⚠ Unconfirmed. Pending hardware team review (see docs/field-reference.csv). |
+
+### 31.4 Code 400 — Invalid or missing query parameters
+
+```json
+{
+  "error": {
+    "code": "string",
+    "message": "string"
+  }
+}
+```
+
+| Error code | Meaning |
+| --- | --- |
+| `MISSING_PARAM` | Required `dev_eui`, `start`, or `stop` was not provided. |
+| `INVALID_TIMESTAMP` | `start` or `stop` is not valid ISO 8601. |
+| `INVALID_TIME_RANGE` | `start` is not strictly before `stop`. |
+| `INVALID_LIMIT` | `limit` is not a positive integer. The parameter schema also sets maximum `10000`. |
+
+### 31.5 Code 401 — Missing or invalid bearer token
+
+```json
+{
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "string"
+  }
+}
+```
+
+### 31.6 Planner/coding interpretation
+
+- Join reading `dev_eui` to catalogue `device_id`. The reading's `device_id` is a friendly network/application-server name.
+- Keep `timestamp` as recorded time, separate from registry timestamps and local `fetchedAt`.
+- Preserve all documented numeric fields; do not coerce them to booleans or invent units, enums, conversions, or alarm thresholds.
+- Keep `meta.count`/`meta.truncated` optional and propagate truncation when returning history to clients.
+- Reuse the bounded range policy and fixed type routing above. No endpoint-specific `404` response is documented for this endpoint.
+
+Swagger does not specify units/scales for `voltage`, `visible`, `ir`, `co2`, or `voc`. The documented smart building path is `/api/v1/sb`.
+
+---
+
+## 32. Webhook API
+
+### 32.1 Source, authentication, and implementation boundary
+
+Verified against the live [Swagger documentation](https://api.ttlab.manhthao.uk/api-docs/) and its `1.5.1-beta` OpenAPI contract on 2026-10-02. The upstream route is plural: `/api/v1/webhooks`.
+
+All six operations inherit the static master bearer-token authentication:
+
+```http
+Authorization: Bearer <TOKEN>
+```
+
+This section records the upstream contract. It does **not** authorize expanding the current implementation phase: registration, updates, deletion, and test delivery remain **documentation-only until separately authorized**. The existing prohibition on upstream mutations remains in force. In particular, `POST /api/v1/webhooks/{id}/test` sends a real outbound request to the configured receiver and must not be called merely to inspect the API. The master token belongs only on the application backend.
+
+All JSON below is a schema-shaped example, not a live response. Placeholder strings are not credentials or usable receiver addresses. Response schemas describe properties without declaring them required; do not infer mandatory response-field presence from an example. `meta.count` is an integer and `meta.truncated` a boolean; sample values are not endpoint constants.
+
+### 32.2 GET `/api/v1/webhooks` — list registrations
+
+Parameters:
+
+- Optional query `string device_type`: `solar | avc | nfc | sb | smoke`. Omit to list webhooks for every device type.
+
+**200 — List of registered webhooks.** `data` is an array of `Webhook` objects:
+
+```json
+{
+  "data": [
+    {
+      "id": "string",
+      "device_type": "smoke",
+      "url": "<http-or-https-receiver-url>",
+      "format": "tia",
+      "created_at": "2026-10-02T00:00:00.000Z",
+      "updated_at": "2026-10-02T00:00:00.000Z"
+    }
+  ],
+  "meta": { "count": 1, "truncated": false }
+}
+```
+
+**400 — Invalid or missing query parameters.** `INVALID_DEVICE_TYPE` applies to an unsupported filter value.
+
+**401 — Missing or invalid bearer token.** `UNAUTHORIZED`.
+
+Both error responses use:
+
+```json
+{
+  "error": { "code": "string", "message": "string" }
+}
+```
+
+### 32.3 POST `/api/v1/webhooks` — register a webhook
+
+No query or path parameters are documented. The `application/json` request body is **required**:
+
+- Required `string device_type`: `solar | avc | nfc | sb | smoke`.
+- Required `string url`: URI that starts with `http://` or `https://`.
+- Optional `string format`: `tia | discord`; defaults to `tia`.
+
+```json
+{
+  "device_type": "smoke",
+  "url": "<http-or-https-receiver-url>",
+  "format": "tia"
+}
+```
+
+**201 — Webhook registered.** `data` is a `WebhookWithSecret` object:
+
+```json
+{
+  "data": {
+    "id": "string",
+    "device_type": "smoke",
+    "url": "<http-or-https-receiver-url>",
+    "format": "tia",
+    "created_at": "2026-10-02T00:00:00.000Z",
+    "updated_at": "2026-10-02T00:00:00.000Z",
+    "secret": "<one-time-secret>"
+  },
+  "meta": { "count": 1, "truncated": false }
+}
+```
+
+The secret is returned **only once**, immediately after creation. Save it in a server-side secret store when an authorized integration is implemented. TIA cannot show it again. If it is lost, the documented recovery is deleting that webhook and creating a new one, subject to separate authorization. List, detail, and update responses do not include `secret`.
+
+**400 — Invalid or missing input.** Relevant codes: `MISSING_FIELD`, `INVALID_DEVICE_TYPE`, `INVALID_URL`, `INVALID_FORMAT`. The shared Swagger response description says “Invalid or missing query parameters,” although this operation validates a JSON body.
+
+**401 — Missing or invalid bearer token.** `UNAUTHORIZED`.
+
+Both error responses use:
+
+```json
+{
+  "error": { "code": "string", "message": "string" }
+}
+```
+
+### 32.4 GET `/api/v1/webhooks/{id}` — get one registration
+
+Parameters:
+
+- Required path `string id`: webhook ID returned at creation.
+
+**200 — Webhook details.** `data` is one `Webhook` object:
+
+```json
+{
+  "data": {
+    "id": "string",
+    "device_type": "smoke",
+    "url": "<http-or-https-receiver-url>",
+    "format": "tia",
+    "created_at": "2026-10-02T00:00:00.000Z",
+    "updated_at": "2026-10-02T00:00:00.000Z"
+  },
+  "meta": { "count": 1, "truncated": false }
+}
+```
+
+**401 — Missing or invalid bearer token.** `UNAUTHORIZED`.
+
+**404 — No webhook registered with that ID.** `WEBHOOK_NOT_FOUND`.
+
+Both error responses use:
+
+```json
+{
+  "error": { "code": "string", "message": "string" }
+}
+```
+
+### 32.5 PUT `/api/v1/webhooks/{id}` — update a registration
+
+Parameters:
+
+- Required path `string id`: webhook ID returned at creation.
+
+The `application/json` request body is **optional**. Every body field is optional, and only fields sent are changed:
+
+- Optional `string device_type`: `solar | avc | nfc | sb | smoke`.
+- Optional `string url`: URI; `INVALID_URL` is defined for an invalid `http://` or `https://` address.
+- Optional `string format`: `tia | discord`. No update-time default is documented; an omitted field remains unchanged.
+
+Example changing only the payload format:
+
+```json
+{
+  "format": "discord"
+}
+```
+
+**200 — Updated webhook.** `data` is one `Webhook` object:
+
+```json
+{
+  "data": {
+    "id": "string",
+    "device_type": "smoke",
+    "url": "<http-or-https-receiver-url>",
+    "format": "discord",
+    "created_at": "2026-10-02T00:00:00.000Z",
+    "updated_at": "2026-10-02T00:00:00.000Z"
+  },
+  "meta": { "count": 1, "truncated": false }
+}
+```
+
+**400 — Invalid input.** Relevant codes: `INVALID_DEVICE_TYPE`, `INVALID_URL`, `INVALID_FORMAT`. The shared Swagger response description says “Invalid or missing query parameters.” `MISSING_FIELD` is defined for creation, not for omitted update fields.
+
+**401 — Missing or invalid bearer token.** `UNAUTHORIZED`.
+
+**404 — No webhook registered with that ID.** `WEBHOOK_NOT_FOUND`.
+
+All three error responses use:
+
+```json
+{
+  "error": { "code": "string", "message": "string" }
+}
+```
+
+### 32.6 DELETE `/api/v1/webhooks/{id}` — remove a registration
+
+Parameters:
+
+- Required path `string id`: webhook ID returned at creation.
+- No request body is documented.
+
+**204 — Webhook deleted.** No response body or JSON success envelope is documented.
+
+**401 — Missing or invalid bearer token.** `UNAUTHORIZED`.
+
+**404 — No webhook registered with that ID.** `WEBHOOK_NOT_FOUND`.
+
+Both error responses use:
+
+```json
+{
+  "error": { "code": "string", "message": "string" }
+}
+```
+
+### 32.7 POST `/api/v1/webhooks/{id}/test` — attempt a test delivery
+
+Parameters:
+
+- Required path `string id`: webhook ID returned at creation.
+- No request body is documented.
+
+One test call is sent immediately, without waiting for new device data. It uses the registration's `format` and does not change which readings the webhook will receive later.
+
+**200 — Test call attempted.** HTTP 200 is returned even when the receiver rejects the call. Check `data.delivered`, not just the API response status. `data` is a `WebhookTestResult` object; the example shows an unreachable receiver:
+
+```json
+{
+  "data": {
+    "delivered": false,
+    "status": null,
+    "response_body": null,
+    "error": "ENOTFOUND"
+  },
+  "meta": { "count": 1, "truncated": false }
+}
+```
+
+Test result fields:
+
+- `boolean delivered`: true when the receiver answered with a 2xx HTTP status.
+- `int | null status`: receiver HTTP status; null when TIA could not reach it.
+- `string | null response_body`: the start of the receiver's response body, at most 300 characters; null when unreachable.
+- Optional `string error`: present only when the receiver could not be reached. Examples are `ECONNREFUSED`, `ENOTFOUND`, and `timeout`; omit this field in a successful-delivery example. It is not declared nullable.
+
+**401 — Missing or invalid bearer token.** `UNAUTHORIZED`.
+
+**404 — No webhook registered with that ID.** `WEBHOOK_NOT_FOUND`.
+
+Both error responses use:
+
+```json
+{
+  "error": { "code": "string", "message": "string" }
+}
+```
+
+### 32.8 Shared models and error meanings
+
+The `Webhook` model fields are `string id` (generated by TIA), `string device_type` (enum above), `string url` (URI), `string format` (`tia | discord`), and date-time strings `created_at` / `updated_at` (registration time / last-change time). `WebhookWithSecret` adds `string secret`, used to verify that a webhook call originated from TIA. No per-device, room, floor, or threshold subscription field is documented.
+
+| Error code | HTTP | Meaning |
+|---|---:|---|
+| `INVALID_DEVICE_TYPE` | 400 | `device_type` is outside `solar`, `avc`, `nfc`, `sb`, `smoke`. |
+| `INVALID_URL` | 400 | `url` is not a valid `http://` or `https://` address. |
+| `MISSING_FIELD` | 400 | Registration omitted `device_type` or `url`. |
+| `INVALID_FORMAT` | 400 | `format` is outside `tia`, `discord`. |
+| `UNAUTHORIZED` | 401 | Missing or invalid bearer token. |
+| `WEBHOOK_NOT_FOUND` | 404 | No webhook is registered with the supplied ID. |
+
+Every error has the shared `error.code` / `error.message` shape. The message is a human-readable explanation described as safe to log or show directly. Each operation's response list above records only the statuses explicitly declared for that operation.
+
+### 32.9 Outbound payload formats and specification limits
+
+- `tia` is the registration default. TIA sends its own JSON envelope, signed with the `X-TIA-Signature` header.
+- `discord` sends a Discord message with one embed per reading. Select it for a Discord webhook URL because Discord rejects the TIA envelope format.
+- A `tia` test is a signed envelope with `meta.test` set to `true` and an empty `readings` list.
+- A `discord` test is a short text message.
+
+Swagger does **not** define the complete outbound JSON schema or where `readings` is nested. It does not specify the signature algorithm, canonicalization, encoding, or verification procedure. Do not invent an outbound JSON contract or assume HMAC/SHA details from the header name alone.
+
+Normal delivery cadence, retry policy, batching limits, deduplication IDs, receiver-authentication headers, and timeout duration are also unspecified. No secret-retrieval or secret-rotation endpoint is documented. An authorized receiving integration must resolve these contract gaps with the IoT team before relying on guessed behavior.
+
+---
+
+## 33. Historical catalogue response — 2026-09-21
+
+The complete original executed catalogue response is retained verbatim. It predates the floor/height/room documentation updates and is not a current schema example. The original detail execution remains in section 6.5.
+
+```json
+{
+  "data": [
+    {
+      "device_id": "70B3D57ED0073E9D",
+      "device_type": "solar",
+      "create_timestamp": "2026-09-20T19:09:17.355Z",
+      "last_updated_timestamp": "2026-09-20T19:09:17.355Z",
+      "install_location": {
+        "install_x": 0,
+        "install_y": 0,
+        "install_floor_level": 0
+      },
+      "is_active": true
+    },
+    {
+      "device_id": "70B3D57ED0076947",
+      "device_type": "solar",
+      "create_timestamp": "2026-09-20T19:09:17.566Z",
+      "last_updated_timestamp": "2026-09-20T19:09:17.566Z",
+      "install_location": {
+        "install_x": 0,
+        "install_y": 0,
+        "install_floor_level": 0
+      },
+      "is_active": true
+    },
+    {
+      "device_id": "70B3D57ED0076948",
+      "device_type": "solar",
+      "create_timestamp": "2026-09-20T19:09:17.773Z",
+      "last_updated_timestamp": "2026-09-20T19:09:17.773Z",
+      "install_location": {
+        "install_x": 0,
+        "install_y": 0,
+        "install_floor_level": 0
+      },
+      "is_active": true
+    },
+    {
+      "device_id": "70B3D57ED0078FD9",
+      "device_type": "solar",
+      "create_timestamp": "2026-09-20T19:09:18.005Z",
+      "last_updated_timestamp": "2026-09-20T19:09:18.005Z",
+      "install_location": {
+        "install_x": 0,
+        "install_y": 0,
+        "install_floor_level": 0
+      },
+      "is_active": true
+    },
+    {
+      "device_id": "70B3D57ED0078FEA",
+      "device_type": "solar",
+      "create_timestamp": "2026-09-20T19:09:18.225Z",
+      "last_updated_timestamp": "2026-09-20T19:09:18.225Z",
+      "install_location": {
+        "install_x": 0,
+        "install_y": 0,
+        "install_floor_level": 0
+      },
+      "is_active": true
+    },
+    {
+      "device_id": "8cf9572000149bd3",
+      "device_type": "avc",
+      "create_timestamp": "2026-09-20T19:09:18.451Z",
+      "last_updated_timestamp": "2026-09-20T19:09:18.451Z",
+      "install_location": {
+        "install_x": 0,
+        "install_y": 0,
+        "install_floor_level": 0
+      },
+      "is_active": true
+    },
+    {
+      "device_id": "8cf9572000149d1f",
+      "device_type": "avc",
+      "create_timestamp": "2026-09-20T19:09:18.690Z",
+      "last_updated_timestamp": "2026-09-20T19:09:18.690Z",
+      "install_location": {
+        "install_x": 0,
+        "install_y": 0,
+        "install_floor_level": 0
+      },
+      "is_active": true
+    },
+    {
+      "device_id": "dummy01801182ed2814",
+      "device_type": "nfc",
+      "create_timestamp": "2026-09-20T19:09:18.918Z",
+      "last_updated_timestamp": "2026-09-20T19:09:18.918Z",
+      "install_location": {
+        "install_x": 0,
+        "install_y": 0,
+        "install_floor_level": 0
+      },
+      "is_active": true
+    },
+    {
+      "device_id": "dummy025dac961b2431",
+      "device_type": "nfc",
+      "create_timestamp": "2026-09-20T19:09:19.142Z",
+      "last_updated_timestamp": "2026-09-20T19:09:19.142Z",
+      "install_location": {
+        "install_x": 0,
+        "install_y": 0,
+        "install_floor_level": 0
+      },
+      "is_active": true
+    },
+    {
+      "device_id": "dummy0319d0f5a73511",
+      "device_type": "nfc",
+      "create_timestamp": "2026-09-20T19:09:19.365Z",
+      "last_updated_timestamp": "2026-09-20T19:09:19.365Z",
+      "install_location": {
+        "install_x": 0,
+        "install_y": 0,
+        "install_floor_level": 0
+      },
+      "is_active": true
+    }
+  ],
+  "meta": {
+    "count": 10
+  }
+}
 ```

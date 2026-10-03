@@ -22,6 +22,7 @@ import { UnavailableDataState } from '@/components/dashboard/states/UnavailableD
 import { ErrorState } from '@/components/dashboard/states/ErrorState';
 import { IotTelemetryMetricSelector } from './IotTelemetryMetricSelector';
 import { IotTelemetryTechnicalDetails } from './IotTelemetryTechnicalDetails';
+import { IotRawTelemetryDetails } from './IotRawTelemetryDetails';
 
 export interface IotDeviceTelemetryPanelProps {
   device: DashboardDeviceCatalogueItem;
@@ -32,6 +33,8 @@ export interface IotDeviceTelemetryPanelProps {
     snr?: number | null;
     latestTimestamp?: string | null;
   } | null) => void;
+  refreshSignal?: number;
+  onSettled?: () => void;
 }
 
 function formatDate(isoString?: string | null): string {
@@ -50,12 +53,22 @@ export function IotDeviceTelemetryPanel({
   device,
   onClose,
   onTelemetryLoaded,
+  refreshSignal,
+  onSettled,
 }: IotDeviceTelemetryPanelProps) {
-  const isSupportedType = device.sourceDeviceType === 'solar' || device.sourceDeviceType === 'avc';
+  const isSupportedType =
+    device.sourceDeviceType === 'solar' ||
+    device.sourceDeviceType === 'avc' ||
+    device.sourceDeviceType === 'sb' ||
+    device.sourceDeviceType === 'smoke';
 
   const [preset, setPreset] = useState<DashboardTelemetryPreset>(DEFAULT_TELEMETRY_PRESET);
   const [selectedMetric, setSelectedMetric] = useState<string>(
-    device.sourceDeviceType === 'avc' ? 'instant_flow_m3h' : 'current_uA',
+    device.sourceDeviceType === 'avc'
+      ? 'instant_flow_m3h'
+      : device.sourceDeviceType === 'sb'
+      ? 'co2'
+      : 'current_uA',
   );
   const [data, setData] = useState<DashboardDeviceTelemetryResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
@@ -64,27 +77,44 @@ export function IotDeviceTelemetryPanel({
 
   const requestGenRef = useRef(0);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const lastEmittedSummaryRef = useRef<string>('');
 
-  // Notify parent of telemetry summary for table and gateway card
+  // Reset last emitted summary when device switches
+  useEffect(() => {
+    lastEmittedSummaryRef.current = '';
+  }, [device.externalDeviceId]);
+
+  // Notify parent of telemetry summary for table and gateway card ONLY when values actually change
   useEffect(() => {
     if (data?.latestSample) {
-      onTelemetryLoaded?.({
-        gatewayId: data.latestSample.gatewayId ?? null,
-        rssi: data.latestSample.rssiDbm ?? null,
-        snr: data.latestSample.snrDb ?? null,
-        latestTimestamp: data.latestSample.observedAt ?? null,
-      });
-    } else {
-      onTelemetryLoaded?.(null);
+      const summaryKey = `${device.externalDeviceId}|${data.latestSample.gatewayId ?? ''}|${data.latestSample.rssiDbm ?? ''}|${data.latestSample.snrDb ?? ''}|${data.latestSample.observedAt ?? ''}`;
+      if (lastEmittedSummaryRef.current !== summaryKey) {
+        lastEmittedSummaryRef.current = summaryKey;
+        onTelemetryLoaded?.({
+          gatewayId: data.latestSample.gatewayId ?? null,
+          rssi: data.latestSample.rssiDbm ?? null,
+          snr: data.latestSample.snrDb ?? null,
+          latestTimestamp: data.latestSample.observedAt ?? null,
+        });
+      }
+    } else if (data === null) {
+      if (lastEmittedSummaryRef.current !== '') {
+        lastEmittedSummaryRef.current = '';
+        onTelemetryLoaded?.(null);
+      }
     }
-  }, [data, onTelemetryLoaded]);
-
+  }, [data, device.externalDeviceId, onTelemetryLoaded]);
 
   // Update default metric when selected device type changes
   useEffect(() => {
-    setSelectedMetric(device.sourceDeviceType === 'avc' ? 'instant_flow_m3h' : 'current_uA');
+    setSelectedMetric(
+      device.sourceDeviceType === 'avc'
+        ? 'instant_flow_m3h'
+        : device.sourceDeviceType === 'sb'
+        ? 'co2'
+        : 'current_uA',
+    );
   }, [device.externalDeviceId, device.sourceDeviceType]);
-
 
   const loadTelemetry = useCallback(
     async (targetPreset: DashboardTelemetryPreset, isRefresh = false) => {
@@ -132,10 +162,11 @@ export function IotDeviceTelemetryPanel({
         if (currentGen === requestGenRef.current) {
           setLoading(false);
           setIsRefreshing(false);
+          onSettled?.();
         }
       }
     },
-    [device.externalDeviceId, isSupportedType],
+    [device.externalDeviceId, isSupportedType, onSettled],
   );
 
   // Trigger on device or preset change
@@ -156,6 +187,15 @@ export function IotDeviceTelemetryPanel({
       }
     };
   }, [preset, isSupportedType, loadTelemetry]);
+
+  // Trigger history refresh when parent scheduler fires detail refresh signal
+  const prevRefreshSignalRef = useRef<number>(refreshSignal ?? 0);
+  useEffect(() => {
+    if (refreshSignal !== undefined && refreshSignal > prevRefreshSignalRef.current) {
+      prevRefreshSignalRef.current = refreshSignal;
+      loadTelemetry(preset, true);
+    }
+  }, [refreshSignal, preset, loadTelemetry]);
 
   const handleRefresh = () => {
     loadTelemetry(preset, true);
@@ -243,6 +283,10 @@ export function IotDeviceTelemetryPanel({
               ? 'Tấm pin năng lượng mặt trời — Giám sát dòng điện và độ sáng thời gian thực'
               : device.sourceDeviceType === 'avc'
               ? 'Đồng hồ nước AVC — Giám sát lưu lượng và chỉ số đo nước'
+              : device.sourceDeviceType === 'sb'
+              ? 'Cảm biến môi trường Smart Building — Giám sát thông số thô'
+              : device.sourceDeviceType === 'smoke'
+              ? 'Cảm biến báo khói — Giám sát trạng thái thô'
               : `Thiết bị danh mục ${device.sourceDeviceType}`}
           </span>
         </div>
@@ -309,8 +353,8 @@ export function IotDeviceTelemetryPanel({
       {!isSupportedType && (
         <UnavailableDataState
           title={`Loại thiết bị '${device.sourceDeviceType}' chưa hỗ trợ telemetry trên Dashboard`}
-          description="Trong giai đoạn Big Phase 02 / Phase 03, Dashboard chỉ tích hợp dữ liệu telemetry trực tiếp cho thiết bị pin mặt trời (solar) và đồng hồ nước (avc). Thiết bị NFC và các loại khác tiếp tục hiển thị trong danh mục nhưng chưa có biểu đồ telemetry."
-          phaseNote="Quy định Phase 03: Thiết bị NFC và các cảm biến chưa hỗ trợ không thực hiện cuộc gọi mạng telemetry từ Dashboard."
+          description="Loại thiết bị này chưa có telemetry được hỗ trợ trên Dashboard. Thiết bị NFC và các loại khác tiếp tục hiển thị trong danh mục nhưng chưa có biểu đồ telemetry."
+          phaseNote="Thiết bị NFC và các cảm biến chưa hỗ trợ không thực hiện cuộc gọi mạng telemetry từ Dashboard."
         />
       )}
 
@@ -486,32 +530,42 @@ export function IotDeviceTelemetryPanel({
             </div>
           )}
 
-          {/* Metric Selector Cards */}
-          <IotTelemetryMetricSelector
-            deviceType={data.deviceType}
-            telemetry={data.telemetry}
-            selectedMetric={selectedMetric}
-            onSelectMetric={setSelectedMetric}
-          />
+          {/* Legacy Solar and AVC detail branch */}
+          {(data.deviceType === 'solar' || data.deviceType === 'avc') && (
+            <>
+              {/* Metric Selector Cards */}
+              <IotTelemetryMetricSelector
+                deviceType={data.deviceType as 'solar' | 'avc'}
+                telemetry={data.telemetry as any}
+                selectedMetric={selectedMetric}
+                onSelectMetric={setSelectedMetric}
+              />
 
-          {/* Historical Trend Chart (MetricTrendChart / @ant-design/charts) */}
-          <div className="w-full">
-            <MetricTrendChart
-              data={chartData.points}
-              metricLabel={activeMetricMeta.label}
-              unit={activeMetricMeta.unit}
-              accessibleSummary={chartData.accessibleSummary}
-              provenance={data.provenance}
-              availability={data.availability}
-              height={260}
-            />
-          </div>
+              {/* Historical Trend Chart (MetricTrendChart / @ant-design/charts) */}
+              <div className="w-full">
+                <MetricTrendChart
+                  data={chartData.points}
+                  metricLabel={activeMetricMeta.label}
+                  unit={activeMetricMeta.unit}
+                  accessibleSummary={chartData.accessibleSummary}
+                  provenance={data.provenance}
+                  availability={data.availability}
+                  height={260}
+                />
+              </div>
 
-          {/* Technical Details Disclosure */}
-          <IotTelemetryTechnicalDetails
-            deviceType={data.deviceType}
-            latestReading={((data.telemetry as any)?.readings || [])[0] ?? null}
-          />
+              {/* Technical Details Disclosure */}
+              <IotTelemetryTechnicalDetails
+                deviceType={data.deviceType}
+                latestReading={((data.telemetry as any)?.readings || [])[0] ?? null}
+              />
+            </>
+          )}
+
+          {/* New Raw Telemetry Details for Smart Building (sb) and Smoke */}
+          {(data.deviceType === 'sb' || data.deviceType === 'smoke') && (
+            <IotRawTelemetryDetails data={data} device={device} />
+          )}
 
           {/* Coverage Summary Footer */}
           <div className="flex items-center justify-between flex-wrap gap-2 pt-2 border-t text-[11px] text-muted-foreground font-mono" style={{ borderColor: 'var(--border)' }}>
@@ -526,6 +580,9 @@ export function IotDeviceTelemetryPanel({
                 </>
               ) : null}
               )
+              {data.coverage.sourceTruncated === true && (
+                <span className="text-amber-400"> (nguồn báo đã cắt bớt)</span>
+              )}
             </div>
             {data.coverage.earliestTimestamp && data.coverage.latestTimestamp && (
               <div>

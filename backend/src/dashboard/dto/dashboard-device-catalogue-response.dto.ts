@@ -58,6 +58,9 @@ export class DashboardDeviceSourceLocationDto {
 
   @ApiProperty({ example: 4, description: 'Source installation floor level integer' })
   floorLevel: number;
+
+  @ApiPropertyOptional({ example: 'E4.08', nullable: true, description: 'Source room identifier, or null if unset' })
+  roomId?: string | null;
 }
 
 export class DashboardDeviceCatalogueItemDto {
@@ -102,6 +105,9 @@ export class DashboardDeviceCatalogueResponseDto {
 
   @ApiProperty({ example: '4', nullable: true })
   requestedFloorId: string | null;
+
+  @ApiProperty({ example: 'E4.08', nullable: true, required: false, description: 'Normalized applied room filter, or null if unfiltered' })
+  requestedRoomId?: string | null;
 
   @ApiProperty({ example: 'ready', enum: ['ready', 'empty'] })
   availability: 'ready' | 'empty';

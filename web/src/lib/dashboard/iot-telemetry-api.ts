@@ -6,6 +6,7 @@ export interface FetchDashboardTelemetryOptions {
   deviceId: string;
   start: string;
   stop: string;
+  limit?: number;
   signal?: AbortSignal;
 }
 
@@ -22,13 +23,14 @@ export type FetchDashboardTelemetryResult =
 
 /**
  * Fetches Dashboard device telemetry through the Next.js same-origin application proxy.
- * Calls: /api/devices/dashboard/buildings/E/iot/devices/:deviceId/telemetry?start=...&stop=...&limit=1000
+ * Calls: /api/devices/dashboard/buildings/E/iot/devices/:deviceId/telemetry?start=...&stop=...&limit=...
  * Strictly read-only, cache: 'no-store'. No direct external IoT backend calls.
  */
 export async function fetchDashboardDeviceTelemetry({
   deviceId,
   start,
   stop,
+  limit,
   signal,
 }: FetchDashboardTelemetryOptions): Promise<FetchDashboardTelemetryResult> {
   const encodedId = encodeURIComponent(deviceId.trim());
@@ -37,6 +39,9 @@ export async function fetchDashboardDeviceTelemetry({
     stop,
     limit: '1000',
   });
+  if (typeof limit === 'number' && Number.isInteger(limit) && limit >= 1 && limit <= 1000) {
+    params.set('limit', limit.toString());
+  }
 
   const url = `${BASE_URL}/dashboard/buildings/E/iot/devices/${encodedId}/telemetry?${params.toString()}`;
 

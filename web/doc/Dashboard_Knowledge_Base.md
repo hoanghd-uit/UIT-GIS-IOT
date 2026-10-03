@@ -1,9 +1,9 @@
 ---
 document_id: GIS-UIT-DASHBOARD-KB
 filename: Dashboard_Knowledge_Base.md
-version: "1.1.0"
+version: "1.2.0"
 compiled_on: "2026-09-25"
-updated_on: "2026-10-01"
+updated_on: "2026-10-03"
 language: vi
 project: "GIS - UIT Building E Digital Twin"
 audience: "Project owner, ChatGPT/Work Mode, planner agents, coding agents, QA agents"
@@ -13,7 +13,7 @@ application_stack: "Next.js + NestJS + PostgreSQL + Unity WebGL"
 authorization_library: "CASL"
 chart_library: "ant-design-charts"
 iot_api_master_source: "IoTBackend_API_HandOver.md"
-repository_verified_in_this_compilation: false
+repository_verified_in_this_compilation: true
 live_iot_api_verified_in_this_compilation: false
 status: CURRENT
 ---
@@ -477,10 +477,11 @@ Concept gồm:
 ### 11.2 Current API facts already available
 
 Theo current `IoTBackend_API_HandOver.md`:
-- `/devices` có device ID/type, timestamps, floor/X/Y/Z, `is_active`.
-- `/solar` có `gateway_id`, RSSI, SNR, temperature, humidity, lux và một số field khác.
-- `/avc` có water metrics, `gateway_id`, RSSI, SNR, battery-low flag và radio fields.
-- `/solar`, `/avc`, `/nfc` hỗ trợ historical range query.
+- `/devices` có device ID/type, timestamps, floor/X/Y/Z, `is_active`. Hỗ trợ filter `floor_level` (integer) và `room_id` (case-sensitive trimmed string) dùng riêng hoặc kết hợp; response metadata cung cấp `install_room_id` nullable string (`string | null | undefined`).
+- `/solar` có `gateway_id`, RSSI, SNR, temperature, humidity, lux và một số field khác. Theo §3.6 API handover: `solar.voltage` là measured battery voltage (V, không phải battery %); `solar.temperature` là ambient temperature (°C, không tự khẳng định representative room/IAQ compliance); `solar.humidity` là relative humidity (%, không tự bật compliance/alerts); `solar.state` là numeric status code (mapping còn open).
+- `/avc` có water metrics, `gateway_id`, RSSI, SNR, battery-low flag và radio fields. Theo §3.6 API handover: `avc.tag_source` là ingestion pipeline tag; `avc.fwd_volume_m3` là cumulative forward volume (m³, không phải daily consumption); `avc.rev_volume_m3` là cumulative reverse volume (m³, reset/rollover còn open); `avc.instant_flow_m3h` là instantaneous flow (m³/h, không tự kết luận rò rỉ); `avc.valve_open` là numeric valve status (mapping còn open).
+- `/solar`, `/avc`, `/nfc` hỗ trợ historical range query (`start`, `stop`, `limit`).
+- Documented endpoints `/sb` (Smart Building sensors) và `/smoke` (khói/cháy) đã được tích hợp trong Small Phase 24 (Phase 11) dưới dạng read-only raw telemetry trên Page 07 (Smart Building 5 thẻ thông số thô + biểu đồ xu hướng CO2/VOC/voltage/visible/ir; Smoke 2 thẻ mã thô status/state + bảng lịch sử 20 dòng). Endpoint `/webhooks` thuộc Small Phase 27 vẫn nằm trong backlog.
 
 Không hỏi lại những capability đã có contract; chỉ hỏi semantics/field còn thiếu.
 
@@ -572,7 +573,7 @@ Stakeholder chọn **CASL**.
 
 Lưu ý thuật ngữ:
 - CASL được dùng cho **authorization/ability**.
-- Cơ chế authentication tối thiểu được lập kế hoạch trong `bp2_phase09_minimal_identity_casl_foundation.md`: local NestJS username/password, PostgreSQL application users/opaque sessions, same-origin HttpOnly cookie. Đây là implementation design của Small Phase 16, **chưa triển khai**; CASL không phải authentication provider.
+- Cơ chế authentication tối thiểu đã được triển khai trong Small Phase 16 (`bp2_phase09_minimal_identity_casl_foundation_handoff.md`): local NestJS username/password, PostgreSQL application users/opaque sessions (`application_users`, `application_sessions`), same-origin HttpOnly cookie (`bei_session`), strict CSRF (`Origin` + `X-BEI-Request`); CASL quản lý authorization/ability với hai roles `viewer` và `manager`.
 
 ### 14.2 Minimum protected domains trong Big Phase
 
@@ -783,7 +784,7 @@ Current Big Phase không tự mở lại drag/drop custom dashboard JSONB. Nếu
 
 ### 17.5 Application identity/session foundation
 
-Small Phase 16 dùng PostgreSQL application users (username, password hash, role, active flag, timestamps) và opaque sessions (user FK, token digest, expiry/revocation). Đây là planned auth persistence, chưa claim tables/accounts đã tồn tại. Code-defined two-role CASL matrix không cần dynamic permissions/role-management tables.
+Small Phase 16 đã triển khai PostgreSQL application users (username, password hash, role, active flag, timestamps) và opaque sessions (user FK, token digest, expiry/revocation) qua các bảng `application_users` và `application_sessions`. Code-defined two-role CASL matrix không cần dynamic permissions/role-management tables.
 
 Identity/session persistence ở Small Phase 16 và PCCC manual data ở Small Phase 17 không thay đổi việc IoT-derived report/alert persistence được deferred tới Small Phase 21. Tiếp tục bounded raw reads/request-scoped calculation cho các live/derived widgets trong các phase trước đó.
 
@@ -871,7 +872,6 @@ Không hỏi lại các quyết định đã freeze ở trên. Các mục mở h
 - Numeric baseline recommendation cho từng metric/device type.
 - Exact unit/schema của `alert_time_threshold` trong DB/API.
 - Whether/when `STALE` và `NO_DATA` trở thành explicit alert/device states.
-- Implementation/verification của planned local-account/login/session mechanism; minimum design đã được ghi trong Small Phase 16 plan, CASL vẫn chỉ giải quyết authorization.
 - Future role/policy expansion ngoài approved Viewer/Manager matrix; minimum matrix không còn là open decision.
 - Room-grid layout source/persistence nếu cần layout ổn định theo từng floor.
 - Exact floor metadata fields ở Page 01 nếu data source chưa đủ.
@@ -958,8 +958,10 @@ Current Dashboard Big Phase decisions captured in project conversation and compi
 | DASH-DEC-19 | Shared Dashboard component system ưu tiên reuse | DECIDED |
 | DASH-DEC-20 | Không hỏi lại IoT field đã có trong current API handover | DECIDED WORKING RULE |
 | DASH-DEC-21 | Minimal Dashboard roles = Viewer/Manager; Manager PCCC create/update/delete; không Admin/Editor/manage-all | DECIDED — stakeholder 2026-10-01 |
-| DASH-DEC-22 | Small Phase 16 resumed; hai application accounts beiviewer/beimanager; local login/PG opaque-session implementation design ở detailed Phase 09 plan | DECIDED ACCOUNTS + PLANNED IMPLEMENTATION |
+| DASH-DEC-22 | Small Phase 16 resumed; hai application accounts beiviewer/beimanager; local login/PG opaque-session implementation design ở detailed Phase 09 plan | IMPLEMENTED — Small Phase 16 |
 | DASH-DEC-23 | Viewer và Manager đều không được update/delete device display positions; backend phải enforce | DECIDED — stakeholder clarification 2026-10-01 |
+| DASH-DEC-24 | Small Phase 16 authentication & session foundation hoàn thành: application_users, application_sessions, HttpOnly cookie, CSRF, CASL ability matrix | IMPLEMENTED — Small Phase 16 handoff |
+| DASH-DEC-25 | Small Phase 23 (Phase 10) Device catalogue contract upgrade: roomId filter, install_room_id nullable metadata, §3.6 Solar/AVC semantics reconciliation, floor-0 fallback bypass khi có room filter | IMPLEMENTED — Small Phase 23 handoff |
 
 ---
 
@@ -999,7 +1001,7 @@ DataMode: live / derived / manual / demo.
 Authorization: CASL.
 Minimal roles: viewer / manager. Viewer read-only; Manager PCCC CRUD theo
 domain phase; cả hai denied device display-position writes. Authentication
-foundation có plan Phase 09 / Small Phase 16 nhưng chưa claim implemented.
+foundation của Small Phase 16 đã triển khai (local NestJS + PostgreSQL users/sessions + same-origin HttpOnly cookie + CSRF).
 Charts: ant-design-charts.
 
 Không tự invent IoT field, threshold, unit, role permission, report schema,
@@ -1013,11 +1015,11 @@ fallback/demo rule đã chốt.
 
 ```text
 status: CURRENT
-version: 1.1.0
+version: 1.2.0
 compiled_on: 2026-09-25
-updated_on: 2026-10-01
+updated_on: 2026-10-03
 role: single authoritative Dashboard knowledge base
 supersedes: dashboard scope assumptions from older proposal/project KB where conflicting
 exact_iot_api_authority: IoTBackend_API_HandOver.md
-repository_state: UNVERIFIED in this compilation
+repository_state: VERIFIED (Small Phase 23 / Phase 10 catalogue upgrade completed)
 ```

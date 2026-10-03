@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { DashboardDeviceCatalogueItem } from '@/types/dashboard-iot';
+import type { DeviceRowSummary } from './useIotPage07Telemetry';
 
 export interface SelectedTelemetrySummary {
   rssi?: number | null;
@@ -14,6 +15,7 @@ export interface IotDeviceCatalogueTableProps {
   selectedDeviceId?: string | null;
   selectedTelemetrySummary?: SelectedTelemetrySummary | null;
   onSelectDevice?: (device: DashboardDeviceCatalogueItem) => void;
+  rowSummaries?: Record<string, DeviceRowSummary>;
 }
 
 function formatDate(isoString: string): string {
@@ -51,6 +53,7 @@ export function IotDeviceCatalogueTable({
   selectedDeviceId,
   selectedTelemetrySummary,
   onSelectDevice,
+  rowSummaries,
 }: IotDeviceCatalogueTableProps) {
   // Expansion state for technical metadata disclosure per row
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -113,11 +116,93 @@ export function IotDeviceCatalogueTable({
             const isExpanded = expandedId === device.externalDeviceId;
             const isFallback = device.floorAssignment === 'development-fallback';
 
-            // Show telemetry radio stats only for the actively selected device if available
+            // Row summary from auto-loaded visible page or fallback to selected device summary
+            const summary = rowSummaries?.[device.externalDeviceId];
             const hasLiveTelemetry = isSelected && selectedTelemetrySummary;
-            const rssiVal = hasLiveTelemetry && selectedTelemetrySummary.rssi != null ? `${selectedTelemetrySummary.rssi} dBm` : '—';
-            const snrVal = hasLiveTelemetry && selectedTelemetrySummary.snr != null ? `${selectedTelemetrySummary.snr}` : '—';
-            const lastTimeVal = hasLiveTelemetry && selectedTelemetrySummary.latestTimestamp ? formatTime(selectedTelemetrySummary.latestTimestamp) : '—';
+
+            // RSSI derivation
+            let rssiDisplay: React.ReactNode = '—';
+            let rssiTitle = 'Chưa có dữ liệu telemetry';
+            let rssiColor = 'var(--text-muted)';
+
+            if (summary) {
+              if (summary.status === 'ready' && summary.rssi != null) {
+                rssiDisplay = `${summary.rssi} dBm`;
+                rssiTitle = `RSSI từ telemetry: ${summary.rssi} dBm`;
+                rssiColor = summary.rssi < -110 ? 'var(--warning)' : 'var(--text-primary)';
+              } else if (summary.status === 'loading') {
+                rssiDisplay = <span className="animate-pulse text-[#7E8B96]">···</span>;
+                rssiTitle = 'Đang tải dữ liệu telemetry...';
+              } else if (summary.status === 'unsupported') {
+                rssiDisplay = '—';
+                rssiTitle = `Loại thiết bị ${device.sourceDeviceType} không hỗ trợ kết nối vô tuyến`;
+              } else if (summary.status === 'empty') {
+                rssiDisplay = '—';
+                rssiTitle = 'Không có mẫu đo trong 72 giờ qua';
+              } else if (summary.status === 'error') {
+                rssiDisplay = '—';
+                rssiTitle = `Không thể tải dữ liệu vô tuyến (${summary.errorMessage || 'Lỗi mạng'})`;
+              }
+            } else if (hasLiveTelemetry && selectedTelemetrySummary.rssi != null) {
+              rssiDisplay = `${selectedTelemetrySummary.rssi} dBm`;
+              rssiTitle = `RSSI từ telemetry: ${selectedTelemetrySummary.rssi} dBm`;
+              rssiColor = selectedTelemetrySummary.rssi < -110 ? 'var(--warning)' : 'var(--text-primary)';
+            }
+
+            // SNR derivation
+            let snrDisplay: React.ReactNode = '—';
+            let snrTitle = 'Chưa có dữ liệu telemetry';
+            let snrColor = 'var(--text-muted)';
+
+            if (summary) {
+              if (summary.status === 'ready' && summary.snr != null) {
+                snrDisplay = `${summary.snr}`;
+                snrTitle = `SNR từ telemetry: ${summary.snr}`;
+                snrColor = 'var(--text-primary)';
+              } else if (summary.status === 'loading') {
+                snrDisplay = <span className="animate-pulse text-[#7E8B96]">···</span>;
+                snrTitle = 'Đang tải dữ liệu telemetry...';
+              } else if (summary.status === 'unsupported') {
+                snrDisplay = '—';
+                snrTitle = `Loại thiết bị ${device.sourceDeviceType} không hỗ trợ kết nối vô tuyến`;
+              } else if (summary.status === 'empty') {
+                snrDisplay = '—';
+                snrTitle = 'Không có mẫu đo trong 72 giờ qua';
+              } else if (summary.status === 'error') {
+                snrDisplay = '—';
+                snrTitle = `Không thể tải dữ liệu vô tuyến (${summary.errorMessage || 'Lỗi mạng'})`;
+              }
+            } else if (hasLiveTelemetry && selectedTelemetrySummary.snr != null) {
+              snrDisplay = `${selectedTelemetrySummary.snr}`;
+              snrTitle = `SNR từ telemetry: ${selectedTelemetrySummary.snr}`;
+              snrColor = 'var(--text-primary)';
+            }
+
+            // Lần cuối derivation
+            let lastTimeDisplay: React.ReactNode = '—';
+            let lastTimeTitle = 'Chưa có dữ liệu thời gian mẫu đo';
+
+            if (summary) {
+              if (summary.status === 'ready' && summary.observedAt) {
+                lastTimeDisplay = formatTime(summary.observedAt);
+                lastTimeTitle = `Thời điểm mẫu đo mới nhất: ${formatDate(summary.observedAt)} (khoảng thời gian 72h)`;
+              } else if (summary.status === 'loading') {
+                lastTimeDisplay = <span className="animate-pulse text-[#7E8B96]">···</span>;
+                lastTimeTitle = 'Đang tải dữ liệu thời gian...';
+              } else if (summary.status === 'unsupported') {
+                lastTimeDisplay = '—';
+                lastTimeTitle = `Loại thiết bị ${device.sourceDeviceType} không hỗ trợ kết nối vô tuyến`;
+              } else if (summary.status === 'empty') {
+                lastTimeDisplay = '—';
+                lastTimeTitle = 'Không có mẫu đo trong 72 giờ qua';
+              } else if (summary.status === 'error') {
+                lastTimeDisplay = '—';
+                lastTimeTitle = 'Lỗi tải dữ liệu';
+              }
+            } else if (hasLiveTelemetry && selectedTelemetrySummary.latestTimestamp) {
+              lastTimeDisplay = formatTime(selectedTelemetrySummary.latestTimestamp);
+              lastTimeTitle = `Thời điểm mẫu đo mới nhất: ${formatDate(selectedTelemetrySummary.latestTimestamp)}`;
+            }
 
             return (
               <React.Fragment key={device.externalDeviceId}>
@@ -177,28 +262,20 @@ export function IotDeviceCatalogueTable({
                   {/* RSSI */}
                   <td className="py-3 px-2.5 text-right font-mono text-xs">
                     <span
-                      style={{
-                        color: hasLiveTelemetry && selectedTelemetrySummary.rssi != null
-                          ? selectedTelemetrySummary.rssi < -110 ? 'var(--warning)' : 'var(--text-primary)'
-                          : 'var(--text-muted)'
-                      }}
-                      title={hasLiveTelemetry ? `RSSI từ telemetry: ${rssiVal}` : 'Chỉ khả dụng khi chọn thiết bị để nạp telemetry'}
+                      style={{ color: rssiColor }}
+                      title={rssiTitle}
                     >
-                      {rssiVal}
+                      {rssiDisplay}
                     </span>
                   </td>
 
                   {/* SNR */}
                   <td className="py-3 px-2.5 text-right font-mono text-xs">
                     <span
-                      style={{
-                        color: hasLiveTelemetry && selectedTelemetrySummary.snr != null
-                          ? 'var(--text-primary)'
-                          : 'var(--text-muted)'
-                      }}
-                      title={hasLiveTelemetry ? `SNR từ telemetry: ${snrVal}` : 'Chỉ khả dụng khi chọn thiết bị để nạp telemetry'}
+                      style={{ color: snrColor }}
+                      title={snrTitle}
                     >
-                      {snrVal}
+                      {snrDisplay}
                     </span>
                   </td>
 
@@ -211,8 +288,8 @@ export function IotDeviceCatalogueTable({
 
                   {/* Lần cuối */}
                   <td className="py-3 px-3 text-center font-mono text-xs text-[#A5B0B9]">
-                    <span title={hasLiveTelemetry ? `Mẫu đo mới nhất: ${selectedTelemetrySummary.latestTimestamp}` : 'Chỉ hiển thị khi nạp telemetry'}>
-                      {lastTimeVal}
+                    <span title={lastTimeTitle}>
+                      {lastTimeDisplay}
                     </span>
                   </td>
 
@@ -298,12 +375,16 @@ export function IotDeviceCatalogueTable({
                 {isExpanded && (
                   <tr className="bg-[rgba(23,34,44,0.6)] text-xs">
                     <td colSpan={11} className="py-3 px-4 border-b border-[rgba(83,109,126,0.2)]">
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-[11px]">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-[11px]">
                         <div>
                           <span className="text-[#7E8B96]">Tọa độ nguồn (X, Y, Z): </span>
                           <span className="font-mono text-[#E6EDF1]">
                             [{device.sourceLocation.x}, {device.sourceLocation.y}, {device.sourceLocation.z}]
                           </span>
+                        </div>
+                        <div>
+                          <span className="text-[#7E8B96]">Phòng nguồn: </span>
+                          <span className="font-mono text-[#E6EDF1]">{device.sourceLocation.roomId || '—'}</span>
                         </div>
                         <div>
                           <span className="text-[#7E8B96]">Ngày tạo nguồn: </span>

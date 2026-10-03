@@ -38,10 +38,14 @@ export class DashboardIotCatalogueService {
   /**
    * Reads, validates, and normalizes the active IoT device catalogue for Dashboard Page 07.
    * Strictly read-only, request-time and in-memory. Zero database writes.
+  /**
+   * Reads, validates, and normalizes the active IoT device catalogue for Dashboard Page 07.
+   * Strictly read-only, request-time and in-memory. Zero database writes.
    */
   async getCatalogue(
     buildingId: string,
     floorId?: string,
+    roomId?: string,
   ): Promise<DashboardDeviceCatalogueResponse> {
     // 1. Source-mode gate: Live catalogue requires DEVICE_SOURCE_MODE=iot
     const mode = this.config.get<string>('fixtures.mode', 'disabled');
@@ -84,23 +88,48 @@ export class DashboardIotCatalogueService {
       requestedFloorId = normalizedFloor;
     }
 
+    // 3b. Validate roomId if provided
+    let requestedRoomId: string | null = null;
+    if (roomId !== undefined && roomId !== null) {
+      if (typeof roomId !== 'string' || roomId.trim().length === 0) {
+        throw new BadRequestException('roomId must be a non-empty string when provided.');
+      }
+      requestedRoomId = roomId.trim();
+    }
+
     // 4. Fetch upstream data through reused IotClientService
     let raw: IoTUpstreamDeviceListResponse;
     let developmentFallbackApplied = false;
     const floorMode = this.iotMapper.getFloorMappingMode();
+    const hasRoomFilter = requestedRoomId !== null;
 
     try {
-      if (requestedUpstreamFloorLevel === null) {
+      if (requestedUpstreamFloorLevel === null && !hasRoomFilter) {
         this.logger.log('Fetching full unfiltered active device catalogue from upstream for Dashboard...');
         raw = await this.iotClient.fetchRawDevices();
       } else {
-        this.logger.log(
-          `Fetching scoped active device catalogue for ${normalizedBuilding}/${requestedFloorId} (upstream floor_level=${requestedUpstreamFloorLevel})...`,
-        );
-        raw = await this.iotClient.fetchRawDevices({ floorLevel: requestedUpstreamFloorLevel });
+        const filter: { floorLevel?: number; roomId?: string } = {};
+        if (requestedUpstreamFloorLevel !== null) {
+          filter.floorLevel = requestedUpstreamFloorLevel;
+        }
+        if (hasRoomFilter) {
+          filter.roomId = requestedRoomId;
+        }
 
-        // Development fallback under TEST_CURRENT_FLOOR_4_6_V1
+        this.logger.log(
+          `Fetching scoped active device catalogue for ${normalizedBuilding}` +
+            (requestedFloorId ? `/${requestedFloorId}` : '') +
+            (hasRoomFilter ? ` (room=${requestedRoomId})` : '') +
+            (requestedUpstreamFloorLevel !== null ? ` (upstream floor_level=${requestedUpstreamFloorLevel})` : '') +
+            '...',
+        );
+        raw = await this.iotClient.fetchRawDevices(filter);
+
+        // Development fallback under TEST_CURRENT_FLOOR_4_6_V1:
+        // Scoped isolation: ONLY when floor is filtered AND NO room filter is active
         if (
+          !hasRoomFilter &&
+          requestedUpstreamFloorLevel !== null &&
           (!raw || !Array.isArray(raw.data) || raw.data.length === 0) &&
           floorMode === 'TEST_CURRENT_FLOOR_4_6_V1'
         ) {
@@ -200,6 +229,19 @@ export class DashboardIotCatalogueService {
         continue;
       }
 
+      // install_room_id: optional string or null. Malformed value (number, object, etc.) is skipped.
+      let sourceRoomId: string | null | undefined = undefined;
+      if (loc.install_room_id !== undefined) {
+        if (loc.install_room_id === null) {
+          sourceRoomId = null;
+        } else if (typeof loc.install_room_id === 'string') {
+          sourceRoomId = loc.install_room_id; // preserve exact source string & case
+        } else {
+          skippedCount++;
+          continue;
+        }
+      }
+
       // Duplicate check: keep the first valid record
       if (seenIds.has(deviceId)) {
         duplicateCount++;
@@ -252,6 +294,7 @@ export class DashboardIotCatalogueService {
           y: loc.install_y,
           z: loc.install_z,
           floorLevel: loc.install_floor_level,
+          ...(sourceRoomId !== undefined ? { roomId: sourceRoomId } : {}),
         },
         displayFloorId,
         floorAssignment,
@@ -291,6 +334,7 @@ export class DashboardIotCatalogueService {
       schemaVersion: 1,
       buildingId: normalizedBuilding,
       requestedFloorId,
+      requestedRoomId,
       availability,
       provenance: {
         mode: 'live',

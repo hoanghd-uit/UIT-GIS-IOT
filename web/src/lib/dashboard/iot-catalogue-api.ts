@@ -3,6 +3,7 @@ import { DashboardDeviceCatalogueResponse } from '@/types/dashboard-iot';
 export interface FetchCatalogueOptions {
   buildingId?: string;
   floorId?: string | null;
+  roomId?: string | null;
   signal?: AbortSignal;
 }
 
@@ -46,6 +47,21 @@ export async function fetchDashboardDeviceCatalogue(
     params.set('floorId', options.floorId.trim());
   }
 
+  if (options.roomId !== undefined && options.roomId !== null) {
+    if (typeof options.roomId !== 'string' || options.roomId.trim().length === 0) {
+      return {
+        success: false,
+        error: {
+          statusCode: 400,
+          errorCode: 'INVALID_ROOM_ID',
+          message: 'Mã phòng nguồn không hợp lệ hoặc để trống.',
+          isUnavailable: false,
+        },
+      };
+    }
+    params.set('roomId', options.roomId.trim());
+  }
+
   const query = params.toString() ? `?${params.toString()}` : '';
   const url = `/api/devices/dashboard/buildings/${encodeURIComponent(buildingId)}/iot/devices${query}`;
 
@@ -76,7 +92,7 @@ export async function fetchDashboardDeviceCatalogue(
         : status === 502
         ? 'Không thể kết nối đến máy chủ IoT hoặc dữ liệu không hợp lệ.'
         : status === 400
-        ? 'Tham số tầng hoặc tòa nhà không hợp lệ.'
+        ? 'Tham số phòng, tầng hoặc tòa nhà không hợp lệ.'
         : 'Đã xảy ra lỗi khi tải danh mục thiết bị.';
 
       return {

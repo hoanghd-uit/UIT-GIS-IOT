@@ -381,7 +381,7 @@ describe('DashboardIotTelemetryService & Controller (Big Phase 02 / Phase 03)', 
       expect(res.deviceType).toBe('solar');
       expect(res.provenance.caveats).toBeDefined();
       expect(
-        res.provenance.caveats?.some((c) => c.includes('Thông số điện áp, nhiệt độ, độ ẩm')),
+        res.provenance.caveats?.some((c) => c.includes('Mã trạng thái, hiệu chuẩn và chất lượng dữ liệu')),
       ).toBe(true);
 
       const solar = res.telemetry as any;
@@ -404,7 +404,7 @@ describe('DashboardIotTelemetryService & Controller (Big Phase 02 / Phase 03)', 
 
       expect(res.deviceType).toBe('avc');
       expect(
-        res.provenance.caveats?.some((c) => c.includes('Ý nghĩa lưu lượng tức thời')),
+        res.provenance.caveats?.some((c) => c.includes('Mã cờ van/sự cố, quy tắc reset chỉ số tích lũy')),
       ).toBe(true);
       expect(
         res.provenance.caveats?.some((c) => c.includes('Nhiệt độ đo được (°C)')),
@@ -517,6 +517,170 @@ describe('DashboardIotTelemetryService & Controller (Big Phase 02 / Phase 03)', 
           stop: '2026-09-26T10:00:00.000Z',
         }),
       ).rejects.toThrow(ServiceUnavailableException);
+    });
+  });
+
+  describe('Small Phase 24: Smart Building (sb) & Smoke support and caveats', () => {
+    it('returns telemetry with SB-specific caveat for sb device type', async () => {
+      mockSharedTelemetryService.resolveDeviceType = jest.fn().mockResolvedValueOnce('sb');
+      mockSharedTelemetryService.getDeviceTelemetry = jest.fn().mockResolvedValueOnce({
+        schemaVersion: 1,
+        deviceId: 'dev-sb-1',
+        deviceType: 'sb',
+        fetchedAt: '2026-09-26T10:00:00.000Z',
+        queryRange: {
+          start: '2026-09-23T10:00:00.000Z',
+          stop: '2026-09-26T10:00:00.000Z',
+          limit: 1000,
+        },
+        coverage: {
+          returnedCount: 1,
+          validCount: 1,
+          invalidCount: 0,
+          isTruncated: false,
+          earliestTimestamp: '2026-09-25T10:00:00.000Z',
+          latestTimestamp: '2026-09-25T10:00:00.000Z',
+          reachedLimit: false,
+          sourceCount: 1,
+          sourceTruncated: false,
+        },
+        telemetry: {
+          type: 'sb',
+          category: 'smart_building',
+          latest: {
+            timestamp: '2026-09-25T10:00:00.000Z',
+            rawVoltage: 3.3,
+            rawVisible: 100,
+            rawIr: 50,
+            rawCo2: 450,
+            rawVoc: 120,
+            fCnt: 50,
+          },
+          status: {
+            label: 'Dữ liệu thô chưa xác nhận thang đo',
+            isConfirmed: false,
+          },
+          readings: [
+            {
+              timestamp: '2026-09-25T10:00:00.000Z',
+              devEui: 'dev-sb-1',
+              networkDeviceName: 'SB_Room_1',
+              applicationId: 'app-sb',
+              gatewayId: 'gw-1',
+              rssi: -80,
+              snr: 8.0,
+              rawVoltage: 3.3,
+              rawVisible: 100,
+              rawIr: 50,
+              rawCo2: 450,
+              rawVoc: 120,
+              fCnt: 50,
+            },
+          ],
+        },
+      });
+
+      const res = await telemetryService.getTelemetry('E', 'dev-sb-1', {
+        start: '2026-09-23T10:00:00.000Z',
+        stop: '2026-09-26T10:00:00.000Z',
+      });
+
+      expect(res.deviceType).toBe('sb');
+      expect(res.latestSample?.gatewayId).toBe('gw-1');
+      expect(res.provenance.caveats).toContain(
+        'Đơn vị và thang đo cảm biến sb chưa được xác nhận; các giá trị này chưa dùng để đánh giá IAQ hoặc cảnh báo.',
+      );
+    });
+
+    it('returns telemetry with Smoke-specific caveat for smoke device type', async () => {
+      mockSharedTelemetryService.resolveDeviceType = jest.fn().mockResolvedValueOnce('smoke');
+      mockSharedTelemetryService.getDeviceTelemetry = jest.fn().mockResolvedValueOnce({
+        schemaVersion: 1,
+        deviceId: 'dev-smoke-1',
+        deviceType: 'smoke',
+        fetchedAt: '2026-09-26T10:00:00.000Z',
+        queryRange: {
+          start: '2026-09-23T10:00:00.000Z',
+          stop: '2026-09-26T10:00:00.000Z',
+          limit: 1000,
+        },
+        coverage: {
+          returnedCount: 1,
+          validCount: 1,
+          invalidCount: 0,
+          isTruncated: false,
+          earliestTimestamp: '2026-09-25T10:00:00.000Z',
+          latestTimestamp: '2026-09-25T10:00:00.000Z',
+          reachedLimit: false,
+          sourceCount: 1,
+          sourceTruncated: false,
+        },
+        telemetry: {
+          type: 'smoke',
+          category: 'unknown',
+          latest: {
+            timestamp: '2026-09-25T10:00:00.000Z',
+            rawStatus: 0,
+            rawState: 1,
+          },
+          status: {
+            label: 'Mã thô chưa xác nhận ý nghĩa',
+            isConfirmed: false,
+          },
+          readings: [
+            {
+              timestamp: '2026-09-25T10:00:00.000Z',
+              devEui: 'dev-smoke-1',
+              networkDeviceName: 'Smoke_Detector_1',
+              applicationId: 'app-smoke',
+              gatewayId: 'gw-smoke-1',
+              rssi: -70,
+              snr: 10.0,
+              rawStatus: 0,
+              rawState: 1,
+            },
+          ],
+        },
+      });
+
+      const res = await telemetryService.getTelemetry('E', 'dev-smoke-1', {
+        start: '2026-09-23T10:00:00.000Z',
+        stop: '2026-09-26T10:00:00.000Z',
+      });
+
+      expect(res.deviceType).toBe('smoke');
+      expect(res.latestSample?.gatewayId).toBe('gw-smoke-1');
+      expect(res.provenance.caveats).toContain(
+        'Chưa xác nhận ý nghĩa mã status/state; không diễn giải thành bình thường, cháy hoặc sự cố.',
+      );
+    });
+
+    it('rejects NFC and unknown types with 400 on Dashboard boundary', async () => {
+      mockSharedTelemetryService.resolveDeviceType = jest.fn().mockResolvedValueOnce('nfc');
+
+      await expect(
+        telemetryService.getTelemetry('E', 'dev-nfc-1', {
+          start: '2026-09-23T10:00:00.000Z',
+          stop: '2026-09-26T10:00:00.000Z',
+        }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('rejects repeated query parameters with 400', async () => {
+      await expect(
+        telemetryService.getTelemetry('E', 'dev-1', {
+          start: ['2026-09-23T10:00:00.000Z', '2026-09-24T10:00:00.000Z'] as any,
+          stop: '2026-09-26T10:00:00.000Z',
+        }),
+      ).rejects.toThrow('Both start and stop ISO-8601 query parameters are required as single strings.');
+
+      await expect(
+        telemetryService.getTelemetry('E', 'dev-1', {
+          start: '2026-09-23T10:00:00.000Z',
+          stop: '2026-09-26T10:00:00.000Z',
+          limit: ['100', '200'] as any,
+        }),
+      ).rejects.toThrow('Query parameter limit must not be repeated.');
     });
   });
 });

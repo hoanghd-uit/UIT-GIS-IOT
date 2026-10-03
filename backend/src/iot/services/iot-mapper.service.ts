@@ -155,6 +155,19 @@ export class IotMapperService {
         continue;
       }
 
+      // Validate optional install_room_id if present: must be string or null
+      let roomId: string | null | undefined = undefined;
+      if (loc.install_room_id !== undefined) {
+        if (loc.install_room_id === null) {
+          roomId = null;
+        } else if (typeof loc.install_room_id === 'string') {
+          roomId = loc.install_room_id;
+        } else {
+          skippedCount++;
+          continue;
+        }
+      }
+
       // Check duplicate ID: keep first valid record
       if (seenIds.has(deviceId)) {
         duplicateCount++;
@@ -176,6 +189,7 @@ export class IotMapperService {
           y: loc.install_y,
           z: loc.install_z,
           floorLevel: loc.install_floor_level,
+          ...(roomId !== undefined ? { roomId } : {}),
         },
         displayFloorId: normalizedFloor,
       });

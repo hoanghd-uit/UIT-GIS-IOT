@@ -2,6 +2,8 @@ import {
   TelemetryCoverageSummary,
   SolarTelemetryData,
   AvcTelemetryData,
+  SmartBuildingTelemetryData,
+  SmokeTelemetryData,
 } from '@/types/iot-telemetry';
 
 export type DashboardTelemetryPreset = 'last-24h' | 'last-72h' | 'last-7d';
@@ -28,7 +30,7 @@ export interface DashboardDeviceTelemetryResponse {
   schemaVersion: 1;
   buildingId: string;
   deviceId: string;
-  deviceType: 'solar' | 'avc';
+  deviceType: 'solar' | 'avc' | 'sb' | 'smoke';
   availability: 'ready' | 'empty';
   provenance: DashboardTelemetryProvenance;
   queryRange: {
@@ -38,5 +40,5 @@ export interface DashboardDeviceTelemetryResponse {
   };
   coverage: TelemetryCoverageSummary;
   latestSample: DashboardTelemetryLatestSample | null;
-  telemetry: SolarTelemetryData | AvcTelemetryData;
+  telemetry: SolarTelemetryData | AvcTelemetryData | SmartBuildingTelemetryData | SmokeTelemetryData;
 }

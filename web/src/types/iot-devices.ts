@@ -18,6 +18,7 @@ export interface FloorDeviceView {
     y: number;
     z?: number;
     floorLevel: number;
+    roomId?: string | null;
   };
   displayFloorId: string;
 }

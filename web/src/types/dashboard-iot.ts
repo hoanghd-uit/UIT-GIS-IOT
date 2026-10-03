@@ -16,6 +16,7 @@ export interface DashboardDeviceSourceLocation {
   y: number;
   z: number;
   floorLevel: number;
+  roomId?: string | null;
 }
 
 export interface DashboardDeviceCatalogueItem {
@@ -48,6 +49,7 @@ export interface DashboardDeviceCatalogueResponse {
   schemaVersion: 1;
   buildingId: string;
   requestedFloorId: string | null;
+  requestedRoomId?: string | null;
   availability: 'ready' | 'empty';
   provenance: DashboardProvenance;
   mapping: DashboardCatalogueMapping;

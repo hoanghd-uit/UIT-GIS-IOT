@@ -349,6 +349,57 @@ describe('IotMapperService & IotClientService (Small Phase 06)', () => {
       const res2 = mapper.mapResponse(payloadNoMeta, 'E', '4');
       expect(res2.summary.truncated).toBeNull();
     });
+
+    it('maps string and null install_room_id and preserves absence', () => {
+      const payload: IoTUpstreamDeviceListResponse = {
+        data: [
+          {
+            device_id: 'dev-room-string',
+            device_type: 'solar',
+            install_location: { install_x: 0, install_y: 0, install_z: 0, install_floor_level: 0, install_room_id: 'E4.08' },
+          },
+          {
+            device_id: 'dev-room-null',
+            device_type: 'solar',
+            install_location: { install_x: 1, install_y: 1, install_z: 1, install_floor_level: 0, install_room_id: null },
+          },
+          {
+            device_id: 'dev-room-absent',
+            device_type: 'solar',
+            install_location: { install_x: 2, install_y: 2, install_z: 2, install_floor_level: 0 },
+          },
+        ],
+      };
+
+      const res = mapper.mapResponse(payload, 'E', '4');
+      expect(res.devices).toHaveLength(3);
+      expect(res.devices[0].sourceLocation.roomId).toBe('E4.08');
+      expect(res.devices[1].sourceLocation.roomId).toBeNull();
+      expect(res.devices[2].sourceLocation.roomId).toBeUndefined();
+    });
+
+    it('skips records with malformed install_room_id (e.g. number or object)', () => {
+      const payload: IoTUpstreamDeviceListResponse = {
+        data: [
+          {
+            device_id: 'dev-bad-room-num',
+            device_type: 'solar',
+            install_location: { install_x: 0, install_y: 0, install_z: 0, install_floor_level: 0, install_room_id: 123 as any },
+          },
+          {
+            device_id: 'dev-valid-room',
+            device_type: 'solar',
+            install_location: { install_x: 1, install_y: 1, install_z: 1, install_floor_level: 0, install_room_id: 'E4.01' },
+          },
+        ],
+      };
+
+      const res = mapper.mapResponse(payload, 'E', '4');
+      expect(res.devices).toHaveLength(1);
+      expect(res.devices[0].deviceId).toBe('dev-valid-room');
+      expect(res.summary.skippedCount).toBe(1);
+      expect(res.summary.acceptedCount).toBe(1);
+    });
   });
 
   describe('IotClientService token guard', () => {
