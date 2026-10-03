@@ -25,10 +25,12 @@ namespace UIT.Viewer.Editor
     {
         public const string SourceFloor4Path = "Assets/Prefabs/Floor/Floor_E_04.prefab";
         public const string SourceFloor6Path = "Assets/Prefabs/Floor/Floor_E_06.prefab";
+        public const string SourceFloorGPath = "Assets/Prefabs/Floor/Floor_E_G.prefab";
 
         public const string WrapperFolder = "Assets/Content/Floors/E";
         public const string WrapperFloor4Path = "Assets/Content/Floors/E/Floor_E_04.prefab";
         public const string WrapperFloor6Path = "Assets/Content/Floors/E/Floor_E_06.prefab";
+        public const string WrapperFloorGPath = "Assets/Content/Floors/E/Floor_E_G.prefab";
 
         public const string ConfigFolder = "Assets/Content/Config";
         public const string RegistryAssetPath = "Assets/Content/Config/FloorContentRegistry.asset";
@@ -194,6 +196,7 @@ namespace UIT.Viewer.Editor
         {
             CreateOrUpdateWrapper("4", SourceFloor4Path, WrapperFloor4Path);
             CreateOrUpdateWrapper("6", SourceFloor6Path, WrapperFloor6Path);
+            CreateOrUpdateWrapper("G", SourceFloorGPath, WrapperFloorGPath);
         }
 
         private static void CreateOrUpdateWrapper(string floorId, string sourcePrefabPath, string wrapperPrefabPath)
@@ -261,6 +264,7 @@ namespace UIT.Viewer.Editor
 
             string floor4Guid = AssetDatabase.AssetPathToGUID(WrapperFloor4Path);
             string floor6Guid = AssetDatabase.AssetPathToGUID(WrapperFloor6Path);
+            string floorGGuid = AssetDatabase.AssetPathToGUID(WrapperFloorGPath);
 
             foreach (var fid in allFloors)
             {
@@ -282,6 +286,11 @@ namespace UIT.Viewer.Editor
                     entry.isConfigured = true;
                     entry.prefab = new AssetReferenceGameObject(floor6Guid);
                 }
+                else if (fid == "G" && !string.IsNullOrEmpty(floorGGuid))
+                {
+                    entry.isConfigured = true;
+                    entry.prefab = new AssetReferenceGameObject(floorGGuid);
+                }
 
                 entries.Add(entry);
             }
@@ -292,7 +301,7 @@ namespace UIT.Viewer.Editor
             // Also ensure copy in Resources for robust runtime fallback
             AssetDatabase.CopyAsset(RegistryAssetPath, ResourcesRegistryPath);
 
-            Debug.Log($"[Phase03Automation] Saved FloorContentRegistry with {entries.Count} entries (Floor 4 and 6 configured).");
+            Debug.Log($"[Phase03Automation] Saved FloorContentRegistry with {entries.Count} entries (Floor 4, 6, and G configured).");
             return registry;
         }
 
@@ -346,9 +355,10 @@ namespace UIT.Viewer.Editor
                 bundledSchema.IncludeInBuild = true;
             }
 
-            // Add entries for Floor 4 and Floor 6 wrappers
+            // Add entries for Floor 4, Floor 6, and Floor G wrappers
             AddOrUpdateAddressableEntry(settings, group, WrapperFloor4Path, "floors/E/4");
             AddOrUpdateAddressableEntry(settings, group, WrapperFloor6Path, "floors/E/6");
+            AddOrUpdateAddressableEntry(settings, group, WrapperFloorGPath, "floors/E/G");
 
             EditorUtility.SetDirty(settings);
             Debug.Log("[Phase03Automation] Addressables settings, profiles, and FloorPrefabs group configured.");
@@ -536,6 +546,11 @@ namespace UIT.Viewer.Editor
                 if (!registry.TryGetEntry("E", "6", out var e6) || !e6.isConfigured || e6.prefab == null || !e6.prefab.RuntimeKeyIsValid())
                 {
                     Debug.LogError("[Validation] Floor 6 is not properly configured in FloorContentRegistry.");
+                    allPassed = false;
+                }
+                if (!registry.TryGetEntry("E", "G", out var eg) || !eg.isConfigured || eg.prefab == null || !eg.prefab.RuntimeKeyIsValid())
+                {
+                    Debug.LogError("[Validation] Floor G is not properly configured in FloorContentRegistry.");
                     allPassed = false;
                 }
                 if (registry.TryGetEntry("E", "7", out var e7) && e7.isConfigured)

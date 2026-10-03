@@ -15,7 +15,7 @@ MonoBehaviour:
   m_PixelRect:
     serializedVersion: 2
     x: 0
-    y: 42
+    y: 61
     width: 1152
     height: 630
   m_ShowMode: 4
@@ -93,7 +93,7 @@ MonoBehaviour:
     serializedVersion: 2
     x: 0
     y: 0
-    width: 227.6
+    width: 227.5
     height: 374
   m_MinSize: {x: 201, y: 226}
   m_MaxSize: {x: 4001, y: 4026}
@@ -268,9 +268,9 @@ MonoBehaviour:
   m_Children: []
   m_Position:
     serializedVersion: 2
-    x: 227.6
+    x: 227.5
     y: 0
-    width: 652.4
+    width: 652.5
     height: 374
   m_MinSize: {x: 202, y: 226}
   m_MaxSize: {x: 4002, y: 4026}
@@ -339,7 +339,7 @@ MonoBehaviour:
   m_Pos:
     serializedVersion: 2
     x: 0
-    y: 452
+    y: 398
     width: 879
     height: 174
   m_SerializedDataModeController:
@@ -384,21 +384,21 @@ MonoBehaviour:
     scrollPos: {x: 0, y: 348.40002}
     m_SelectedIDs: fcd60000
     m_LastClickedID: 55036
-    m_ExpandedIDs: 00000000dad40000dcd40000ded40000e0d40000e2d4000000ca9a3b
+    m_ExpandedIDs: 000000009a0901009c0901009e090100
     m_RenameOverlay:
       m_UserAcceptedRename: 0
-      m_Name: Desk Props
-      m_OriginalName: Desk Props
+      m_Name: 
+      m_OriginalName: 
       m_EditFieldRect:
         serializedVersion: 2
         x: 0
         y: 0
         width: 0
         height: 0
-      m_UserData: 55032
+      m_UserData: 0
       m_IsWaitingForDelay: 0
       m_IsRenaming: 0
-      m_OriginalEventType: 0
+      m_OriginalEventType: 11
       m_IsRenamingFilename: 1
       m_TrimLeadingAndTrailingWhitespace: 0
       m_ClientGUIView: {fileID: 5}
@@ -413,7 +413,7 @@ MonoBehaviour:
     scrollPos: {x: 0, y: 0}
     m_SelectedIDs: 
     m_LastClickedID: 0
-    m_ExpandedIDs: 00000000dad40000dcd40000ded40000e0d40000e2d40000
+    m_ExpandedIDs: 000000009a0901009c0901009e090100
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -492,8 +492,8 @@ MonoBehaviour:
     m_TextWithWhitespace: "Inspector\u200B"
   m_Pos:
     serializedVersion: 2
-    x: 880
-    y: 78
+    x: 881
+    y: 24
     width: 271
     height: 548
   m_SerializedDataModeController:
@@ -542,8 +542,8 @@ MonoBehaviour:
   m_Pos:
     serializedVersion: 2
     x: 0
-    y: 78
-    width: 226.6
+    y: 24
+    width: 226.5
     height: 348
   m_SerializedDataModeController:
     m_DataMode: 0
@@ -558,7 +558,7 @@ MonoBehaviour:
     m_OverlaysVisible: 1
   m_SceneHierarchy:
     m_TreeViewState:
-      scrollPos: {x: 0, y: 498}
+      scrollPos: {x: 0, y: 0}
       m_SelectedIDs: 
       m_LastClickedID: 0
       m_ExpandedIDs: f0849eff069f9eff4a8104008e810400e6810400
@@ -607,9 +607,9 @@ MonoBehaviour:
     m_TextWithWhitespace: "Scene\u200B"
   m_Pos:
     serializedVersion: 2
-    x: 227.6
-    y: 78
-    width: 650.4
+    x: 228.5
+    y: 24
+    width: 650.5
     height: 348
   m_SerializedDataModeController:
     m_DataMode: 0
@@ -1240,7 +1240,7 @@ MonoBehaviour:
     m_OverlaysVisible: 1
   m_WindowGUID: cc27987af1a868c49b0894db9c0f5429
   m_Gizmos: 1
-  m_OverrideSceneCullingMask: 0
+  m_OverrideSceneCullingMask: 6917529027641081856
   m_SceneIsLit: 0
   m_SceneLighting: 1
   m_2DMode: 0
@@ -1299,7 +1299,7 @@ MonoBehaviour:
   m_Rotation:
     m_Target: {x: 0.035334066, y: -0.93922925, z: 0.32612255, w: 0.101836495}
     speed: 2
-    m_Value: {x: 0.035270743, y: -0.93936527, z: 0.32553837, w: 0.101851225}
+    m_Value: {x: -0.03533183, y: 0.9391698, z: -0.3261019, w: -0.10183006}
   m_Size:
     m_Target: 2.4964921
     speed: 2
@@ -1394,10 +1394,10 @@ MonoBehaviour:
     m_VRangeLocked: 0
     hZoomLockedByDefault: 0
     vZoomLockedByDefault: 0
-    m_HBaseRangeMin: -100.26667
-    m_HBaseRangeMax: 100.26667
-    m_VBaseRangeMin: -82.46667
-    m_VBaseRangeMax: 82.46667
+    m_HBaseRangeMin: -125.333336
+    m_HBaseRangeMax: 125.333336
+    m_VBaseRangeMin: -103.083336
+    m_VBaseRangeMax: 103.083336
     m_HAllowExceedBaseRangeMin: 1
     m_HAllowExceedBaseRangeMax: 1
     m_VAllowExceedBaseRangeMin: 1
@@ -1431,7 +1431,7 @@ MonoBehaviour:
       height: 164.93333
     m_MinimalGUI: 1
   m_defaultScale: 2
-  m_LastWindowPixelSize: {x: 1253.3334, y: 1083.3334}
+  m_LastWindowPixelSize: {x: 1002.6667, y: 866.6667}
   m_ClearInEditMode: 1
   m_NoCameraWarning: 1
   m_LowResolutionForAspectRatios: 01000000000000000000

@@ -21,6 +21,12 @@ MonoBehaviour:
     m_SerializedLabels:
     - floor-content
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4ad667fb0e2344befbf18eef4da45b4f
+    m_Address: floors/E/G
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - floor-content
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 6d4acb63bbbd24943878534c3728ede0
     m_Address: floors/E/6
     m_ReadOnly: 0

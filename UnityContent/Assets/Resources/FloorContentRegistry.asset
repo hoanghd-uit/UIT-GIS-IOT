@@ -123,10 +123,11 @@ MonoBehaviour:
       m_EditorAssetChanged: 0
   - buildingId: E
     floorId: G
-    isConfigured: 0
+    isConfigured: 1
     prefab:
-      m_AssetGUID: 
+      m_AssetGUID: 4ad667fb0e2344befbf18eef4da45b4f
       m_SubObjectName: 
       m_SubObjectType: 
       m_SubObjectGUID: 
       m_EditorAssetChanged: 0
+

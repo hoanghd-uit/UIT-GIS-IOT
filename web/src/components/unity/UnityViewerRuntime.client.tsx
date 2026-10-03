@@ -148,6 +148,8 @@ export function UnityViewerRuntime({ children }: UnityViewerRuntimeProps) {
     (targetPathname: string) => {
       if (!isLoaded) return;
 
+      pathnameRef.current = targetPathname;
+
       const route = parseViewerRoute(targetPathname);
       if (!route) return;
 
