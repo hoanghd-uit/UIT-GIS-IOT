@@ -16,11 +16,14 @@ export class DashboardEnvironmentProvenanceDto {
 }
 
 export class DashboardEnvironmentSourceSummaryDto {
-  @ApiProperty({ example: 4, description: 'Raw solar records received from upstream catalogue' })
+  @ApiProperty({ example: 4, description: 'Raw candidate records received from upstream catalogue' })
   receivedCount: number;
 
   @ApiProperty({ example: 4, description: 'Valid solar records accepted into environment source list' })
   acceptedSolarCount: number;
+
+  @ApiProperty({ example: 1, description: 'Valid SB records accepted into environment source list' })
+  acceptedSbCount: number;
 
   @ApiProperty({ example: 0, description: 'Malformed records skipped' })
   skippedCount: number;
@@ -36,8 +39,8 @@ export class DashboardEnvironmentSourceItemDto {
   @ApiProperty({ example: '8cf95720000a0123', description: 'Opaque upstream device identifier' })
   deviceId: string;
 
-  @ApiProperty({ example: 'solar', enum: ['solar'], description: 'Authoritative source device type' })
-  sourceDeviceType: 'solar';
+  @ApiProperty({ example: 'solar', enum: ['solar', 'sb'], description: 'Authoritative source device type' })
+  sourceDeviceType: 'solar' | 'sb';
 
   @ApiProperty({ example: true, description: 'Catalogue registration/activity metadata (NOT online/offline health)' })
   catalogueActive: boolean;
@@ -67,6 +70,13 @@ export class DashboardEnvironmentSourceItemDto {
     description: 'Environmental semantic confirmation status',
   })
   semanticStatus: 'unconfirmed_environment_candidate';
+
+  @ApiPropertyOptional({
+    type: [String],
+    example: ['temperature', 'humidity', 'lux'],
+    description: 'Supported environmental metrics by source device type',
+  })
+  supportedMetrics?: string[];
 }
 
 export class DashboardEnvironmentSourceListResponseDto {

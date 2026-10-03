@@ -1,7 +1,7 @@
 ---
 document_id: GIS-UIT-DASHBOARD-KB
 filename: Dashboard_Knowledge_Base.md
-version: "1.2.0"
+version: "1.3.2"
 compiled_on: "2026-09-25"
 updated_on: "2026-10-03"
 language: vi
@@ -304,7 +304,7 @@ Thay interactive BIM 3D panel trong Dashboard bằng logical 2D grid có thể t
 - Water KPI nếu dùng: `LIVE/DERIVED` khi AVC data phù hợp.
 - Alert count/list: `DERIVED` từ alert subsystem.
 - IoT health: `DERIVED` từ device/telemetry state có thể xác định.
-- CO2: `CONDITIONAL`; đang chờ IoT team confirm. Nếu không có -> `DEMO`.
+- CO2: `/sb` đã có nguồn và sample do stakeholder cung cấp. Đơn vị ppm được phép dùng theo giả định vận hành ở §9.3.1; room/grid popup live vẫn phụ thuộc mapping, coverage và adapter của selected phase. Không giữ demo chỉ vì technical unit confirmation còn chờ.
 - Không hard-code proposal numbers làm live values.
 
 ### 7.3 Metadata panel
@@ -356,25 +356,52 @@ Implement toàn bộ component của Page 03 theo proposal, gồm concept:
 
 ### 9.2 Metric availability
 
-Current IoT handover có `solar.temperature`, `solar.humidity`, `lux`, RSSI/SNR và một số field khác, nhưng temperature/humidity units/semantics còn pending hardware review.
+Current IoT handover có Solar ambient temperature (°C), relative humidity (%), lux và radio fields theo §3.6; `/sb` có `co2`, `voc`, voltage, light channels và radio fields theo §31. Shared SB bridge đã delivered trong Small Phase 24. Small Phase 25 mandatory branch đã có implementation handoff `bp2_phase12_page03_sb_co2_environment_upgrade_handoff.md` và source adapters Solar/SB, CO₂ latest/history/population summary; review tài liệu này không rerun các tests lịch sử. Phần bổ sung ranking/compliance ở §9.6 mới là plan, chưa implement.
 
-Các metric Dashboard mong muốn cần IoT team confirm thêm:
-- CO2.
-- VOC.
-- Air pressure.
-- Temperature/humidity units/physical meaning.
+Đơn vị measurement chưa được hardware confirm được xử lý theo decision §9.3.1, không phải mặc định giữ tất cả metrics ở demo. Calibration, sensor quality, room representativeness và alert/compliance semantics vẫn chưa tự được xác nhận. `/sb` không có documented temperature/humidity/pressure fields; không bổ sung chúng bằng suy luận từ khả năng phần cứng hoặc ghép nhầm sensor.
 
 ### 9.3 CO2
 
-CO2 là requirement UI hiện tại nhưng **không có field trong approved API handover hiện tại**.
+CO2 có source field `/sb.co2`, normalized `rawCo2`, recorded time và device identity. Stakeholder đã cung cấp sample của `70B3D57ED006D366` (`sb-dev2`), recorded at `2026-10-02T09:24:08.629Z`, `co2=596`; đây là owner-provided execution evidence, không phải agent gọi live API hoặc chứng minh coverage/freshness của toàn fleet.
 
-Rule:
-- IoT team có -> `LIVE/DERIVED`.
-- IoT team không có -> CO2 widget/popup `DEMO`.
+Small Phase 25 được phép đưa CO2 latest/history sang `live` và tính mean/min/max từ sources có dữ liệu sang `derived`, dùng ppm theo decision dưới đây; mandatory branch đã delivered theo handoff nêu trên. Declare source window, contributing-source count và coverage; một thiết bị có dữ liệu không đại diện tự động cho cả tòa nhà hoặc các phòng demo. Room ranking cần actual room metadata, không cần room-to-cell mapping; floor compliance cần actual floor/history và approved rules ở §9.6, không cần room ID. Heatmap/grid vẫn có gates mapping/history riêng; IAQ score và authoritative alerts chưa được kích hoạt. Demo fallback chỉ cho branch được duyệt còn thiếu mapping/rules, không phải fallback im lặng khi live source lỗi/empty.
+
+### 9.3.1 Temporary standard-unit decision — stakeholder 2026-10-03
+
+**DECIDED — APPLICATION ASSUMPTION, NOT HARDWARE CONFIRMATION:** nếu chưa được xác nhận đơn vị, tạm xem các giá trị measurement trả về theo đơn vị đo tiêu chuẩn của metric. Stakeholder sẽ tự xác nhận với đội kỹ thuật sau; không chặn metric integration chỉ vì đang chờ unit review.
+
+- CO2 dùng **ppm**, identity mapping (`co2=596` → `596 ppm`), không tự nhân/chia scale. Voltage dùng **V**. Các metric đã được contract mô tả giữ unit hiện có: temperature °C, relative humidity %, RSSI dBm, SNR dB.
+- Centralize named metric/unit mappings và record trạng thái như `unitStatus: assumed_standard`, `hardwareConfirmed: false`, mapping version; giữ giá trị raw/source field để đổi mapping sau này. Đây là metadata/provenance policy, chưa phải DTO/implementation đã hoàn thành.
+- Với VOC/light channels hoặc field có nhiều cách định nghĩa metric, detailed plan phải ghi rõ convention/unit của **metric cụ thể** đang dùng và mark assumption; không đòi technical confirmation trước để proceed, nhưng không coi VOC Index, concentration, raw channel counts và lux là các quantity có thể đổi nhãn cho nhau mà không có mapping. Không invent công thức conversion hoặc tự suy sensor output algorithm.
+- Decision áp dụng **đơn vị measurement**, không xác nhận smoke/state/flag enums, phòng/tầng, coordinate units/frame, battery %, online state, calibration hoặc threshold/IAQ rules. Không tạo field/source không tồn tại.
+- Dữ liệu thật dùng `live`; phép tính trên nguồn thật dùng `derived`, kèm unit-assumption provenance — không đổi sang `demo` chỉ vì units đang provisional. Giữ null/zero, query bounds, quality và coverage; không trộn demo vào aggregates.
+- Chỉ selected phase mới được đổi adapter/unit presentation cần thiết. Không tự sửa labels/layout trên completed pages. Refresh 5 phút theo hotfix đã duyệt **chỉ Page 07**; Page 03 giữ cơ chế hiện tại theo §9.5, không tự lan sang Page 01 hoặc các page khác. Không implementation hoặc PostgreSQL report/alert persistence được kích hoạt bởi unit decision này.
 
 ### 9.4 Historical/report data
 
 Approved type-specific APIs đã có time-range history cho current device types. Các report dài hạn/aggregate cho IAQ sẽ đi qua report-data design ở Small Phase riêng khi cần tối ưu/cache.
+
+### 9.5 Page IAQ refresh — keep current behavior, stakeholder 2026-10-03
+
+**DECIDED — KEEP CURRENT IMPLEMENTATION:** sau khi nhận kết quả kiểm tra source, stakeholder rút yêu cầu refresh IAQ mỗi 5 phút. Không thêm scheduler/polling hoặc refactor callback/state chỉ để thay đổi refresh trong Small Phase 25. Yêu cầu 5 phút trước đó chưa được implement và không còn là task/acceptance criterion.
+
+**Current source audit, not runtime observation:** `EnvironmentDashboard.client.tsx` có `loadInitialData` memoized với dependencies `[]`, effect tải sources/summary khi mount; `loadReadingsForSource` phụ thuộc preset, effect tải khi đổi selected source/preset. `EnvironmentSourceDetail.tsx` chỉ gọi `onRefresh` khi user bấm nút; API helpers dùng `cache: 'no-store'` nhưng không có retry/poll scheduler. Không thấy timer, subscription hoặc callback feedback loop tự fetch liên tục trong path IAQ đã kiểm tra. Không diễn giải việc có `useCallback`/`useEffect` hay `no-store` thành polling.
+
+- Giữ tải lần đầu khi mở trang và selected telemetry khi đổi source/preset hoặc manual refresh như hiện tại; không thêm background timer hoặc automatic retry.
+- Small Phase 25 vẫn giữ scope SB CO2 live/derived, unit metadata và conditional room/grid adapters đã duyệt. Decision này chỉ hủy thay đổi refresh, không hủy source integration hoặc temporary standard-unit policy.
+- Page 07 giữ yêu cầu refresh 5 phút riêng; Page 01, Water, Alerts, Parking và shared/global fetch behavior không đổi. Preserve stakeholder labels/layout và historical handoffs.
+
+### 9.6 Derived ranking và three-metric floor compliance — stakeholder 2026-10-03
+
+**DECIDED — SUPPLEMENT PLAN, NOT YET IMPLEMENTED:** chuyển hai widgets “Phòng CO₂ cao nhất lúc này” và “% thời gian đạt chuẩn” sang `derived` khi actual nguồn/metadata cho phép. Không làm lại mandatory SB/CO₂ branch, không migrate heatmap/Overview grid hoặc restyle completed pages. Detailed supplement: `bp2_phase12_page03_derived_ranking_floor_compliance_supplement.md`; tạo matching supplemental handoff riêng, không overwrite handoff gốc.
+
+- **Thresholds:** upper warning config defaults **CO₂ 1.000 ppm, temperature 27°C, humidity 70%**. Pass dùng **`<=`**, cả ba cùng đạt; warning presentation dùng `>`. Không dùng lower boundaries 24°C/40% trong footer demo cũ. Đây là application-owned statistical criterion, không hardware calibration hoặc health/regulatory certification.
+- **Config ownership:** component “Ngưỡng cảnh báo”, footer và NestJS calculator đọc **cùng typed, versioned default config**. Source audit hiện thấy CO₂ default ở table/fixture, temperature/humidity table vẫn `Chưa xác nhận`; cần reconcile đúng ba approved warning cells, không claim existing centralized provider đã có. Giữ table **read-only**, “Sửa ngưỡng” disabled cho cả Viewer/Manager; chức năng **sửa/lưu ngưỡng ở Small Phase 21**. Không runtime RAM editor, localStorage config, entity/migration/job hoặc PostgreSQL report/alert persistence mới ở phase 25. Danger/VOC/demo rows không tự trở thành approved live alert rules.
+- **Floor policy:** dùng trung bình **từng metric theo tầng trong cùng khoảng thời gian**, không đánh giá từng phòng rồi tổng hợp room pass percentages. SB CO₂ và Solar °C/% compose ở floor-statistics level; không ghép thành một sensor record hoặc mượn data khác tầng. Source-floor0/development fallback không tự đại diện cho tầng4/6.
+- **Time/missing policy:** giữ full rolling7d window làm denominator; chỉ duration cả ba metric cùng đạt mới vào numerator. Khoảng mất bất kỳ metric cần thiết được tính **không đạt**, không bỏ khỏi denominator. Tầng zero valid relevant samples cho toàn window dùng **`percent: null` → `—`**, không0%. Tầng có data nhưng thiếu cả-window một metric có thể0% theo missing-as-fail, kèm lý do. API fail/truncation/not-attempted không giả thành confirmed data gap hoặc0%.
+- **Resolution chosen by detailed plan, not stakeholder hardware confirmation:** buckets5phút, versioned application calculation policy; mean per device rồi equal-device floor mean per metric; no interpolation/carry-forward. Weighted bucket durations, explicit estimate/coverage caveat. Đây **không phải sampling cadence hoặc auto-refresh5phút**; §9.5 vẫn giữ nguyên. Whole-building row tổng hợp floor-time của evaluable floors, exclude/count missing/unavailable floors, không claim complete building coverage.
+- **Ranking policy chosen by detailed plan:** mean của latest finite CO₂ row từ từng distinct SB device cùng actual room/floor, top6 descending, latest24h lookback/subset/source-time disclosure. Không cần verified primary-cell binding. Room thiếu assignment → honest empty/unavailable, không device EUI/demo room substitution. Numeric threshold chip chỉ descriptive comparison, không authoritative Alert state.
+- **Scope boundary:** required rename title thành “% thời gian đạt chuẩn”, correct config/footer/provenance/data wiring được phép; mọi stakeholder labels khác giữ nguyên. Không polling/notify loop, role/account changes, Page06 alert activation/menu badge hoặc database writes. Authoritative alert durations/semantics và grid mapping vẫn có gates riêng.
 
 ---
 
@@ -425,6 +452,8 @@ Không dùng tổng số historical alert events làm badge.
 ### 10.4 Alert configuration
 
 Config phải lưu PostgreSQL, bao gồm cả baseline recommendation và giá trị đã được user chỉnh.
+
+Implementation timing: PostgreSQL alert/config persistence và authorized editing vẫn ở Small Phase21. Approved Page03 statistical defaults theo §9.6 chỉ được đọc từ application config trước phase đó; không promote chúng thành active authoritative Alert rules hoặc bật editor sớm. Phase21 phải reuse cùng default/config version boundary để table và calculator không lệch nhau khi thêm user-edited values.
 
 Conceptual fields:
 
@@ -687,14 +716,12 @@ Project owner đã gửi các câu hỏi cho IoT backend team. Trong lúc chờ,
 ### P0 - ảnh hưởng trực tiếp Dashboard core
 
 1. **CO2 / VOC / air pressure**
-   - Có device/endpoint/field hay không.
-   - Units.
-   - Current + history.
+   - `/sb` CO2/VOC current/history capability đã có; owner cung cấp populated CO2 sample. Không hỏi lại endpoint/field availability này.
+   - Technical units/scales/calibration vẫn cần stakeholder xác nhận sau, nhưng **không block integration**: tạm dùng standard metric units với assumption metadata theo §9.3.1.
+   - Air pressure vẫn chưa có source; unit assumption không tạo pressure API/reading.
 
 2. **Solar field semantics**
-   - temperature unit/physical meaning.
-   - humidity unit/physical meaning.
-   - voltage unit/meaning.
+   - Ambient °C, relative humidity %, battery voltage V đã được mô tả trong API handover §3.6; còn quality/calibration và room representativeness.
    - `state` enum.
 
 3. **AVC water semantics**
@@ -703,8 +730,8 @@ Project owner đã gửi các câu hỏi cho IoT backend team. Trong lúc chờ,
    - numeric flag domains (`pipe_leak`, `pipe_burst`, `battery_low`, `valve_open`, ...).
 
 4. **Room mapping**
-   - Upstream có room ID hay không.
-   - Nếu không, ứng dụng sẽ cần PostgreSQL/application mapping.
+   - Catalogue có nullable `install_room_id`; còn actual population và mapping source room → configured room/grid cell.
+   - Null/unmapped room không được thay bằng phòng demo; application mapping cần scope riêng, không suy room từ tên mạng hoặc coordinate chưa calibrated.
 
 5. **Expected telemetry cadence**
    - reporting interval theo device type.
@@ -808,12 +835,13 @@ Identity/session persistence ở Small Phase 16 và PCCC manual data ở Small P
 - Page 06 alert configuration domain/API/UI skeleton, baseline seed mechanism và evaluator abstraction mà không cần freeze numeric baseline ngay.
 - Menu notification-badge component contract.
 - Loading/empty/error/unavailable states.
+- Small Phase 25: typed SB environment source/CO2 latest/history và bounded CO2 aggregates theo standard-unit assumption ở §9.3.1; confirmed Solar unit metadata; giữ refresh hiện tại theo §9.5. Đây là ready backlog, **chưa claim implemented**.
 
 ### CONDITIONAL / có thể build UI nhưng live integration chờ confirm
 
-- Page 01 CO2 popup live.
-- Page 03 CO2/VOC/pressure live metrics.
-- Page 03 units/labels cho solar temperature/humidity nếu semantics chưa confirm.
+- Page 01 CO2 room/grid popup và Page 03 room heatmap/ranking: cần actual room/cell mapping và usable coverage, không còn bị block bởi CO2 unit review.
+- Page 03 IAQ score/compliance/alerts: cần approved rules/quality, không tự được quyết định bởi unit assumption.
+- Page 03 pressure: còn thiếu actual source. Các VOC/light conventions phải rõ metric mapping trong detailed plan, không blanket unit-confirmation blocker.
 - Page 07 firmware/OTA/calibration/gateway health/network aggregate.
 - Page 11 fire-zone live state.
 - Room-level mapping nếu upstream chưa có room ID.
@@ -869,7 +897,7 @@ Identity/session persistence ở Small Phase 16 và PCCC manual data ở Small P
 
 Không hỏi lại các quyết định đã freeze ở trên. Các mục mở hiện tại:
 
-- Numeric baseline recommendation cho từng metric/device type.
+- Numeric baseline recommendation cho authoritative alert metrics/device types chưa được duyệt. Riêng Page03 statistical compliance upper defaults1000ppm/27°C/70% và three-metric/missing rules đã chốt ở §9.6; không hỏi lại chúng như open gates cho hai widgets.
 - Exact unit/schema của `alert_time_threshold` trong DB/API.
 - Whether/when `STALE` và `NO_DATA` trở thành explicit alert/device states.
 - Future role/policy expansion ngoài approved Viewer/Manager matrix; minimum matrix không còn là open decision.
@@ -942,7 +970,7 @@ Current Dashboard Big Phase decisions captured in project conversation and compi
 | DASH-DEC-03 | Page 01 BIM 3D panel -> Interactive 2D Grid | DECIDED |
 | DASH-DEC-04 | Shared `FloorCatalog` + grid interaction | DECIDED |
 | DASH-DEC-05 | DataMode = live/derived/manual/demo | DECIDED |
-| DASH-DEC-06 | CO2 cần IoT confirm; thiếu thì demo | DECIDED |
+| DASH-DEC-06 | CO2 cần source; fallback demo khi được duyệt và source/mapping thiếu. Unit-wait requirement cũ được supersede bởi DASH-DEC-26 | DECIDED — amended 2026-10-03 |
 | DASH-DEC-07 | NestJS tạo report data cần thiết và PostgreSQL lưu; chi tiết deferred | DECIDED + DEFERRED DETAIL |
 | DASH-DEC-08 | Alert config và baseline recommendation lưu DB | DECIDED |
 | DASH-DEC-09 | Config có `alert_time_threshold` | DECIDED |
@@ -962,6 +990,10 @@ Current Dashboard Big Phase decisions captured in project conversation and compi
 | DASH-DEC-23 | Viewer và Manager đều không được update/delete device display positions; backend phải enforce | DECIDED — stakeholder clarification 2026-10-01 |
 | DASH-DEC-24 | Small Phase 16 authentication & session foundation hoàn thành: application_users, application_sessions, HttpOnly cookie, CSRF, CASL ability matrix | IMPLEMENTED — Small Phase 16 handoff |
 | DASH-DEC-25 | Small Phase 23 (Phase 10) Device catalogue contract upgrade: roomId filter, install_room_id nullable metadata, §3.6 Solar/AVC semantics reconciliation, floor-0 fallback bypass khi có room filter | IMPLEMENTED — Small Phase 23 handoff |
+| DASH-DEC-26 | Chưa confirm thì tạm coi measurements theo standard unit của metric; CO2 ppm, voltage V, identity numeric mapping; stakeholder confirm kỹ thuật sau. Assumption provenance, không tự đóng room/quality/alert gates hoặc implement phase mới | DECIDED — temporary stakeholder policy 2026-10-03; §9.3.1 |
+| DASH-DEC-27 | Sau source audit không thấy continuous/automatic polling, stakeholder rút yêu cầu IAQ refresh 5 phút; giữ mount/selection/preset/manual fetch hiện tại. Không thêm scheduler hoặc refresh-only refactor; SB/unit scope của Small Phase 25 vẫn giữ nguyên | DECIDED — latest stakeholder update 2026-10-03; §9.5; earlier 5-minute proposal withdrawn before implementation |
+| DASH-DEC-28 | Page03 “% thời gian đạt chuẩn” dùng floor means, simultaneous CO₂/temperature/humidity AND, inclusive upper config defaults1000ppm/27°C/70%; missing intervals fail/full denominator, wholly no-data floor`—` | DECIDED — stakeholder 2026-10-03; §9.6; supplement not implemented |
+| DASH-DEC-29 | Phase25 table/calculations chỉ đọc cùng default config; “Sửa ngưỡng”/user-edit persistence ở Phase21. Ranking cần actual room metadata, floor compliance cần actual floor; không chờ room-to-cell binding của heatmap/Overview | DECIDED — stakeholder config deferral + scoped planning 2026-10-03; §9.6; no editor/PG/alert activation |
 
 ---
 
@@ -1004,9 +1036,10 @@ domain phase; cả hai denied device display-position writes. Authentication
 foundation của Small Phase 16 đã triển khai (local NestJS + PostgreSQL users/sessions + same-origin HttpOnly cookie + CSRF).
 Charts: ant-design-charts.
 
-Không tự invent IoT field, threshold, unit, role permission, report schema,
-TSDB access hoặc live data. Nếu thiếu, đọc backlog/open items và giữ đúng
-fallback/demo rule đã chốt.
+Không tự invent IoT field, threshold, role permission, report schema,
+TSDB access hoặc live data. Unit chưa confirm có explicit standard-unit
+assumption theo §9.3.1; không biến assumption thành hardware confirmation.
+Nếu thiếu source/mapping/rules, giữ đúng fallback/demo rule đã chốt.
 ```
 
 ---
@@ -1015,11 +1048,11 @@ fallback/demo rule đã chốt.
 
 ```text
 status: CURRENT
-version: 1.2.0
+version: 1.3.2
 compiled_on: 2026-09-25
 updated_on: 2026-10-03
 role: single authoritative Dashboard knowledge base
 supersedes: dashboard scope assumptions from older proposal/project KB where conflicting
 exact_iot_api_authority: IoTBackend_API_HandOver.md
-repository_state: VERIFIED (Small Phase 23 / Phase 10 catalogue upgrade completed)
+repository_state: SOURCE-AUDITED (Small Phase 25 mandatory branch handoff/source present; supplemental ranking/compliance planned, tests not rerun by this documentation update)
 ```

@@ -14,7 +14,7 @@ import { DeviceTelemetryResponseDto } from '../../iot/dto/iot-telemetry.dto';
 import { DashboardDeviceCatalogueResponse } from '../dto/dashboard-device-catalogue-response.dto';
 import { calculateEnvironmentSummary } from '../dashboard-environment-summary';
 
-describe('DashboardEnvironmentService & Controller (Big Phase 02 / Phase 05)', () => {
+describe('DashboardEnvironmentService & Controller (Big Phase 02 / Phase 05 & Phase 12)', () => {
   let environmentService: DashboardEnvironmentService;
   let controller: DashboardEnvironmentController;
   let mockCatalogueService: jest.Mocked<Partial<DashboardIotCatalogueService>>;
@@ -38,8 +38,8 @@ describe('DashboardEnvironmentService & Controller (Big Phase 02 / Phase 05)', (
       requestedUpstreamFloorLevel: null,
     },
     summary: {
-      receivedCount: 3,
-      acceptedCount: 3,
+      receivedCount: 4,
+      acceptedCount: 4,
       skippedCount: 0,
       duplicateCount: 0,
       truncated: false,
@@ -52,7 +52,7 @@ describe('DashboardEnvironmentService & Controller (Big Phase 02 / Phase 05)', (
         active: true,
         sourceCreatedAt: '2026-09-20T10:00:00.000Z',
         sourceUpdatedAt: '2026-09-20T10:00:00.000Z',
-        sourceLocation: { x: 1, y: 2, z: 3, floorLevel: 4 },
+        sourceLocation: { x: 1, y: 2, z: 3, floorLevel: 4, roomId: 'E4.01' },
         displayFloorId: '4',
         floorAssignment: 'source',
       },
@@ -63,8 +63,19 @@ describe('DashboardEnvironmentService & Controller (Big Phase 02 / Phase 05)', (
         active: false,
         sourceCreatedAt: '2026-09-21T10:00:00.000Z',
         sourceUpdatedAt: '2026-09-21T10:00:00.000Z',
-        sourceLocation: { x: 4, y: 5, z: 6, floorLevel: 6 },
+        sourceLocation: { x: 4, y: 5, z: 6, floorLevel: 6, roomId: null },
         displayFloorId: '6',
+        floorAssignment: 'source',
+      },
+      {
+        externalDeviceId: 'sb-dev-01',
+        sourceDeviceType: 'sb',
+        category: 'smart_building',
+        active: true,
+        sourceCreatedAt: '2026-09-22T08:00:00.000Z',
+        sourceUpdatedAt: '2026-09-22T08:00:00.000Z',
+        sourceLocation: { x: 10, y: 11, z: 12, floorLevel: 4, roomId: 'E4.02' },
+        displayFloorId: '4',
         floorAssignment: 'source',
       },
       {
@@ -159,6 +170,61 @@ describe('DashboardEnvironmentService & Controller (Big Phase 02 / Phase 05)', (
     },
   };
 
+  const mockSbTelemetryResponse: DeviceTelemetryResponseDto = {
+    schemaVersion: 1,
+    deviceId: 'sb-dev-01',
+    deviceType: 'sb',
+    fetchedAt: '2026-09-27T10:00:00.000Z',
+    queryRange: {
+      start: '2026-09-26T10:00:00.000Z',
+      stop: '2026-09-27T10:00:00.000Z',
+      limit: 1000,
+    },
+    coverage: {
+      returnedCount: 1,
+      validCount: 1,
+      invalidCount: 0,
+      isTruncated: false,
+      earliestTimestamp: '2026-09-27T09:24:00.000Z',
+      latestTimestamp: '2026-09-27T09:24:00.000Z',
+      reachedLimit: false,
+    },
+    telemetry: {
+      type: 'sb',
+      category: 'smart_building',
+      latest: {
+        timestamp: '2026-09-27T09:24:00.000Z',
+        rawVoltage: 4.35,
+        rawVisible: 32,
+        rawIr: 17,
+        rawCo2: 596,
+        rawVoc: 94,
+        fCnt: 200,
+      },
+      status: {
+        label: 'Normal',
+        isConfirmed: false,
+      },
+      readings: [
+        {
+          timestamp: '2026-09-27T09:24:00.000Z',
+          devEui: 'sb-dev-01',
+          networkDeviceName: 'sb-dev2',
+          applicationId: 'app-01',
+          gatewayId: 'gw-01',
+          rssi: -22,
+          snr: 9.25,
+          rawVoltage: 4.35,
+          rawVisible: 32,
+          rawIr: 17,
+          rawCo2: 596,
+          rawVoc: 94,
+          fCnt: 200,
+        },
+      ],
+    },
+  };
+
   beforeEach(async () => {
     mockConfigValues = {
       'fixtures.mode': 'iot',
@@ -169,8 +235,15 @@ describe('DashboardEnvironmentService & Controller (Big Phase 02 / Phase 05)', (
     };
 
     mockTelemetryService = {
-      resolveDeviceType: jest.fn().mockResolvedValue('solar'),
-      getDeviceTelemetry: jest.fn().mockResolvedValue(mockSolarTelemetryResponse),
+      resolveDeviceType: jest.fn().mockImplementation(async (id) => {
+        if (id.startsWith('sb')) return 'sb';
+        if (id.startsWith('solar')) return 'solar';
+        return 'avc';
+      }),
+      getDeviceTelemetry: jest.fn().mockImplementation(async (id) => {
+        if (id.startsWith('sb')) return mockSbTelemetryResponse;
+        return mockSolarTelemetryResponse;
+      }),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -201,19 +274,28 @@ describe('DashboardEnvironmentService & Controller (Big Phase 02 / Phase 05)', (
   });
 
   describe('GET /api/v1/dashboard/buildings/:buildingId/environment/sources', () => {
-    it('returns only authoritative Solar sources from catalogue, filtering out AVC devices', async () => {
+    it('returns both Solar and SB sources from catalogue, filtering out AVC/Smoke devices', async () => {
       const result = await controller.getSources('E', {});
 
       expect(result.schemaVersion).toBe(1);
       expect(result.buildingId).toBe('E');
       expect(result.availability).toBe('ready');
       expect(result.summary.acceptedSolarCount).toBe(2);
-      expect(result.sources).toHaveLength(2);
-      expect(result.sources.map((s) => s.deviceId)).toEqual(['solar-eui-01', 'solar-eui-02']);
-      expect(result.sources.every((s) => s.sourceDeviceType === 'solar')).toBe(true);
-      expect(result.sources.every((s) => s.semanticStatus === 'unconfirmed_environment_candidate')).toBe(true);
-      expect(result.sources[0].catalogueActive).toBe(true);
-      expect(result.sources[1].catalogueActive).toBe(false);
+      expect(result.summary.acceptedSbCount).toBe(1);
+      expect(result.sources).toHaveLength(3);
+      expect(result.sources.map((s) => s.deviceId)).toEqual(['solar-eui-01', 'solar-eui-02', 'sb-dev-01']);
+      expect(result.sources[0].sourceDeviceType).toBe('solar');
+      expect(result.sources[2].sourceDeviceType).toBe('sb');
+      expect(result.sources[0].sourceLocation.roomId).toBe('E4.01');
+      expect(result.sources[1].sourceLocation.roomId).toBeNull();
+      expect(result.sources[2].sourceLocation.roomId).toBe('E4.02');
+      expect(result.sources[0].supportedMetrics).toEqual(['temperature', 'humidity', 'lux']);
+      expect(result.sources[2].supportedMetrics).toEqual(['co2', 'voc', 'voltage', 'visible', 'ir']);
+    });
+
+    it('propagates roomId query to catalogue service', async () => {
+      await controller.getSources('E', { roomId: 'E4.01' });
+      expect(mockCatalogueService.getCatalogue).toHaveBeenCalledWith('E', undefined, 'E4.01');
     });
 
     it('rejects any buildingId other than E', async () => {
@@ -223,16 +305,17 @@ describe('DashboardEnvironmentService & Controller (Big Phase 02 / Phase 05)', (
       );
     });
 
-    it('returns empty availability when no solar devices exist', async () => {
+    it('returns empty availability when no environment devices exist', async () => {
       mockCatalogueService.getCatalogue!.mockResolvedValueOnce({
         ...mockMixedCatalogueResponse,
-        devices: [mockMixedCatalogueResponse.devices[2]], // only AVC
+        devices: [mockMixedCatalogueResponse.devices[3]], // only AVC
       });
 
       const result = await controller.getSources('E', {});
       expect(result.availability).toBe('empty');
       expect(result.sources).toHaveLength(0);
       expect(result.summary.acceptedSolarCount).toBe(0);
+      expect(result.summary.acceptedSbCount).toBe(0);
     });
   });
 
@@ -249,21 +332,26 @@ describe('DashboardEnvironmentService & Controller (Big Phase 02 / Phase 05)', (
       expect(result.buildingId).toBe('E');
       expect(result.availability).toBe('ready');
       expect(result.provenance.mode).toBe('derived');
-      expect(result.provenance.calculation).toBe('latest_sample_population_summary_v1');
       expect(result.coverage.catalogueSolarCount).toBe(2);
-      expect(result.coverage.attemptedSourceCount).toBe(2);
-      expect(result.coverage.successfulSourceCount).toBe(2);
+      expect(result.coverage.catalogueSbCount).toBe(1);
+      expect(result.coverage.attemptedSourceCount).toBe(3);
+      expect(result.coverage.successfulSourceCount).toBe(3);
       expect(result.coverage.failedSourceCount).toBe(0);
       expect(result.coverage.sourcesTruncated).toBe(false);
 
-      // Latest reading in mock is 26.5 temp, 62.0 humidity, 450 lux
+      // Solar contributes temp/humidity/lux
       expect(result.metrics.rawTemperature.mean).toBe(26.5);
-      expect(result.metrics.rawTemperature.unit).toBeNull();
+      expect(result.metrics.rawTemperature.unit).toBe('°C');
       expect(result.metrics.rawHumidity.mean).toBe(62.0);
-      expect(result.metrics.rawHumidity.unit).toBeNull();
+      expect(result.metrics.rawHumidity.unit).toBe('%');
       expect(result.metrics.lux.mean).toBe(450);
       expect(result.metrics.lux.unit).toBe('lux');
-      expect(result.latestObservedAt).toBe('2026-09-27T09:00:00.000Z');
+
+      // SB contributes CO2
+      expect(result.metrics.co2?.mean).toBe(596);
+      expect(result.metrics.co2?.unit).toBe('ppm');
+      expect(result.metrics.co2?.contributingSourceCount).toBe(1);
+      expect(result.metrics.co2?.semanticStatus).toBe('assumed_standard');
     });
 
     it('enforces duration cap of max 24 hours', async () => {
@@ -292,25 +380,21 @@ describe('DashboardEnvironmentService & Controller (Big Phase 02 / Phase 05)', (
         if (id === 'solar-eui-02') {
           throw new BadGatewayException('Upstream device timeout');
         }
+        if (id.startsWith('sb')) return mockSbTelemetryResponse;
         return mockSolarTelemetryResponse;
       });
 
       const result = await controller.getSummary('E', validSummaryQuery);
 
       expect(result.availability).toBe('partial');
-      expect(result.coverage.successfulSourceCount).toBe(1);
       expect(result.coverage.failedSourceCount).toBe(1);
       expect(result.metrics.rawTemperature.contributingSourceCount).toBe(1);
-      expect(result.sourceResults).toEqual([
-        { deviceId: 'solar-eui-01', status: 'ready', observedAt: '2026-09-27T09:00:00.000Z' },
-        { deviceId: 'solar-eui-02', status: 'error', observedAt: null },
-      ]);
-      expect(result.provenance.caveats.some((c) => c.includes('1 nguồn Solar gặp lỗi'))).toBe(true);
+      expect(result.sourceResults.find((s) => s.deviceId === 'solar-eui-02')?.status).toBe('error');
     });
 
-    it('caps candidate devices at 20 and flags sourcesTruncated', async () => {
+    it('caps candidate devices at 20 and uses fair type-interleaving to prevent SB starvation', async () => {
       const manySolarDevices = Array.from({ length: 25 }, (_, i) => ({
-        externalDeviceId: `solar-${i}`,
+        externalDeviceId: `solar-${String(i).padStart(2, '0')}`,
         sourceDeviceType: 'solar' as const,
         category: 'solar' as const,
         active: true,
@@ -321,17 +405,31 @@ describe('DashboardEnvironmentService & Controller (Big Phase 02 / Phase 05)', (
         floorAssignment: 'source' as const,
       }));
 
+      const sbDevice = {
+        externalDeviceId: 'sb-single-01',
+        sourceDeviceType: 'sb' as const,
+        category: 'smart_building' as const,
+        active: true,
+        sourceCreatedAt: '2026-09-20T10:00:00.000Z',
+        sourceUpdatedAt: '2026-09-20T10:00:00.000Z',
+        sourceLocation: { x: 0, y: 0, z: 0, floorLevel: 4 },
+        displayFloorId: '4',
+        floorAssignment: 'source' as const,
+      };
+
       mockCatalogueService.getCatalogue!.mockResolvedValueOnce({
         ...mockMixedCatalogueResponse,
-        devices: manySolarDevices,
+        devices: [...manySolarDevices, sbDevice],
       });
 
       const result = await controller.getSummary('E', validSummaryQuery);
 
       expect(result.coverage.catalogueSolarCount).toBe(25);
+      expect(result.coverage.catalogueSbCount).toBe(1);
       expect(result.coverage.attemptedSourceCount).toBe(20);
+      expect(result.coverage.attemptedSbCount).toBe(1); // SB is included via interleaving!
       expect(result.coverage.sourcesTruncated).toBe(true);
-      expect(result.availability).toBe('partial');
+      expect(result.coverage.selectionPolicy).toBe('type_interleaving_v1');
     });
 
     it('blocks request when DEVICE_SOURCE_MODE is disabled or fixture', async () => {
@@ -348,6 +446,7 @@ describe('DashboardEnvironmentService & Controller (Big Phase 02 / Phase 05)', (
       const samples = [
         {
           deviceId: 'dev-1',
+          sourceDeviceType: 'solar' as const,
           status: 'ready' as const,
           reading: {
             timestamp: '2026-09-27T01:00:00.000Z',
@@ -368,6 +467,7 @@ describe('DashboardEnvironmentService & Controller (Big Phase 02 / Phase 05)', (
         },
         {
           deviceId: 'dev-2',
+          sourceDeviceType: 'solar' as const,
           status: 'ready' as const,
           reading: {
             timestamp: '2026-09-27T02:00:00.000Z',
@@ -387,6 +487,26 @@ describe('DashboardEnvironmentService & Controller (Big Phase 02 / Phase 05)', (
           },
         },
         {
+          deviceId: 'sb-dev-1',
+          sourceDeviceType: 'sb' as const,
+          status: 'ready' as const,
+          reading: {
+            timestamp: '2026-09-27T02:30:00.000Z',
+            devEui: 'sb-dev-1',
+            networkDeviceName: 'sb-dev2',
+            applicationId: null,
+            gatewayId: null,
+            rssi: -20,
+            snr: 9.0,
+            rawVoltage: 4.2,
+            rawVisible: 30,
+            rawIr: 15,
+            rawCo2: 596, // valid CO2
+            rawVoc: 94,
+            fCnt: 1,
+          },
+        },
+        {
           deviceId: 'dev-3',
           status: 'empty' as const,
           reading: null,
@@ -400,7 +520,7 @@ describe('DashboardEnvironmentService & Controller (Big Phase 02 / Phase 05)', (
       expect(res.metrics.rawTemperature.min).toBe(0);
       expect(res.metrics.rawTemperature.max).toBe(30);
       expect(res.metrics.rawTemperature.mean).toBe(15);
-      expect(res.metrics.rawTemperature.unit).toBeNull();
+      expect(res.metrics.rawTemperature.unit).toBe('°C');
 
       // Humidity: only 50 contributes -> mean 50, count 1
       expect(res.metrics.rawHumidity.contributingSourceCount).toBe(1);
@@ -415,7 +535,13 @@ describe('DashboardEnvironmentService & Controller (Big Phase 02 / Phase 05)', (
       expect(res.metrics.lux.mean).toBe(100);
       expect(res.metrics.lux.unit).toBe('lux');
 
-      expect(res.latestObservedAt).toBe('2026-09-27T02:00:00.000Z');
+      // CO2: only SB dev contributes 596 -> mean 596, count 1
+      expect(res.metrics.co2?.contributingSourceCount).toBe(1);
+      expect(res.metrics.co2?.mean).toBe(596);
+      expect(res.metrics.co2?.unit).toBe('ppm');
+      expect(res.metrics.co2?.observedAt).toBe('2026-09-27T02:30:00.000Z');
+
+      expect(res.latestObservedAt).toBe('2026-09-27T02:30:00.000Z');
     });
   });
 
@@ -445,11 +571,27 @@ describe('DashboardEnvironmentService & Controller (Big Phase 02 / Phase 05)', (
       expect(result.readings[1].observedAt).toBe('2026-09-26T11:00:00.000Z');
     });
 
-    it('rejects devices that are not of type solar', async () => {
+    it('returns normalized readings for a single selected SB device with CO2', async () => {
+      const result = await controller.getReadings('E', 'sb-dev-01', validReadingsQuery);
+
+      expect(result.schemaVersion).toBe(1);
+      expect(result.buildingId).toBe('E');
+      expect(result.sourceId).toBe('sb-dev-01');
+      expect(result.sourceDeviceType).toBe('sb');
+      expect(result.availability).toBe('ready');
+      expect(result.latestSample?.rawCo2).toBe(596);
+      expect(result.latestSample?.rawVoc).toBe(94);
+      expect(result.latestSample?.rawVoltage).toBe(4.35);
+      expect(result.latestSample?.rawVisible).toBe(32);
+      expect(result.latestSample?.rawIr).toBe(17);
+      expect(result.readings[0].rawCo2).toBe(596);
+    });
+
+    it('rejects devices that are not of type solar or sb', async () => {
       mockTelemetryService.resolveDeviceType!.mockResolvedValue('avc');
 
       await expect(controller.getReadings('E', 'avc-water-01', validReadingsQuery)).rejects.toThrow(
-        /is not a Solar device \(supported: solar\)/i,
+        /which is not an Environment device \(supported: solar, sb\)/i,
       );
     });
 

@@ -2,7 +2,7 @@
 
 > **Project:** GIS — UIT Building E Digital Twin  
 > **Document role:** Single authoritative IoTBackend API handover / knowledge base for planner agents and coding agents.<br>
-> **Version:** 2026-10-02<br>
+> **Version:** 2026-10-03 — documentation update; upstream Swagger snapshot remains 2026-10-02<br>
 > **Maintenance:** Cumulative single source. Preserve existing API information; add new APIs and update only changed contracts.<br>
 > **Current small-phase scope:** Device catalogue/detail and data retrieval for `solar`, `avc`, `nfc`, `smoke`, and `sb`, plus webhook inspection. Webhook creation/update/deletion/test operations are documented as reference.<br>
 > **Current upstream base URL:** `https://api.ttlab.manhthao.uk`  
@@ -11,6 +11,8 @@
 > **Important:** The nine GET endpoints documented here are the read-only integration surface. Documenting webhook POST/PUT/DELETE/test operations does not authorize executing them; the upstream mutation restriction remains in force.
 
 Source update: [live Swagger](https://api.ttlab.manhthao.uk/api-docs/), API `1.5.1-beta`, OpenAPI `3.0.3`, read on 2026-10-02. The complete September 24 handover was recovered from Git commit `47ac2cd4` so the existing solar/AVC/NFC contracts remain intact. New sensor/webhook examples are documented schemas, not authenticated executions. Full earlier device snapshots remain in sections 6.5 and 33.
+
+Owner update 2026-10-03: a populated SB response sample and a temporary standard-measurement-unit decision are recorded in §31.7. These are owner-provided evidence/application policy, not a new Swagger schema or an authenticated request executed by the documenting agent. Upstream pending-review field descriptions remain intact.
 
 New endpoint contracts: [smoke](#30-get-apiv1smoke), [smart building](#31-get-apiv1sb--smart-building), [webhooks](#32-webhook-api). The original solar/AVC/NFC blocks are retained verbatim; their current description clarifications are recorded in section 3.6, which takes precedence over older unit/pending-review wording in those blocks.
 
@@ -29,8 +31,8 @@ This document is intended to let a future planner/coding agent answer implementa
 5. **Do not update device metadata, coordinates, device registration, or physical state on the IoT backend.**
 6. **Do not expose, log, commit, persist in PostgreSQL, or return the Master Bearer Token to clients.**
 7. **Do not probe undocumented endpoints or brute-force device identifiers.**
-8. **Do not assume fields marked `Unconfirmed. Pending hardware team review` have stable physical meaning yet.**
-9. **Do not silently invent units, enum values, coordinate mapping, time windows, or device-type behavior not present in this handover.**
+8. **Fields marked `Unconfirmed. Pending hardware team review` remain technically unconfirmed.** The owner's explicit standard-unit application assumption in §31.7 permits provisional measurement presentation/calculation; it is not hardware confirmation or permission to infer state codes/calibration.
+9. **Do not silently invent units, enum values, coordinate mapping, time windows, or device-type behavior not present in this handover.** Explicit owner-approved assumed standard measurement units must be versioned/traceable as such (§31.7), separate from confirmed contract facts.
 10. Additional Swagger endpoints remain out of scope until the project owner explicitly adds them to this handover/current phase.
 
 ### 0.2 Current in-scope upstream endpoints
@@ -2273,13 +2275,14 @@ If a later source conflicts with this file, resolve the current-contract section
 
 ```text
 status: CURRENT
-version: 2026-10-02
+version: 2026-10-03
 role: single authoritative IoTBackend API handover / knowledge base
 supersedes: earlier IoTBackend_API_HandOver.md copies
 approved upstream mode: read-only GET
 approved read endpoint count: 9
 documented operation count: 13 (9 GET + 4 webhook POST/PUT/DELETE/test)
 latest contract change: devices room filter/shared location schema; smoke, sb, full webhook reference added
+latest application decision: owner-provided SB sample; temporary standard measurement units, not upstream hardware confirmation (section 31.7)
 ```
 
 ---
@@ -2487,6 +2490,17 @@ Illustrative schema example; zero values are placeholders, not actual measuremen
 - Reuse the bounded range policy and fixed type routing above. No endpoint-specific `404` response is documented for this endpoint.
 
 Swagger does not specify units/scales for `voltage`, `visible`, `ir`, `co2`, or `voc`. The documented smart building path is `/api/v1/sb`.
+
+### 31.7 Owner-provided sample and temporary application-unit policy — 2026-10-03
+
+The owner supplied a screenshot of an executed `/sb` response showing a populated reading for `dev_eui=70B3D57ED006D366`, friendly network name `sb-dev2`, recorded at `2026-10-02T09:24:08.629Z`: `co2=596`, `voc=94`, `voltage=4.35`, `visible=32`, `ir=17`, `rssi=-22`, `snr=9.25`, `f_cnt=5444`; application and gateway identifiers are also present. This is owner-provided evidence, not an agent-executed live query. The cropped image does not establish full result count/truncation, time coverage, sampling cadence, current online state, calibration or installed room/floor.
+
+**Explicit owner decision:** until technical confirmation is available, treat returned measurement values according to the standard unit of the named metric; the owner will confirm with the technical team later. For Dashboard integration, **CO2 is provisionally ppm (`596` → `596 ppm`) and voltage is provisionally V**, with identity numeric mapping. Existing confirmed radio units remain dBm/dB. Detailed metric conventions, assumption provenance and scope boundaries are maintained in `Dashboard_Knowledge_Base.md` §9.3.1.
+
+- This removes waiting for technical unit confirmation as a blocker for scoped live/derived measurement integration; it does not modify the upstream field descriptions/schema or claim the firmware/decoder has been verified.
+- Preserve raw values/source identity/time and version the application metric/unit mappings as assumed, not hardware-confirmed. Do not invent scaling/conversion formulas, missing readings, VOC algorithm, room assignments, smoke/state/flag semantics, battery %, online status or IAQ/alert rules.
+- Metrics with multiple possible conventions must have their named metric/unit assumption documented in the selected plan; a VOC index, concentration and raw channel count are not interchangeable quantities merely because each is numeric.
+- No code implementation, live source calls, PostgreSQL persistence or changes to completed-page labels/layout are authorized merely by documenting this decision. Page 07's approved 5-minute refresh remains scoped to its separate fix plan; this unit policy does not extend it to other pages. After source audit, the owner withdrew the proposed Page 03 IAQ 5-minute refresh: preserve its current mount/selection/preset/manual-triggered fetching (Dashboard KB §9.5). No upstream sampling cadence/rate limit is confirmed by these application decisions; Page 01 and other pages remain unchanged.
 
 ---
 

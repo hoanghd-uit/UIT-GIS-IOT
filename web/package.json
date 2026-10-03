@@ -18,6 +18,7 @@
     "test:bp2:p09": "node test-bp2-phase09.mjs",
     "test:bp2:p10": "node test-bp2-phase10.mjs",
     "test:bp2:p11": "node test-bp2-phase11.mjs",
+    "test:bp2:p12": "node test-bp2-phase12.mjs",
     "test:bp2:hotfix": "node test-bp2-hotfix-page07.mjs"
   },
   "dependencies": {

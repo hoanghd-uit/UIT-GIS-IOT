@@ -9,6 +9,7 @@ const BASE_URL = '/api/devices';
 export interface FetchEnvironmentSourcesOptions {
   buildingId?: string;
   floorId?: string | null;
+  roomId?: string | null;
   signal?: AbortSignal;
 }
 
@@ -76,7 +77,7 @@ function sanitizeErrorMessage(msg: unknown, fallback: string): string {
 }
 
 /**
- * Fetches Solar environment sources list via same-origin Next.js proxy.
+ * Fetches Solar & SB environment sources list via same-origin Next.js proxy.
  * Calls: /api/devices/dashboard/buildings/E/environment/sources
  */
 export async function fetchEnvironmentSources(
@@ -87,6 +88,9 @@ export async function fetchEnvironmentSources(
 
   if (options.floorId && options.floorId !== 'all') {
     params.set('floorId', options.floorId.trim());
+  }
+  if (options.roomId && options.roomId.trim()) {
+    params.set('roomId', options.roomId.trim());
   }
 
   const query = params.toString() ? `?${params.toString()}` : '';

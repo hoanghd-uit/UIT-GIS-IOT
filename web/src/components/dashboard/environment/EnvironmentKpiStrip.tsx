@@ -22,6 +22,8 @@ export function EnvironmentKpiStrip({
 
   const tempSummary = summary?.metrics?.rawTemperature;
   const humidSummary = summary?.metrics?.rawHumidity;
+  const co2Summary = summary?.metrics?.co2;
+  const hasCo2Data = isSummaryReady && co2Summary && typeof co2Summary.mean === 'number';
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3.5 w-full">
@@ -53,10 +55,10 @@ export function EnvironmentKpiStrip({
         </div>
       </div>
 
-      {/* Slot 2: CO2 trung bình (Demo) */}
+      {/* Slot 2: CO2 trung bình (Derived từ SB latest samples, ppm) */}
       <div
         role="article"
-        aria-label={`CO2 trung bình: ${CO2_DEMO_FIXTURE.kpis.averageCo2} ppm (Demo)`}
+        aria-label={`CO2 trung bình: ${hasCo2Data && co2Summary?.mean != null ? `${formatVal(co2Summary.mean)} ppm (Derived)` : 'Chưa có dữ liệu nguồn SB'}`}
         className="flex flex-col justify-between p-4 rounded-xl border transition-all min-h-[136px]"
         style={{
           backgroundColor: 'var(--panel-bg)',
@@ -67,25 +69,46 @@ export function EnvironmentKpiStrip({
           <span className="text-xs font-semibold uppercase tracking-wider text-[#A5B0B9] truncate">
             CO₂ trung bình
           </span>
-          <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#FFB121]/10 text-[#FFB121] font-medium border border-[#FFB121]/30 shrink-0">
-            Demo
+          <span
+            className={`text-[10px] px-1.5 py-0.5 rounded font-medium border shrink-0 ${
+              hasCo2Data
+                ? 'bg-[var(--primary)]/10 text-[var(--primary)] border-[var(--primary)]/30'
+                : 'bg-white/5 text-[#7E8B96] border-white/10'
+            }`}
+          >
+            {hasCo2Data ? 'Derived' : 'Unavailable'}
           </span>
         </div>
         <div className="my-1.5 flex items-baseline gap-1.5">
-          <span className="text-3xl font-bold font-mono tracking-tight text-[#E6EDF1]">
-            {CO2_DEMO_FIXTURE.kpis.averageCo2}
-          </span>
-          <span className="text-xs font-medium text-[#A5B0B9]">ppm</span>
+          {hasCo2Data && co2Summary?.mean != null ? (
+            <>
+              <span className="text-3xl font-bold font-mono tracking-tight text-[#E6EDF1]">
+                {formatVal(co2Summary.mean)}
+              </span>
+              <span className="text-xs font-medium text-[#A5B0B9]">ppm</span>
+            </>
+          ) : (
+            <span className="text-2xl font-light font-mono text-[#7E8B96]">—</span>
+          )}
         </div>
-        <div className="text-[11px] text-[#A5B0B9] truncate" title="Fixture page03-co2-demo-v1">
-          Cao nhất: {CO2_DEMO_FIXTURE.kpis.maxCo2} - phòng E6.6
+        <div
+          className="text-[11px] text-[#A5B0B9] truncate"
+          title={
+            hasCo2Data && co2Summary
+              ? `${co2Summary.contributingSourceCount} nguồn SB · Giả định ppm tiêu chuẩn`
+              : 'Chưa có mẫu nguồn SB'
+          }
+        >
+          {hasCo2Data && co2Summary
+            ? `${co2Summary.contributingSourceCount} nguồn SB · Cao nhất: ${formatVal(co2Summary.max)} ppm`
+            : 'Chưa có mẫu nguồn SB'}
         </div>
       </div>
 
-      {/* Slot 3: Raw temperature · trung bình mẫu (Derived, NO unit) */}
+      {/* Slot 3: Nhiệt độ trung bình (Derived Solar, °C) */}
       <div
         role="article"
-        aria-label={`Raw temperature trung bình mẫu: ${isSummaryReady && tempSummary?.mean != null ? tempSummary.mean : 'Chưa có dữ liệu'}`}
+        aria-label={`Nhiệt độ trung bình: ${isSummaryReady && tempSummary?.mean != null ? `${formatVal(tempSummary.mean)} °C` : 'Chưa có dữ liệu'}`}
         className="flex flex-col justify-between p-4 rounded-xl border transition-all min-h-[136px]"
         style={{
           backgroundColor: 'var(--panel-bg)',
@@ -111,12 +134,17 @@ export function EnvironmentKpiStrip({
             </span>
           )}
         </div>
+        <div className="text-[11px] text-[#A5B0B9] truncate" title="Nguồn Solar · Hợp đồng kỹ thuật §3.6">
+          {isSummaryReady && tempSummary?.contributingSourceCount
+            ? `${tempSummary.contributingSourceCount} nguồn Solar · Mẫu mới nhất`
+            : 'Chưa có dữ liệu'}
+        </div>
       </div>
 
-      {/* Slot 4: Raw humidity · trung bình mẫu (Derived, NO unit) */}
+      {/* Slot 4: Độ ẩm trung bình (Derived Solar, %) */}
       <div
         role="article"
-        aria-label={`Raw humidity trung bình mẫu: ${isSummaryReady && humidSummary?.mean != null ? humidSummary.mean : 'Chưa có dữ liệu'}`}
+        aria-label={`Độ ẩm trung bình: ${isSummaryReady && humidSummary?.mean != null ? `${formatVal(humidSummary.mean)} %` : 'Chưa có dữ liệu'}`}
         className="flex flex-col justify-between p-4 rounded-xl border transition-all min-h-[136px]"
         style={{
           backgroundColor: 'var(--panel-bg)',
@@ -141,6 +169,11 @@ export function EnvironmentKpiStrip({
               —
             </span>
           )}
+        </div>
+        <div className="text-[11px] text-[#A5B0B9] truncate" title="Nguồn Solar · Hợp đồng kỹ thuật §3.6">
+          {isSummaryReady && humidSummary?.contributingSourceCount
+            ? `${humidSummary.contributingSourceCount} nguồn Solar · Mẫu mới nhất`
+            : 'Chưa có dữ liệu'}
         </div>
       </div>
 

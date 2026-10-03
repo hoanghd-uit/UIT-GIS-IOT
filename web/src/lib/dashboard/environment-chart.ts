@@ -14,6 +14,11 @@ const METRIC_LABELS: Record<EnvironmentRawMetricKey, string> = {
   rawTemperature: 'Raw temperature',
   rawHumidity: 'Raw humidity',
   lux: 'Độ rọi',
+  rawCo2: 'CO₂ (ppm)',
+  rawVoc: 'VOC Index',
+  rawVoltage: 'Điện áp pin (V)',
+  rawVisible: 'Visible channel',
+  rawIr: 'IR channel',
   rssi: 'RSSI',
   snr: 'SNR',
 };
@@ -49,6 +54,11 @@ export function prepareEnvironmentChartData(
     if (metricKey === 'rawTemperature') rawVal = item.rawTemperature;
     else if (metricKey === 'rawHumidity') rawVal = item.rawHumidity;
     else if (metricKey === 'lux') rawVal = item.lux;
+    else if (metricKey === 'rawCo2') rawVal = item.rawCo2;
+    else if (metricKey === 'rawVoc') rawVal = item.rawVoc;
+    else if (metricKey === 'rawVoltage') rawVal = item.rawVoltage;
+    else if (metricKey === 'rawVisible') rawVal = item.rawVisible;
+    else if (metricKey === 'rawIr') rawVal = item.rawIr;
     else if (metricKey === 'rssi') rawVal = item.rssiDbm;
     else if (metricKey === 'snr') rawVal = item.snrDb;
 

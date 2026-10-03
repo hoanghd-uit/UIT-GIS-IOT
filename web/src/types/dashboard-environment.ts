@@ -5,9 +5,11 @@
 
 export type EnvironmentTimeRangePreset = '24h' | '72h' | '7d';
 
+export type EnvironmentSourceDeviceType = 'solar' | 'sb';
+
 export interface DashboardEnvironmentSourceItem {
   deviceId: string;
-  sourceDeviceType: 'solar';
+  sourceDeviceType: EnvironmentSourceDeviceType;
   catalogueActive: boolean;
   sourceCreatedAt: string | null;
   sourceUpdatedAt: string | null;
@@ -16,10 +18,12 @@ export interface DashboardEnvironmentSourceItem {
     y?: number;
     z?: number;
     floorLevel?: number;
+    roomId?: string | null;
   };
   displayFloorId: string | null;
   floorAssignment: 'source' | 'development-fallback' | 'unmapped';
   semanticStatus: 'unconfirmed_environment_candidate';
+  supportedMetrics?: string[];
 }
 
 export interface DashboardEnvironmentSourceListResponse {
@@ -36,6 +40,7 @@ export interface DashboardEnvironmentSourceListResponse {
   summary: {
     receivedCount: number;
     acceptedSolarCount: number;
+    acceptedSbCount?: number;
     skippedCount: number;
     duplicateCount: number;
     truncated: boolean | null;
@@ -50,6 +55,7 @@ export interface DashboardEnvironmentMetricSummary {
   contributingSourceCount: number;
   unit: string | null;
   semanticStatus?: string;
+  observedAt?: string | null;
 }
 
 export interface DashboardEnvironmentSummaryResponse {
@@ -68,60 +74,85 @@ export interface DashboardEnvironmentSummaryResponse {
     fetchedAt: string;
     calculatedAt: string;
     caveats: string[];
+    mappingVersion?: string;
   };
   coverage: {
     catalogueSolarCount: number;
+    catalogueSbCount?: number;
     attemptedSourceCount: number;
+    attemptedSolarCount?: number;
+    attemptedSbCount?: number;
     successfulSourceCount: number;
     emptySourceCount: number;
     failedSourceCount: number;
     sourcesTruncated: boolean;
+    selectionPolicy?: string;
   };
   metrics: {
     rawTemperature: DashboardEnvironmentMetricSummary;
     rawHumidity: DashboardEnvironmentMetricSummary;
     lux: DashboardEnvironmentMetricSummary;
+    co2?: DashboardEnvironmentMetricSummary;
   };
   latestObservedAt: string | null;
   sourceResults: Array<{
     deviceId: string;
+    sourceDeviceType?: EnvironmentSourceDeviceType;
     status: 'ready' | 'empty' | 'error';
     observedAt: string | null;
+    co2?: number | null;
   }>;
 }
 
 export interface DashboardEnvironmentLatestSample {
   observedAt: string;
-  rawTemperature: number | null;
-  rawHumidity: number | null;
-  lux: number | null;
-  currentUa: number | null;
-  rawVoltage: number | null;
-  rawState: number | null;
-  gatewayId: string | null;
-  rssiDbm: number | null;
-  snrDb: number | null;
+  // Solar fields
+  rawTemperature?: number | null;
+  rawHumidity?: number | null;
+  lux?: number | null;
+  currentUa?: number | null;
+  rawVoltage?: number | null;
+  rawState?: number | null;
+  gatewayId?: string | null;
+  rssiDbm?: number | null;
+  snrDb?: number | null;
+  // SB fields
+  rawCo2?: number | null;
+  rawVoc?: number | null;
+  rawVisible?: number | null;
+  rawIr?: number | null;
+  networkDeviceName?: string | null;
+  applicationId?: string | null;
+  fCnt?: number | null;
 }
 
 export interface DashboardEnvironmentReadingItem {
   observedAt: string;
-  rawTemperature: number | null;
-  rawHumidity: number | null;
-  lux: number | null;
-  currentUa: number | null;
-  rawVoltage: number | null;
-  rawState: number | null;
-  gatewayId: string | null;
-  rssiDbm: number | null;
-  snrDb: number | null;
+  // Solar fields
+  rawTemperature?: number | null;
+  rawHumidity?: number | null;
+  lux?: number | null;
+  currentUa?: number | null;
+  rawVoltage?: number | null;
+  rawState?: number | null;
+  gatewayId?: string | null;
+  rssiDbm?: number | null;
+  snrDb?: number | null;
   fCnt?: number | null;
+  // SB fields
+  rawCo2?: number | null;
+  rawVoc?: number | null;
+  rawVisible?: number | null;
+  rawIr?: number | null;
+  networkDeviceName?: string | null;
+  applicationId?: string | null;
 }
 
 export interface DashboardEnvironmentReadingsResponse {
   schemaVersion: number;
   buildingId: string;
   sourceId: string;
-  sourceDeviceType: 'solar';
+  sourceDeviceType: EnvironmentSourceDeviceType;
   availability: 'ready' | 'empty';
   queryRange: {
     start: string;
@@ -151,7 +182,17 @@ export interface DashboardEnvironmentReadingsResponse {
   readings: DashboardEnvironmentReadingItem[];
 }
 
-export type EnvironmentRawMetricKey = 'rawTemperature' | 'rawHumidity' | 'lux' | 'rssi' | 'snr';
+export type EnvironmentRawMetricKey =
+  | 'rawTemperature'
+  | 'rawHumidity'
+  | 'lux'
+  | 'rawCo2'
+  | 'rawVoc'
+  | 'rawVoltage'
+  | 'rawVisible'
+  | 'rawIr'
+  | 'rssi'
+  | 'snr';
 
 export interface Co2DemoRoomData {
   roomId: string;

@@ -681,7 +681,7 @@
     },
     "/api/v1/dashboard/buildings/{buildingId}/environment/sources": {
       "get": {
-        "description": "Returns a list of registered Solar environment candidate sources for Building E. Reuses existing catalogue service and floor mapping. Strictly read-only and in-memory.",
+        "description": "Returns a list of registered Solar and SB environment candidate sources for Building E. Reuses existing catalogue service, floor mapping, and room filtering. Strictly read-only and in-memory.",
         "operationId": "DashboardEnvironmentController_getSources",
         "parameters": [
           {
@@ -698,7 +698,7 @@
             "name": "floorId",
             "required": false,
             "in": "query",
-            "description": "Application floor ID (4, 6). When omitted, returns full unfiltered catalogue of Solar sources.",
+            "description": "Application floor ID (4, 6). When omitted, returns full unfiltered catalogue of candidate sources.",
             "schema": {
               "example": "4",
               "type": "string"
@@ -708,7 +708,7 @@
             "name": "roomId",
             "required": false,
             "in": "query",
-            "description": "Optional exact room ID filter (e.g. E4.08). Leading and trailing spaces are trimmed, exact case preserved. Blank or duplicate roomId is rejected with 400.",
+            "description": "Room identifier for exact room scoping. Reuses catalogue room validation.",
             "schema": {
               "example": "E4.08",
               "type": "string"
@@ -717,7 +717,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Solar environment candidate sources list returned successfully with live provenance",
+            "description": "Environment candidate sources list returned successfully with live provenance",
             "content": {
               "application/json": {
                 "schema": {
@@ -727,7 +727,7 @@
             }
           },
           "400": {
-            "description": "Invalid buildingId, unsupported floor, or floor G"
+            "description": "Invalid buildingId, unsupported floor, or invalid roomId"
           },
           "502": {
             "description": "Upstream IoT service error, timeout, or malformed payload"
@@ -736,7 +736,7 @@
             "description": "IoT integration disabled, fixture mode, or missing credentials"
           }
         },
-        "summary": "Get Dashboard Solar environment sources list (read-only, live provenance)",
+        "summary": "Get Dashboard Environment sources list (Solar & SB, read-only, live provenance)",
         "tags": [
           "Dashboard"
         ]
@@ -2032,12 +2032,17 @@
           "receivedCount": {
             "type": "number",
             "example": 4,
-            "description": "Raw solar records received from upstream catalogue"
+            "description": "Raw candidate records received from upstream catalogue"
           },
           "acceptedSolarCount": {
             "type": "number",
             "example": 4,
             "description": "Valid solar records accepted into environment source list"
+          },
+          "acceptedSbCount": {
+            "type": "number",
+            "example": 1,
+            "description": "Valid SB records accepted into environment source list"
           },
           "skippedCount": {
             "type": "number",
@@ -2059,6 +2064,7 @@
         "required": [
           "receivedCount",
           "acceptedSolarCount",
+          "acceptedSbCount",
           "skippedCount",
           "duplicateCount",
           "truncated"
@@ -2076,7 +2082,8 @@
             "type": "string",
             "example": "solar",
             "enum": [
-              "solar"
+              "solar",
+              "sb"
             ],
             "description": "Authoritative source device type"
           },
@@ -2121,6 +2128,18 @@
               "unconfirmed_environment_candidate"
             ],
             "description": "Environmental semantic confirmation status"
+          },
+          "supportedMetrics": {
+            "example": [
+              "temperature",
+              "humidity",
+              "lux"
+            ],
+            "description": "Supported environmental metrics by source device type",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         },
         "required": [
@@ -2255,10 +2274,25 @@
             "example": 4,
             "description": "Total Solar devices found in catalogue"
           },
+          "catalogueSbCount": {
+            "type": "number",
+            "example": 1,
+            "description": "Total SB devices found in catalogue"
+          },
           "attemptedSourceCount": {
             "type": "number",
             "example": 4,
-            "description": "Number of Solar devices attempted for history fetch (capped at 20)"
+            "description": "Number of devices attempted for history fetch (capped at 20)"
+          },
+          "attemptedSolarCount": {
+            "type": "number",
+            "example": 3,
+            "description": "Number of Solar devices attempted for history fetch"
+          },
+          "attemptedSbCount": {
+            "type": "number",
+            "example": 1,
+            "description": "Number of SB devices attempted for history fetch"
           },
           "successfulSourceCount": {
             "type": "number",
@@ -2278,7 +2312,12 @@
           "sourcesTruncated": {
             "type": "boolean",
             "example": false,
-            "description": "True if catalogue had more than 20 Solar sources"
+            "description": "True if catalogue had more than 20 candidate sources"
+          },
+          "selectionPolicy": {
+            "type": "string",
+            "example": "type_interleaving_v1",
+            "description": "Fair interleaving selection policy version"
           }
         },
         "required": [
@@ -2320,7 +2359,13 @@
           },
           "semanticStatus": {
             "type": "string",
-            "example": "pending_hardware_confirmation"
+            "example": "documented_contract"
+          },
+          "observedAt": {
+            "type": "string",
+            "example": "2026-09-27T11:58:30.000Z",
+            "nullable": true,
+            "description": "Latest observed timestamp for this specific metric"
           }
         },
         "required": [
@@ -2341,6 +2386,9 @@
           },
           "lux": {
             "$ref": "#/components/schemas/DashboardEnvironmentMetricSummaryDto"
+          },
+          "co2": {
+            "$ref": "#/components/schemas/DashboardEnvironmentMetricSummaryDto"
           }
         },
         "required": [
@@ -2356,6 +2404,14 @@
             "type": "string",
             "example": "8cf95720000a0123"
           },
+          "sourceDeviceType": {
+            "type": "string",
+            "example": "solar",
+            "enum": [
+              "solar",
+              "sb"
+            ]
+          },
           "status": {
             "type": "string",
             "example": "ready",
@@ -2369,6 +2425,12 @@
             "type": "string",
             "example": "2026-09-27T11:58:30.000Z",
             "nullable": true
+          },
+          "co2": {
+            "type": "number",
+            "example": 596,
+            "nullable": true,
+            "description": "Latest finite CO2 sample if source is SB"
           }
         },
         "required": [
@@ -2536,19 +2598,49 @@
             "type": "number",
             "example": 8.5,
             "nullable": true
+          },
+          "rawCo2": {
+            "type": "number",
+            "example": 596,
+            "nullable": true,
+            "description": "CO2 in ppm (assumed standard identity)"
+          },
+          "rawVoc": {
+            "type": "number",
+            "example": 94,
+            "nullable": true,
+            "description": "VOC index (dimensionless)"
+          },
+          "rawVisible": {
+            "type": "number",
+            "example": 32,
+            "nullable": true,
+            "description": "Visible channel sensor count"
+          },
+          "rawIr": {
+            "type": "number",
+            "example": 17,
+            "nullable": true,
+            "description": "Infrared channel sensor count"
+          },
+          "networkDeviceName": {
+            "type": "string",
+            "example": "sb-dev2",
+            "nullable": true
+          },
+          "applicationId": {
+            "type": "string",
+            "example": "app-01",
+            "nullable": true
+          },
+          "fCnt": {
+            "type": "number",
+            "example": 120,
+            "nullable": true
           }
         },
         "required": [
-          "observedAt",
-          "rawTemperature",
-          "rawHumidity",
-          "lux",
-          "currentUa",
-          "rawVoltage",
-          "rawState",
-          "gatewayId",
-          "rssiDbm",
-          "snrDb"
+          "observedAt"
         ]
       },
       "DashboardEnvironmentReadingItemDto": {
@@ -2607,19 +2699,44 @@
             "type": "number",
             "example": 120,
             "nullable": true
+          },
+          "rawCo2": {
+            "type": "number",
+            "example": 596,
+            "nullable": true,
+            "description": "CO2 in ppm (assumed standard identity)"
+          },
+          "rawVoc": {
+            "type": "number",
+            "example": 94,
+            "nullable": true,
+            "description": "VOC index (dimensionless)"
+          },
+          "rawVisible": {
+            "type": "number",
+            "example": 32,
+            "nullable": true,
+            "description": "Visible channel sensor count"
+          },
+          "rawIr": {
+            "type": "number",
+            "example": 17,
+            "nullable": true,
+            "description": "Infrared channel sensor count"
+          },
+          "networkDeviceName": {
+            "type": "string",
+            "example": "sb-dev2",
+            "nullable": true
+          },
+          "applicationId": {
+            "type": "string",
+            "example": "app-01",
+            "nullable": true
           }
         },
         "required": [
-          "observedAt",
-          "rawTemperature",
-          "rawHumidity",
-          "lux",
-          "currentUa",
-          "rawVoltage",
-          "rawState",
-          "gatewayId",
-          "rssiDbm",
-          "snrDb"
+          "observedAt"
         ]
       },
       "DashboardEnvironmentReadingsResponseDto": {
@@ -2641,7 +2758,8 @@
             "type": "string",
             "example": "solar",
             "enum": [
-              "solar"
+              "solar",
+              "sb"
             ]
           },
           "availability": {

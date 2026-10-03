@@ -31,67 +31,108 @@ export class DashboardEnvironmentLatestSampleDto {
   @ApiProperty({ example: '2026-09-27T11:58:30.000Z' })
   observedAt: string;
 
-  @ApiProperty({ example: 25.8, nullable: true })
-  rawTemperature: number | null;
+  @ApiPropertyOptional({ example: 25.8, nullable: true })
+  rawTemperature?: number | null;
 
-  @ApiProperty({ example: 64.2, nullable: true })
-  rawHumidity: number | null;
+  @ApiPropertyOptional({ example: 64.2, nullable: true })
+  rawHumidity?: number | null;
 
-  @ApiProperty({ example: 450, nullable: true })
-  lux: number | null;
+  @ApiPropertyOptional({ example: 450, nullable: true })
+  lux?: number | null;
 
-  @ApiProperty({ example: 1200, nullable: true })
-  currentUa: number | null;
+  @ApiPropertyOptional({ example: 1200, nullable: true })
+  currentUa?: number | null;
 
-  @ApiProperty({ example: 3300, nullable: true })
-  rawVoltage: number | null;
+  @ApiPropertyOptional({ example: 3300, nullable: true })
+  rawVoltage?: number | null;
 
-  @ApiProperty({ example: 1, nullable: true })
-  rawState: number | null;
+  @ApiPropertyOptional({ example: 1, nullable: true })
+  rawState?: number | null;
 
-  @ApiProperty({ example: 'gw-01', nullable: true })
-  gatewayId: string | null;
+  @ApiPropertyOptional({ example: 'gw-01', nullable: true })
+  gatewayId?: string | null;
 
-  @ApiProperty({ example: -85, nullable: true })
-  rssiDbm: number | null;
+  @ApiPropertyOptional({ example: -85, nullable: true })
+  rssiDbm?: number | null;
 
-  @ApiProperty({ example: 8.5, nullable: true })
-  snrDb: number | null;
+  @ApiPropertyOptional({ example: 8.5, nullable: true })
+  snrDb?: number | null;
+
+  // Smart Building (SB) fields
+  @ApiPropertyOptional({ example: 596, nullable: true, description: 'CO2 in ppm (assumed standard identity)' })
+  rawCo2?: number | null;
+
+  @ApiPropertyOptional({ example: 94, nullable: true, description: 'VOC index (dimensionless)' })
+  rawVoc?: number | null;
+
+  @ApiPropertyOptional({ example: 32, nullable: true, description: 'Visible channel sensor count' })
+  rawVisible?: number | null;
+
+  @ApiPropertyOptional({ example: 17, nullable: true, description: 'Infrared channel sensor count' })
+  rawIr?: number | null;
+
+  @ApiPropertyOptional({ example: 'sb-dev2', nullable: true })
+  networkDeviceName?: string | null;
+
+  @ApiPropertyOptional({ example: 'app-01', nullable: true })
+  applicationId?: string | null;
+
+  @ApiPropertyOptional({ example: 120, nullable: true })
+  fCnt?: number | null;
 }
 
 export class DashboardEnvironmentReadingItemDto {
   @ApiProperty({ example: '2026-09-27T11:58:30.000Z' })
   observedAt: string;
 
-  @ApiProperty({ example: 25.8, nullable: true })
-  rawTemperature: number | null;
+  @ApiPropertyOptional({ example: 25.8, nullable: true })
+  rawTemperature?: number | null;
 
-  @ApiProperty({ example: 64.2, nullable: true })
-  rawHumidity: number | null;
+  @ApiPropertyOptional({ example: 64.2, nullable: true })
+  rawHumidity?: number | null;
 
-  @ApiProperty({ example: 450, nullable: true })
-  lux: number | null;
+  @ApiPropertyOptional({ example: 450, nullable: true })
+  lux?: number | null;
 
-  @ApiProperty({ example: 1200, nullable: true })
-  currentUa: number | null;
+  @ApiPropertyOptional({ example: 1200, nullable: true })
+  currentUa?: number | null;
 
-  @ApiProperty({ example: 3300, nullable: true })
-  rawVoltage: number | null;
+  @ApiPropertyOptional({ example: 3300, nullable: true })
+  rawVoltage?: number | null;
 
-  @ApiProperty({ example: 1, nullable: true })
-  rawState: number | null;
+  @ApiPropertyOptional({ example: 1, nullable: true })
+  rawState?: number | null;
 
-  @ApiProperty({ example: 'gw-01', nullable: true })
-  gatewayId: string | null;
+  @ApiPropertyOptional({ example: 'gw-01', nullable: true })
+  gatewayId?: string | null;
 
-  @ApiProperty({ example: -85, nullable: true })
-  rssiDbm: number | null;
+  @ApiPropertyOptional({ example: -85, nullable: true })
+  rssiDbm?: number | null;
 
-  @ApiProperty({ example: 8.5, nullable: true })
-  snrDb: number | null;
+  @ApiPropertyOptional({ example: 8.5, nullable: true })
+  snrDb?: number | null;
 
   @ApiPropertyOptional({ example: 120, nullable: true })
   fCnt?: number | null;
+
+  // Smart Building (SB) fields
+  @ApiPropertyOptional({ example: 596, nullable: true, description: 'CO2 in ppm (assumed standard identity)' })
+  rawCo2?: number | null;
+
+  @ApiPropertyOptional({ example: 94, nullable: true, description: 'VOC index (dimensionless)' })
+  rawVoc?: number | null;
+
+  @ApiPropertyOptional({ example: 32, nullable: true, description: 'Visible channel sensor count' })
+  rawVisible?: number | null;
+
+  @ApiPropertyOptional({ example: 17, nullable: true, description: 'Infrared channel sensor count' })
+  rawIr?: number | null;
+
+  @ApiPropertyOptional({ example: 'sb-dev2', nullable: true })
+  networkDeviceName?: string | null;
+
+  @ApiPropertyOptional({ example: 'app-01', nullable: true })
+  applicationId?: string | null;
 }
 
 export class DashboardEnvironmentReadingsResponseDto {
@@ -104,8 +145,8 @@ export class DashboardEnvironmentReadingsResponseDto {
   @ApiProperty({ example: '8cf95720000a0123' })
   sourceId: string;
 
-  @ApiProperty({ example: 'solar', enum: ['solar'] })
-  sourceDeviceType: 'solar';
+  @ApiProperty({ example: 'solar', enum: ['solar', 'sb'] })
+  sourceDeviceType: 'solar' | 'sb';
 
   @ApiProperty({ example: 'ready', enum: ['ready', 'empty'] })
   availability: 'ready' | 'empty';

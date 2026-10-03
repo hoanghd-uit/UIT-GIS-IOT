@@ -56,10 +56,10 @@ export function EnvironmentPageHeader({
               borderColor: 'rgba(79, 185, 173, 0.35)',
               color: 'var(--primary)',
             }}
-            title="Dữ liệu Solar trực tiếp từ IoT và tính toán theo request"
+            title="Dữ liệu Solar & SB trực tiếp từ IoT và tính toán theo request"
           >
             <span className="w-1.5 h-1.5 rounded-full bg-[var(--primary)]" />
-            <span>Solar · Live / Derived</span>
+            <span>Solar & SB · Live / Derived</span>
           </div>
 
           <div
@@ -69,10 +69,10 @@ export function EnvironmentPageHeader({
               borderColor: 'rgba(237, 137, 54, 0.35)',
               color: '#FFB121',
             }}
-            title="Dữ liệu CO2 và VOC phòng hiển thị từ fixture mẫu"
+            title="Dữ liệu lưới phòng và VOC hiển thị từ fixture mẫu"
           >
             <span className="w-1.5 h-1.5 rounded-full bg-[#FFB121]" />
-            <span>CO₂ / VOC · Demo</span>
+            <span>Phòng / VOC · Demo</span>
           </div>
         </div>
 
@@ -93,8 +93,8 @@ export function EnvironmentPageHeader({
             backgroundColor: 'var(--panel-bg)',
             borderColor: 'var(--border)',
           }}
-          title="Tìm kiếm nguồn Solar"
-          aria-label="Tìm kiếm nguồn Solar"
+          title="Tìm kiếm nguồn môi trường"
+          aria-label="Tìm kiếm nguồn môi trường"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />

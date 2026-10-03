@@ -2,11 +2,14 @@
 
 > **Project:** GIS — UIT Building E Digital Twin  
 > **Plan date:** 2026-09-26  
-> **Updated:** 2026-10-03 — reconciled the Phase 10 & Phase 11 implementation handoffs and current source. Small Phases 09–16, 19, 23, and 24 are complete. Small Phase 24 delivered read-only `sb` and `smoke` raw telemetry on Page 07 with zero database persistence. Small Phase 25 is now ready for its environmental-source upgrades and conditional room/grid live migration. Report/alert PostgreSQL persistence remains the last implementation phase (21), followed by acceptance (22).
+> **Updated:** 2026-10-03 — reconciled the Phase 10–12 implementation handoffs and current source. Small Phases 09–16, 19, 23, and 24 are complete; Small Phase 25's mandatory Solar/SB source/CO₂ branch has a completed handoff. Its new Page 03 room-ranking/floor-compliance supplement is PLAN ONLY — READY, not implemented. Report/alert PostgreSQL persistence and threshold editing remain the last implementation phase (21), followed by acceptance (22).
 > **Target:** Implement the current `Dashboard_Knowledge_Base.md` without expanding its frozen scope.  
 > **Priority rule:** Deliver real, currently available data first; then derived data; then application-owned manual data; and deterministic demo-only content last.  
 > **Authoritative requirements:** `Dashboard_Knowledge_Base.md`  
 > **Authoritative IoT contract:** `IoTBackend_API_HandOver.md`
+> **Latest unit decision — 2026-10-03:** Stakeholder authorizes provisional standard measurement units while technical confirmation is pending (Dashboard KB §9.3.1). CO2 uses ppm with identity numeric mapping; Small Phase 25 CO2 live/derived work is no longer blocked by unit review. Room mapping, coverage, quality and business rules remain separate gates. This is planning/metadata policy, not implementation or hardware confirmation.
+> **Latest IAQ refresh decision — 2026-10-03:** Stakeholder withdrew the proposed Page 03 5-minute refresh after source audit found mount/selection/preset/manual-triggered fetching, not continuous polling (KB §9.5). Keep the current IAQ refresh mechanism; no scheduler or refresh-only refactor in Small Phase 25. Its SB/unit/room-adapter scope remains unchanged. Page 07 retains its separate 5-minute policy; no other page cadence changes.
+> **Latest IAQ derived-widget decision — 2026-10-03:** Small Phase 25 supplement evaluates three simultaneous floor metric means using inclusive default upper limits CO₂1000ppm / temperature27°C / humidity70% (KB §9.6). Missing intervals fail/full denominator; wholly no-data floors show `—`. Threshold display/calculation read the same default config only; editing/saving remains Phase21. Room ranking does not need a grid-cell binding; no heatmap/Overview migration or Page06 alert activation is implied.
 
 ---
 
@@ -51,7 +54,7 @@ The following is the **historical 2026-09-26 starting point**, not a claim about
 | P0 | Real and contract-available | Device catalogue, device type, floor/source coordinates, `is_active`, timestamps, gateway ID, RSSI/SNR, solar current/lux, AVC readings, NFC history | Implement first and label `live`; preserve provenance and uncertainty. |
 | P1 | Derived from real data | Water summaries, report aggregates, IoT health, alert state | Before the deferred persistence phase, fetch approved raw ranges and calculate only the bounded result needed for the current request in NestJS memory. Persist selected report data only in Small Phase 21 after the IoT schema/semantics gate is closed. Label `derived`. |
 | P2 | Application-owned manual data | Fire extinguisher and fire drill/document records | Implement after identity and CASL enforcement exist. Label `manual`. |
-| P3 | Conditional or missing upstream data | `sb` CO2/VOC units and room-grid mapping are conditional; pressure, firmware, OTA, calibration, gateway health, and authoritative fire-zone state are still missing/unconfirmed | Use authoritative business data only after the relevant contract gate closes; otherwise keep qualified raw detail, unavailable states, or the KB-approved deterministic demo fallback. |
+| P3 | Conditional or missing upstream data | Room-grid mapping, pressure, firmware, OTA, calibration, gateway health, and authoritative fire-zone state are still missing/unconfirmed | Measurement unit review does not block stakeholder-approved standard-unit live/derived display (KB §9.3.1). Keep assumed versus confirmed provenance; missing source/mapping/business semantics still require unavailable or approved demo fallback. |
 | P4 | Explicit demo scope | Energy and all Parking data | Implement last with versioned deterministic fixtures and visible `demo` provenance. |
 
 Here, **real and contract-available** means the approved source path and application integration exist. It does not claim that the upstream service currently has non-empty production readings. Verify new integration paths with mocks first; perform a minimal real GET smoke check only when explicitly approved for the target environment, otherwise record it as not run. An empty or unavailable live source must render an honest empty/unavailable state, not silently switch to demo unless the Dashboard KB explicitly allows that fallback.
@@ -62,21 +65,21 @@ Here, **real and contract-available** means the approved source path and applica
 - Small Phase **16 is complete**, according to `bp2_phase09_minimal_identity_casl_foundation_handoff.md` and the existing NestJS auth/CASL modules and protected Next.js routes. PostgreSQL users/sessions and the two accounts are no longer pending work. Reuse them; do not create a third role or reseed/reset passwords as part of an IoT upgrade.
 - Small Phase **19 is complete**, according to `bp2_phase08_demo_completion_energy_parking_handoff.md`. Despite its legacy filename, that delivered phase is **Parking only**, not Energy.
 - Small Phase **23 is complete**, according to `bp2_phase10_page07_device_catalogue_contract_upgrade_handoff.md` and the current catalogue source. Combined room/floor filters, nullable source-room metadata, room-query scope isolation and Solar/AVC contract/caveat reconciliation are delivered. Do not implement them again.
-- The current IoT client implements device list/detail plus `solar`, `avc`, and `nfc` GETs. Catalogue metadata accepts `sb`/`smoke` types, but no client methods fetch their readings. Existing `install_z` and source-room handling are not remaining Small Phase 24 work.
-- Shared telemetry dispatch supports `solar`/`avc`/`nfc`; the Dashboard Page 07 telemetry service/DTO and selected-device UI support only `solar`/`avc`. The Dashboard service rejects other types, and the UI skips their telemetry requests. Small Phase 24 raw retrieval/detail is therefore **not complete**. There is also no current webhook client/domain implementation.
-- The Page 03 environment adapter currently filters Solar sources and treats their environment semantics as unconfirmed. The updated API descriptions require a narrow source-semantic reconciliation, not a Page 03 redesign.
+- Small Phase **24 is complete**, per `bp2_phase11_page07_sb_smoke_raw_telemetry_handoff.md` and the checked source: the IoT client/shared normalization supports `sb`/`smoke` alongside existing types; Dashboard Page 07 supports `solar`/`avc`/`sb`/`smoke` selected-device raw telemetry. Do not implement this bridge again. This documentation update does not rerun its historical test matrix.
+- Existing `install_z` and source-room handling are delivered catalogue work, not remaining Small Phase 24 tasks. No current webhook client/domain implementation is claimed. The stakeholder's later standard-unit decision changes upcoming measurement interpretation policy, not the completion evidence of the raw bridge.
+- Small Phase **25 mandatory branch is complete per handoff** `bp2_phase12_page03_sb_co2_environment_upgrade_handoff.md` and inspected Solar/SB Environment source/detail/CO₂ summary code. No historical tests were rerun by this documentation review. Room ranking, compliance and threshold display currently remain demo/read-only; new scoped decisions in KB §9.6 and the supplemental plan make only those three data/config presentations remaining work. Do not implement the mandatory branch again or infer grid/alert completion from it.
 - Page 11 is still a protected placeholder; manual PCCC CRUD and its final grid composition remain unfinished. Its placeholder includes excluded escape-route/fire-water-pressure content; remove only those obsolete Page 11 placeholders when implementing its approved scope.
 - Page 02 still renders `EnergyUnavailablePanels`; its approved deterministic Energy demo is unfinished. Page 01's hourly Energy demo does not complete Page 02.
 
 ### 2.3 API changes mapped to remaining work
 
-The updated `IoTBackend_API_HandOver.md` is the exact source contract. Older availability/unit statements in completed plans or the Dashboard KB must not override its dated clarifications. Refresh stale source facts in the existing KB during the relevant selected phase without changing frozen page scope or stakeholder labels.
+The updated `IoTBackend_API_HandOver.md` is the exact source contract. Keep its upstream pending-review statements intact; the stakeholder's later standard-unit decision (Dashboard KB §9.3.1; API handover §31.7) is a separate application assumption, not a Swagger/hardware confirmation. It supersedes earlier application instructions to block CO2 ppm solely on unit review. Refresh stale source facts during the relevant selected phase without changing frozen page scope or stakeholder labels.
 
 | Updated contract fact | New/merged task | What remains unconfirmed or out of scope |
 | --- | --- | --- |
 | `/devices` supports combined `floor_level` and exact, case-sensitive, trimmed `room_id`; list/detail share location fields including nullable `install_room_id` and numeric `install_z` | **23**: filter validation/serialization, catalogue/detail DTOs and source-location propagation | Room assignment quality, coordinate units/axes/Unity calibration, and viewer `G -> 0` mapping are not confirmed. Source room ID is not automatically a grid cell ID. |
 | `solar.voltage` is battery volts; temperature is ambient °C; humidity is relative %; AVC forward/reverse volumes are cumulative m³ and instantaneous flow is m³/h (§3.6) | **23/25**: contract fixtures and narrowly scoped semantic/unit metadata updates | Calibration, solar state codes, AVC flag domains, counter resets/rollovers, daily consumption, and approved alert thresholds remain open. |
-| `/sb` adds `voltage`, `visible`, `ir`, `co2`, `voc`, radio fields and `f_cnt` | **24**: typed raw retrieval; **25**: Page 03 source support and conditional Page 01/03 live migration | Sensor units/scales are pending. Field presence does not justify `ppm`, VOC index, battery %, compliance, or live CO2 alerts. No pressure or temperature/humidity fields are documented on `sb`. |
+| `/sb` adds `voltage`, `visible`, `ir`, `co2`, `voc`, radio fields and `f_cnt` | **24**: delivered typed raw retrieval; **25 mandatory**: delivered Page03 SB CO₂ support; **25 supplement**: derived room rank/floor compliance with approved defaults | No inferred battery %, pressure, SB temperature/humidity, room mapping or live alert rules. Page03 statistical compliance is separately authorized by stakeholder rules in KB §9.6, not by the payload/unit decision alone. Hardware verification and heatmap/grid mappings remain follow-up. |
 | `/smoke` adds numeric `status`/`state`, sample identity/time, and radio fields | **24**: typed raw retrieval; **18**: reuse for PCCC device detail and a conditional zone adapter | No alarm-code mapping, severity/latching policy, or detector-to-zone mapping. This is a reading API, not an authoritative fire-zone state API. |
 | Webhook list/detail GETs are documented; registration/update/delete/test make up the other four operations | **27**: optional read-only inspection; **W1/W2** in Section 5: separately authorized future delivery work | No automatic permission for upstream writes/test delivery, new role, notification channel, or receiving integration. |
 
@@ -423,7 +426,7 @@ Implement authorized PostgreSQL CRUD for fire extinguisher expiry/inspection and
 ## Small Phase 20 — Cross-page integration without report-data persistence
 
 **Priority:** Integration before the deferred persistence boundary.
-**Depends on:** Completed Small Phases 09–16/19 and remaining required Small Phases 17, 18, 23, 24, 25, and 26. Small Phase 27 is included only if separately selected; unresolved conditional features use their approved demo/unavailable fallback.
+**Depends on:** Completed Small Phases 09–16/19/23/24 and Small Phase25 mandatory branch; remaining required Small Phases17/18/26 and the Phase25 supplement. Small Phase27 is included only if separately selected; unresolved conditional features use their approved demo/unavailable fallback.
 **Execution status:** `WAITING FOR REQUIRED PAGE/ADAPTER COMPLETION`.
 
 ### Goal
@@ -478,7 +481,7 @@ Add only the minimum PostgreSQL report-data and authoritative alert persistence 
 1. Re-audit actual consumers, including upgrades from Small Phases 23–26; remove report keys that are not needed. Do not add `sb`/smoke report or alert keys merely because new raw endpoints exist; any additional consumer requires its own confirmed semantics and stakeholder approval.
 2. Freeze report keys, units, dimensions and aggregation windows only for metrics with an approved stable source contract.
 3. Design PostgreSQL entities/migrations for selected aggregates/snapshots with source window, calculated time, data mode, provenance, freshness and quality state.
-4. If the alert gate is closed, design alert configuration, current distinct-device state and event history with audit/ability enforcement; do not reuse demo rules/events.
+4. When the alert entry gates are satisfied, design alert configuration, current distinct-device state and event history with audit/ability enforcement; do not reuse demo rules/events. Add authorized threshold editing/saving deferred from Page03: Manager updates existing approved config, Viewer reads; reuse the Phase25 default-provider/version boundary so table and compliance calculation consume the same saved configuration. Defaults1000ppm/27°C/70% are approved Page03 statistical limits, not evidence that all alert duration/danger/state policies are settled. Do not activate broader alert rules from these defaults alone.
 5. Define idempotent refresh/evaluation jobs, bounded source reads, retry behavior, TTL/retention, invalidation, late-data recomputation and recovery.
 6. Keep raw telemetry in the IoT-side source; store only selected report values and justified alert state/events needed by Dashboard.
 7. Add an operator-safe rebuild mechanism without exposing the upstream bearer token or adding unauthenticated mutation endpoints.
@@ -561,14 +564,9 @@ Add only the minimum PostgreSQL report-data and authoritative alert persistence 
 
 ### Completion audit — 2026-10-03
 
-Do **not** mark this phase complete merely because `sb`/`smoke` devices appear in the Page 07 catalogue or the API handover documents their fields. The Phase 10 handoff explicitly defers both raw endpoints to this phase. Current source confirms the missing integration:
+Completion is based on the Phase 11 handoff and checked source, not merely catalogue visibility: fixed SB/Smoke GET methods, shared runtime normalization/dispatch, Dashboard/frontend contract extensions and Page 07 type-specific raw detail are delivered. Earlier text describing these as missing was a pre-Phase-11 audit and is superseded.
 
-- `backend/src/iot/services/iot-client.service.ts` has no `/api/v1/sb` or `/api/v1/smoke` retrieval methods; `iot-telemetry.service.ts` has no matching dispatch/normalizers.
-- `backend/src/dashboard/dashboard-iot-telemetry.service.ts` rejects types other than `solar`/`avc`; backend/frontend telemetry DTOs do not include `sb`/`smoke` variants.
-- `web/src/components/dashboard/iot/IotDeviceTelemetryPanel.client.tsx` supports only `solar`/`avc` and returns before fetching other types. New raw-field presentation is missing, not just a label adjustment.
-- `web/test-bp2-phase10.mjs` T26 explicitly asserts that the two new client paths are absent. Its Phase 10 verification is not evidence that Small Phase 24 telemetry works.
-
-Reuse the delivered catalogue/type/room metadata, selected-device panel, bounded range controls, session/CASL/proxy boundary and in-memory pipeline. Remaining implementation is the two typed client paths and runtime parsers, shared normalization/dispatch, Dashboard/frontend contract extensions, Page 07 type-specific raw detail, and their behavior/security/regression tests. No unrelated completed-page or stakeholder-text edits are authorized. This audit reads source/handoffs only; it does not claim a fresh runtime or live-upstream verification.
+Reuse the delivered catalogue/type/room metadata, bounded raw pipeline and session/CASL/proxy boundary for phase 25; do not reopen phase 24 or rewrite its historical handoff. The delivered steps below describe its original raw-only scope. Later standard-unit application assumptions are governed by Dashboard KB §9.3.1 and the selected future phase, not permission to retrofit protected Page 07 labels. This reconciliation reads source/handoffs only; it does not claim a fresh test run or agent-executed live API check.
 
 ### Steps
 
@@ -588,29 +586,34 @@ Reuse the delivered catalogue/type/room metadata, selected-device panel, bounded
 
 ---
 
-## Small Phase 25 — Environmental source upgrade and conditional room/grid live migration
+## Small Phase 25 — Delivered environmental foundation + derived ranking/floor-compliance supplement
 
-**Priority:** P0/P1 available data; business interpretations remain gated.<br>
-**Primary page:** Page 03; Page 01 only for an explicitly gated existing CO2/grid adapter.<br>
-**Depends on:** Small Phases 23–24.<br>
-**Execution status:** `READY — NOT IMPLEMENTED`; Small Phase 24 is complete. Raw-source/confirmed-Solar work is implementable. Live room CO2/VOC/compliance migration remains `CONDITIONAL`.
+**Priority:** P0/P1 real/derived data; other grid/alert interpretations remain gated.<br>
+**Primary page:** Page03 only for the new supplement; Page01/heatmap remain untouched.<br>
+**Depends on:** Completed Small Phases23–24 and the Phase25 mandatory implementation.<br>
+**Execution status:** `MANDATORY BRANCH COMPLETE PER HANDOFF; SUPPLEMENT READY — NOT IMPLEMENTED`. Mandatory source/CO₂ results have their matching handoff; its historical tests are not new verification of the supplement. Actual room/floor/history availability affects widget data states, not permission to implement the tested read-only adapters.
 
-### Steps
+**Delivered foundation:** [Original Phase12 plan](bp2_phase12_page03_sb_co2_environment_upgrade.md) and [mandatory implementation handoff](bp2_phase12_page03_sb_co2_environment_upgrade_handoff.md): Solar/SB source/detail, CO₂ latest/history and bounded population summary, unit metadata and mapping boundary. Do not implement these tasks again or overwrite that historical handoff.
 
-1. Extend the existing environmental source/reading boundary to include typed `sb` sources alongside Solar. Keep source-specific capabilities: `sb` does not document temperature, humidity or pressure; do not synthesize them or silently join readings from unrelated devices into one sensor record.
-2. Promote Solar temperature/humidity unit metadata to the currently documented ambient °C/relative %. Preserve quality/calibration caveats and distinguish measurements from room representativeness, standards compliance and alert evaluation.
-3. Present `sb.co2`/`voc` as live qualified raw device values until units/scales and usable source evidence are confirmed. Do not label raw CO2 as ppm or VOC as concentration/index by assumption. Keep existing room heatmap/ranking/compliance and Page 01 CO2 popup on their approved demo adapter while their gates remain open.
-4. Design an explicit mapping boundary from source floor/nullable room IDs and device identity to configured stable grid cells. Handle missing/unknown rooms, multiple devices per room, approved aggregation/selection policy and development floor fallback; do not infer rooms from coordinates or equate an upstream room string with a verified grid cell.
-5. Only after units/scales, room mapping, source quality, sample cadence/coverage and the relevant calculation rules are confirmed, substitute the existing Page 03/01 metric/grid adapter with live/derived data. Compliance and alerting additionally need approved baselines and duration/no-data rules. Keep unresolved branches deferred and documented; completion of qualified raw support is not completion of those live business capabilities.
-6. Keep bounded raw fetch plus request-scoped NestJS calculations and per-widget provenance. A failed/empty live source must not silently change into a demo series; demo/live/manual rows must never be aggregated together.
-7. Reuse the existing logical `InteractiveFloorGrid` from Small Phase 15 and the current aligned UI. Restrict changes to required sources/types/semantic metadata and gated adapter wiring; do not redesign or rewrite the completed environment, Overview, Water or Alert pages.
-8. Test source selection, confirmed versus unconfirmed units, null/missing rooms, unmapped cells, duplicate room sources, coverage/truncation and demo/live substitution. Demonstrate that raw `sb` readings cannot produce authoritative IAQ score, compliance, alert state or badge.
+**Remaining scoped plan:** [Derived ranking/floor-compliance supplement](bp2_phase12_page03_derived_ranking_floor_compliance_supplement.md), 2026-10-03, with **new** matching handoff `bp2_phase12_page03_derived_ranking_floor_compliance_supplement_handoff.md`. Latest stakeholder decisions in KB§9.6 supersede the old ranking/compliance demo deferral, not the heatmap/Overview mapping or authoritative alert gates.
 
-### Exit criteria
+**Refresh audit — source inspected, not runtime capture:** existing IAQ mount/source/preset/manual requests remain event-driven without an observed source-level timer/feedback loop. Keep this mechanism; no 5-minute polling or refresh-only refactor. The supplement's 5-minute **calculation buckets** are statistical resolution, not device sampling/polling cadence.
 
-- Confirmed Solar measurements and raw smart-building capabilities are represented truthfully through the existing environment architecture.
-- A documented room/cell adapter boundary exists; unsupported live business branches retain explicit conditional/demo status rather than fabricated values.
-- No new pressure endpoint, thresholds, report persistence or unrelated completed-page edits are introduced.
+### Remaining steps
+
+1. Centralize/read typed immutable application defaults CO₂1000ppm/temperature27°C/humidity70%. “Ngưỡng cảnh báo”, compliance calculator and footer consume the same config/version. Reconcile only the three warning rows; keep edit disabled for both roles, no runtime editor/database writes. Sửa/lưu ngưỡng remains Small Phase21.
+2. Derive top6 room CO₂ ranking from existing bounded24h/latest1 SB results, equal-device room mean, actual floor/room identity and explicit subset/source-time coverage. No additional ranking telemetry fan-out, no room-to-cell/primary-grid binding requirement, no fake room names when room metadata missing.
+3. Implement bounded7d floor history/statistics in NestJS: equal-device per-metric means within the same5-minute statistical bucket, **three-metric AND** with inclusive configured upper limits, weighted durations/full-window denominator; no lower limits, interpolation or cross-floor borrowing. Preserve source/unit metadata; statistical floor composition does not create a virtual SB temperature/humidity record.
+4. Rename only the requested component to “% thời gian đạt chuẩn”. Gaps/missing metric buckets fail; wholly no-data floor`—`, not0%. Distinguish complete-data gaps from API errors/truncation/unattempted floors; disclose population partiality. Whole-building row aggregates only evaluable floor-time and discloses excluded floors.
+5. Preserve current aligned layout, KPI/detail/picker/heatmap, stakeholder labels outside the explicit allowlist, all other pages and refresh mechanisms. Add only initial bounded widget/config reads; no callbacks/timers that trigger repeated fetch. Verify calculations/null/coverage, read-only auth/load bounds/UI regressions and create the supplemental handoff.
+
+### Supplement exit criteria
+
+- Table/math/footer use one default config; equality passes; all three metric means must pass in the same time bucket.
+- Full7d denominator includes missing intervals; no-data floors display`—`, legitimate data-with-missing-metric cases0%, unavailable/truncated results have distinct null reasons.
+- Ranking and floor calculations reuse real bounded raw paths, preserve provenance, and need only their own room/floor metadata; no fabricated mapping/demo fallback.
+- Current IAQ cadence and other pages/labels remain protected; no editor, report/config persistence, active Page06 alert registry or new roles/accounts.
+- Scoped tests/QA and separate matching handoff supply delivery evidence. Grid live migration, IAQ score and broader alert policies remain explicitly conditional, not silently marked complete.
 
 ---
 
@@ -661,23 +664,22 @@ Reuse the delivered catalogue/type/room metadata, selected-device panel, bounded
 
 ## 4. Remaining / waiting execution order — 2026-10-03
 
-**Not remaining:** Small Phases **09–16, 19 and 23** have completed implementation handoffs. Small Phase 16 identity, Small Phase 19 Parking and Small Phase 23 catalogue contract upgrade must not be listed as pending or implemented again.
+**Not remaining:** Small Phases **09–16, 19, 23 and 24**, plus **Small Phase25 mandatory source/CO₂ branch**, have completed implementation handoffs. Identity, Parking, catalogue/raw bridge and Page03 SB detail/KPI must not be implemented again. Phase25 is still listed only for its new scoped ranking/compliance/default-config supplement. Page07's separate render/paging/5-minute-refresh fix plan does not reopen phase24 or extend refresh elsewhere. IAQ retains its current cadence; statistical5-minute buckets are not polling.
 
-There are **8 required remaining phases** (including final acceptance) and **1 optional candidate**. Stable IDs are deliberately not execution-order numbers. This is the default data-priority order; Small Phase 17 and Energy phase 26 can be planned independently because unresolved IoT contracts do not block them.
+There are **7 required remaining phases** (including final acceptance) and **1 optional candidate**. Stable IDs are deliberately not execution-order numbers. This is the default data-priority order; Small Phase 17 and Energy phase 26 can be planned independently because unresolved IoT contracts do not block them.
 
 | Order | Small Phase | Remaining result | Status / dependency |
 | ---: | --- | --- | --- |
-| 1 | **24 — `sb`/smoke raw telemetry** | Read-only typed bridge + Page 07 raw detail for both new types | **READY / PLAN CREATED, NOT IMPLEMENTED**; see `bp2_phase11_page07_sb_smoke_raw_telemetry.md`; no guessed sensor units/alarm codes |
-| 2 | **25 — Environment/room adapter upgrade** | Page 03 `sb` raw sources and confirmed Solar units; explicit source-room/grid mapping boundary | **WAIT 24**; live room CO2/VOC/compliance substitution remains conditional |
-| 3 | **17 — Manual PCCC CRUD** | Page 11 extinguisher expiry/inspection and drill/document records; Manager create/update/delete, Viewer read | **READY**; identity completed; minimum fields/UI reference needed in detailed plan |
-| 4 | **18 — PCCC grid + conditional smoke adapter** | Shared 2D fire grid, KPIs, live raw detector detail and manual-data composition | **WAIT 17**; raw branch also waits 24; zone state remains demo until code/mapping gates close |
-| 5 | **26 — Page 02 Energy demo** | Finish only missing deterministic Energy KPIs/charts; protect existing Water | **READY**; independent of new IoT APIs |
+| 1 | **25 — IAQ derived-widget supplement** | Room CO₂ ranking; three-metric floor compliance; one read-only default config1000/27/70; preserve current refresh | **SUPPLEMENT READY — NOT IMPLEMENTED**; mandatory branch complete; actual room/floor/history quality determines honest data states; editor/saving deferred21 |
+| 2 | **17 — Manual PCCC CRUD** | Page 11 extinguisher expiry/inspection and drill/document records; Manager create/update/delete, Viewer read | **READY**; identity completed; minimum fields/UI reference needed in detailed plan |
+| 3 | **18 — PCCC grid + conditional smoke adapter** | Shared 2D fire grid, KPIs, live raw detector detail and manual-data composition | **WAIT 17**; raw bridge delivered in 24; zone state remains demo until code/mapping gates close |
+| 4 | **26 — Page 02 Energy demo** | Finish only missing deterministic Energy KPIs/charts; protect existing Water | **READY**; independent of new IoT APIs |
 | Optional, before 20 if selected | **27 — Webhook inspection** | Only list/detail GETs with approved visibility and sanitized metadata | **OPTIONAL / WAIT SCOPE DECISION**; not a blocker when unselected |
-| 6 | **20 — Cross-page integration** | Seven-page consistency, aligned UI, provenance, auth and bounded raw/in-memory paths | **WAIT 17/18/24/25/26**; conditional branches may use approved fallback |
-| 7 | **21 — Report/alert PostgreSQL persistence** | Only justified aggregates and authoritative alert config/state/history | **DEFERRED / WAIT 20 + CONTRACT/VOLUME GATES**; last implementation phase |
-| 8 | **22 — Final acceptance/hardening** | Seven-page acceptance, authorization/security/provenance/accessibility and regression evidence | **WAIT 20 + 21 delivery or explicit approved deferral decision**; closeout only |
+| 5 | **20 — Cross-page integration** | Seven-page consistency, aligned UI, provenance, auth and bounded raw/in-memory paths | **WAIT 17/18/25/26**; conditional branches may use approved fallback |
+| 6 | **21 — Report/alert PostgreSQL persistence** | Justified aggregates/config/state/history; authorized threshold editing/saving with same Page03 config boundary | **DEFERRED / WAIT 20 + CONTRACT/VOLUME GATES**; last implementation phase |
+| 7 | **22 — Final acceptance/hardening** | Seven-page acceptance, authorization/security/provenance/accessibility and regression evidence | **WAIT 20 + 21 delivery or explicit approved deferral decision**; closeout only |
 
-**Recommended next selected Small Phase: 24.** Its remaining tasks are confirmed by the audit above; do not skip it based on catalogue visibility. Small Phase 17 is also ready if the stakeholder prefers manual PCCC work first. No implementation starts as a result of this backlog update, and no Small Phase 25 detailed plan is issued by this audit while its Small Phase 24 dependency remains incomplete.
+**Recommended next selected task: Small Phase25 supplement.** Read [its new scoped plan](bp2_phase12_page03_derived_ranking_floor_compliance_supplement.md) and reuse the delivered Phase12 foundation; do not start by redoing the original mandatory tasks. Small Phase17 is independently ready. This update is documentation only; supplement implementation, threshold editing/PG persistence and unrelated page changes have not been performed or authorized by this planning pass.
 
 ---
 
@@ -688,18 +690,20 @@ There are **8 required remaining phases** (including final acceptance) and **1 o
 - Small Phase 16 local identity/session implementation and the **exact two-role CASL decision** are complete. Manager may create/update/delete PCCC manual records when phase 17 supplies the domain; Viewer reads only. Both are denied device display-position update/delete. Manager's future AlertConfig update ability is not permission to activate unimplemented configuration or upstream webhook operations.
 - Identity/session PostgreSQL belongs to completed phase 16; manual PCCC PostgreSQL belongs to phase 17. These exceptions do **not** advance IoT-derived report/alert persistence from phase 21.
 - Solar battery voltage/ambient temperature/relative humidity now have documented V/°C/% meanings, and AVC cumulative/instantaneous water descriptions are clarified. Their older generic unit-pending blocker is replaced by the narrower outstanding quality/code/reset questions below.
-- `sb.co2`/`voc`, raw smoke readings and nullable source room IDs now exist in the documented schema. Their endpoint/field availability is no longer a missing-contract question; units, code meanings, actual populated source evidence and physical/grid mapping still require confirmation.
+- `sb.co2`/`voc`, raw smoke readings and nullable source room IDs exist in the documented schema; an owner-provided SB sample also confirms populated CO2. Standard measurement units may now be assumed per KB §9.3.1, including CO2 ppm. Technical units/calibration are stakeholder follow-up, not a CO2 integration blocker; smoke code meanings, source coverage and physical/grid mapping remain unconfirmed.
 - Parking is completed. The unfinished Page 02 Energy scope now has its own phase **26**, not phase 19 or identity phase 16.
+- Page03 statistical compliance is decided: floor means, simultaneous three-metric AND, inclusive upper defaults1000ppm/27°C/70%, full denominator/gaps fail and wholly no-data floor`—`. Read-only config now, authorized editing/saving in21. These choices are not new open baseline questions for the supplement and do not activate authoritative Alert rules.
 
 ### 5.2 External contract/product gates still open
 
 | Gate | Affected work | Required answer before authoritative use |
 | --- | --- | --- |
-| Smart-building measurement semantics | Conditional part of 25; relevant keys/rules in 21 | Units/scales for `co2`, `voc`, `voltage`, `visible`, `ir`; quality/calibration and usable sample evidence. Do not assume ppm, VOC concentration/index or battery %. |
-| Source-room/grid mapping | 25 and live zone branch of 18 | Reliable room assignment, stable floor/room/cell identity, multiple-device aggregation policy, null/unmapped behavior, coordinate frame if actually needed, and approved viewer-floor mapping. |
+| Smart-building technical verification | Follow-up for25; stable report keys/rules in21 | Owner verifies units/scales/calibration later. Provisional ppm and Page03 statistical criteria are approved under KB§9.3.1/9.6; do not block the supplement on hardware review. Preserve assumptions/provenance; no battery%, authoritative IAQ/alerts or early report persistence. |
+| Actual room/floor metadata | Data availability for25 supplement | Ranking requires actual source room/floor metadata; floor compliance requires actual floor only, not room/cell. No fallback floor0→T4/T6 or demo IDs. Aggregation policies are in the scoped supplement; missing assignments produce honest empty/unmapped states, not a requirement to implement placement editing. |
+| Source-room/grid mapping | Conditional heatmap/Overview branch of25 and live zone branch of18 | Verified room/zone-to-cell identities, binding policy and coordinate frame only if needed. This gate must not be applied to descriptive ranking or floor compliance, which do not render grid cells. |
 | Smoke state and zone semantics | Conditional live branch of 18; any later fire alerts | Numeric `status`/`state` dictionary, normal/alarm/fault meanings, severity/latching/clearing behavior, detector-to-zone mapping and freshness/no-data policy. A reading API alone does not close this gate. |
 | Existing sensor interpretation gaps | 23/25 and future derived Water/IoT consumers | Solar state codes/calibration; AVC counter reset/rollover, flag domains and `temp_c` meaning. No daily consumption, valve/leak alarm or battery conversion without the relevant answers. |
-| Authoritative alert rules and data quality | Conditional live IAQ/compliance, 20/21 | Numeric baselines, duration and `alert_time_threshold` unit, cadence, partial/truncated/gap handling, distinct-device state and `STALE`/`NO_DATA` policy. Keep the authoritative registry empty where rules are not approved. |
+| Authoritative alert rules and data quality | IAQ score/broader Alert behavior in20/21 | Remaining numeric danger/baseline rules, alert duration/unit, cadence, quality, distinct-device state and `STALE`/`NO_DATA` policy. Page03 descriptive compliance defaults/AND/gap rules are already approved; they do not populate the authoritative alert registry or settle these separate gates. |
 | Missing optional Page 07/environment fields | Future selected feature only | Pressure source, gateway health, firmware, OTA, calibration capabilities, battery-percentage conversion and packet-delivery denominators. New `sb.f_cnt` or webhook registrations do not supply those contracts. |
 | Source load/operational guidance | All new raw paths; 21 | Rate/load guidance, recommended sampling/polling cadence, source retention and permitted time-window retrieval. Existing app caps remain app policy, not inferred upstream limits. |
 | Persistence necessity | 21 | Stable relevant schemas/units, sufficient live device/data volume, known refresh/retention behavior and stakeholder-approved real Dashboard consumers. New endpoints are not evidence that persistence is now needed. |

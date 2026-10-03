@@ -34,25 +34,31 @@ export class DashboardEnvironmentController {
   @Get('buildings/:buildingId/environment/sources')
   @Header('Cache-Control', 'no-store')
   @ApiOperation({
-    summary: 'Get Dashboard Solar environment sources list (read-only, live provenance)',
+    summary: 'Get Dashboard Environment sources list (Solar & SB, read-only, live provenance)',
     description:
-      'Returns a list of registered Solar environment candidate sources for Building E. Reuses existing catalogue service and floor mapping. Strictly read-only and in-memory.',
+      'Returns a list of registered Solar and SB environment candidate sources for Building E. Reuses existing catalogue service, floor mapping, and room filtering. Strictly read-only and in-memory.',
   })
   @ApiParam({ name: 'buildingId', example: 'E', description: 'Building identifier (currently E only)' })
   @ApiQuery({
     name: 'floorId',
     required: false,
     example: '4',
-    description: 'Application floor ID (4, 6). When omitted, returns full unfiltered catalogue of Solar sources.',
+    description: 'Application floor ID (4, 6). When omitted, returns full unfiltered catalogue of candidate sources.',
+  })
+  @ApiQuery({
+    name: 'roomId',
+    required: false,
+    example: 'E4.08',
+    description: 'Room identifier for exact room scoping. Reuses catalogue room validation.',
   })
   @ApiResponse({
     status: 200,
-    description: 'Solar environment candidate sources list returned successfully with live provenance',
+    description: 'Environment candidate sources list returned successfully with live provenance',
     type: DashboardEnvironmentSourceListResponseDto,
   })
   @ApiResponse({
     status: 400,
-    description: 'Invalid buildingId, unsupported floor, or floor G',
+    description: 'Invalid buildingId, unsupported floor, or invalid roomId',
   })
   @ApiResponse({
     status: 502,
@@ -66,7 +72,7 @@ export class DashboardEnvironmentController {
     @Param('buildingId') buildingId: string,
     @Query() query: DashboardIotCatalogueQueryDto,
   ): Promise<DashboardEnvironmentSourceListResponseDto> {
-    return this.environmentService.getSources(buildingId, query.floorId);
+    return this.environmentService.getSources(buildingId, query.floorId, query.roomId);
   }
 
   @Get('buildings/:buildingId/environment/summary')
