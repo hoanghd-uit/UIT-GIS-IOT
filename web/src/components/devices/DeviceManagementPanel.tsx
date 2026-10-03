@@ -13,6 +13,7 @@ import {
 } from '@/lib/devices-api';
 import { useUnityViewer } from '@/components/unity/UnityViewerRuntime.client';
 import { isDeviceKindVisible } from '@/lib/unity-bridge';
+import { useDashboardAbility } from '@/components/auth/DashboardAbilityProvider';
 
 interface DeviceManagementPanelProps {
   buildingId: string;
@@ -49,6 +50,10 @@ export function DeviceManagementPanel({
   const [editZ, setEditZ] = useState<string>('0');
   const [isPending, startTransition] = useTransition();
   const [actionMessage, setActionMessage] = useState<string | null>(null);
+
+  const { can } = useDashboardAbility();
+  const canEditPosition = can('update', 'DeviceDisplayPosition');
+  const canResetPosition = can('delete', 'DeviceDisplayPosition');
 
   const { sensorFilters } = useUnityViewer();
   const visibleDevices = (catalogue?.devices || []).filter((d) =>
@@ -130,6 +135,10 @@ export function DeviceManagementPanel({
 
   const handleSave = async () => {
     if (!selectedDevice) return;
+    if (!canEditPosition) {
+      setError('Quyền hạn bị từ chối: Không được phép sửa đổi vị trí thiết bị theo chính sách hệ thống.');
+      return;
+    }
     const x = parseFloat(editX);
     const y = parseFloat(editY);
     const z = parseFloat(editZ);
@@ -177,6 +186,10 @@ export function DeviceManagementPanel({
 
   const handleReset = async () => {
     if (!selectedDevice) return;
+    if (!canResetPosition) {
+      setError('Quyền hạn bị từ chối: Không được phép đặt lại vị trí thiết bị theo chính sách hệ thống.');
+      return;
+    }
 
     startTransition(async () => {
       try {
@@ -353,8 +366,9 @@ export function DeviceManagementPanel({
           <div className="flex items-center gap-2 pt-1">
             <button
               onClick={handleSave}
-              disabled={isPending}
-              className="flex-1 bg-sky-600 hover:bg-sky-500 disabled:opacity-50 text-white font-medium py-1.5 px-3 rounded text-xs transition"
+              disabled={isPending || !canEditPosition}
+              title={!canEditPosition ? 'Chức năng điều chỉnh vị trí thiết bị đã bị khóa theo chính sách hệ thống' : undefined}
+              className="flex-1 bg-sky-600 hover:bg-sky-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-medium py-1.5 px-3 rounded text-xs transition"
             >
               {isPending ? 'Saving...' : 'Save Position'}
             </button>
@@ -368,8 +382,9 @@ export function DeviceManagementPanel({
             {selectedDevice.overrideStatus === 'active' && (
               <button
                 onClick={handleReset}
-                disabled={isPending}
-                className="bg-red-900/60 hover:bg-red-800 text-red-200 border border-red-700/60 py-1.5 px-2.5 rounded text-xs transition"
+                disabled={isPending || !canResetPosition}
+                title={!canResetPosition ? 'Chức năng đặt lại vị trí thiết bị đã bị khóa theo chính sách hệ thống' : undefined}
+                className="bg-red-900/60 hover:bg-red-800 disabled:opacity-40 disabled:cursor-not-allowed text-red-200 border border-red-700/60 py-1.5 px-2.5 rounded text-xs transition"
               >
                 Reset
               </button>

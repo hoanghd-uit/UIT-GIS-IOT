@@ -11,6 +11,7 @@ export type DeviceCategory =
 
 export interface IotDeviceListFilter {
   floorLevel?: number;
+  roomId?: string;
 }
 
 export interface FloorDeviceView {
@@ -22,6 +23,7 @@ export interface FloorDeviceView {
     y: number;
     z?: number;
     floorLevel: number;
+    roomId?: string | null;
   };
   displayFloorId: string;
 }
@@ -52,6 +54,7 @@ export interface IoTUpstreamLocation {
   install_y: number;
   install_z: number;
   install_floor_level: number;
+  install_room_id?: string | null;
 }
 
 export interface IoTUpstreamDevice {

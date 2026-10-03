@@ -9,7 +9,10 @@ dotenv.config({ path: envPath });
 import { DeviceBindingEntity } from './entities/device-binding.entity';
 import { DeviceDisplayOverrideEntity } from './entities/device-display-override.entity';
 import { CatalogueSyncStateEntity } from './entities/catalogue-sync-state.entity';
+import { ApplicationUserEntity } from './entities/application-user.entity';
+import { ApplicationSessionEntity } from './entities/application-session.entity';
 import { InitialDeviceTables1726560000000 } from './migrations/1726560000000-InitialDeviceTables';
+import { ApplicationIdentityTables1727780000000 } from './migrations/1727780000000-ApplicationIdentityTables';
 
 export default new DataSource({
   type: 'postgres',
@@ -23,7 +26,12 @@ export default new DataSource({
     DeviceBindingEntity,
     DeviceDisplayOverrideEntity,
     CatalogueSyncStateEntity,
+    ApplicationUserEntity,
+    ApplicationSessionEntity,
   ],
-  migrations: [InitialDeviceTables1726560000000],
+  migrations: [
+    InitialDeviceTables1726560000000,
+    ApplicationIdentityTables1727780000000,
+  ],
   synchronize: false,
 });

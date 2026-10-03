@@ -8,6 +8,8 @@ export interface TelemetryCoverageSummary {
   earliestTimestamp: string | null;
   latestTimestamp: string | null;
   reachedLimit: boolean;
+  sourceCount?: number | null;
+  sourceTruncated?: boolean | null;
 }
 
 export interface NormalizedSolarReading {
@@ -60,6 +62,34 @@ export interface NormalizedNfcEvent {
   detectedCardId: string;
   movingDirection: 'in' | 'out';
   batchId: string | null;
+}
+
+export interface NormalizedSmartBuildingReading {
+  timestamp: string;
+  devEui: string;
+  networkDeviceName: string | null;
+  applicationId: string | null;
+  gatewayId: string | null;
+  rssi: number | null;
+  snr: number | null;
+  rawVoltage: number | null;
+  rawVisible: number | null;
+  rawIr: number | null;
+  rawCo2: number | null;
+  rawVoc: number | null;
+  fCnt: number | null;
+}
+
+export interface NormalizedSmokeReading {
+  timestamp: string;
+  devEui: string;
+  networkDeviceName: string | null;
+  applicationId: string | null;
+  gatewayId: string | null;
+  rssi: number | null;
+  snr: number | null;
+  rawStatus: number | null;
+  rawState: number | null;
 }
 
 export interface SolarTelemetryData {
@@ -140,6 +170,40 @@ export interface AvcTelemetryData {
   readings: NormalizedAvcReading[];
 }
 
+export interface SmartBuildingTelemetryData {
+  type: 'sb';
+  category: DeviceCategory;
+  latest: {
+    timestamp: string | null;
+    rawVoltage: number | null;
+    rawVisible: number | null;
+    rawIr: number | null;
+    rawCo2: number | null;
+    rawVoc: number | null;
+    fCnt: number | null;
+  };
+  status: {
+    label: string;
+    isConfirmed: false;
+  };
+  readings: NormalizedSmartBuildingReading[];
+}
+
+export interface SmokeTelemetryData {
+  type: 'smoke';
+  category: DeviceCategory;
+  latest: {
+    timestamp: string | null;
+    rawStatus: number | null;
+    rawState: number | null;
+  };
+  status: {
+    label: string;
+    isConfirmed: false;
+  };
+  readings: NormalizedSmokeReading[];
+}
+
 export interface NfcTelemetryData {
   type: 'nfc';
   category: DeviceCategory;
@@ -167,17 +231,18 @@ export interface UnknownTelemetryData {
   };
 }
 
-
 export type NormalizedTelemetryPayload =
   | SolarTelemetryData
   | AvcTelemetryData
   | NfcTelemetryData
+  | SmartBuildingTelemetryData
+  | SmokeTelemetryData
   | UnknownTelemetryData;
 
 export interface DeviceTelemetryResponseDto {
   schemaVersion: 1;
   deviceId: string;
-  deviceType: 'solar' | 'avc' | 'nfc' | 'unknown';
+  deviceType: 'solar' | 'avc' | 'nfc' | 'sb' | 'smoke' | 'unknown';
   fetchedAt: string;
   queryRange: {
     start: string;

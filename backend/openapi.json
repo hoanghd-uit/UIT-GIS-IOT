@@ -141,14 +141,6 @@
             "schema": {
               "type": "string"
             }
-          },
-          {
-            "name": "deviceType",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
           }
         ],
         "responses": {
@@ -240,6 +232,12 @@
           "200": {
             "description": "Position override saved successfully"
           },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden: device display positions cannot be modified"
+          },
           "409": {
             "description": "Revision conflict or floor context changed"
           }
@@ -298,6 +296,12 @@
           "200": {
             "description": "Position override reset successfully"
           },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden: device display positions cannot be modified"
+          },
           "409": {
             "description": "Revision conflict"
           }
@@ -305,6 +309,623 @@
         "summary": "Reset display position override back to original",
         "tags": [
           "Devices"
+        ]
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "operationId": "AuthController_login",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful"
+          },
+          "401": {
+            "description": "Invalid credentials"
+          },
+          "403": {
+            "description": "CSRF validation failed"
+          },
+          "429": {
+            "description": "Too many login attempts"
+          }
+        },
+        "summary": "Authenticate user with username and password",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/api/v1/auth/me": {
+      "get": {
+        "operationId": "AuthController_getCurrentUser",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Current session user details"
+          },
+          "401": {
+            "description": "Unauthorized / expired session"
+          }
+        },
+        "summary": "Get current authenticated user identity and CASL rules",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "operationId": "AuthController_logout",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Logout successful"
+          }
+        },
+        "summary": "Revoke current session and expire cookie",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/api/v1/dashboard/buildings/{buildingId}/iot/devices": {
+      "get": {
+        "description": "Returns a normalized active device catalogue for Dashboard Page 07. Supports full-building catalogue (omitting floorId) and approved floor-scoped queries (floorId=4, 6) as well as exact room-level filter (roomId). Zero database persistence.",
+        "operationId": "DashboardIotController_getCatalogue",
+        "parameters": [
+          {
+            "name": "buildingId",
+            "required": true,
+            "in": "path",
+            "description": "Building identifier (currently E only)",
+            "schema": {
+              "example": "E",
+              "type": "string"
+            }
+          },
+          {
+            "name": "floorId",
+            "required": false,
+            "in": "query",
+            "description": "Application floor ID (4, 6). When omitted, returns full unfiltered catalogue.",
+            "schema": {
+              "example": "4",
+              "type": "string"
+            }
+          },
+          {
+            "name": "roomId",
+            "required": false,
+            "in": "query",
+            "description": "Exact source room ID filter. When omitted, returns devices across all rooms.",
+            "schema": {
+              "example": "E4.08",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Device catalogue returned successfully with live provenance",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardDeviceCatalogueResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid buildingId, unsupported floor, floor G, or malformed/duplicate roomId"
+          },
+          "502": {
+            "description": "Upstream IoT service error, timeout, or malformed payload"
+          },
+          "503": {
+            "description": "IoT integration disabled, fixture mode, or missing credentials"
+          }
+        },
+        "summary": "Get Dashboard IoT device catalogue (read-only, live provenance)",
+        "tags": [
+          "Dashboard"
+        ]
+      }
+    },
+    "/api/v1/dashboard/buildings/{buildingId}/iot/devices/{deviceId}/telemetry": {
+      "get": {
+        "description": "Returns normalized telemetry readings and coherent latest sample for a supported device (solar, avc, sb, or smoke). Strictly read-only and in-memory.",
+        "operationId": "DashboardIotController_getTelemetry",
+        "parameters": [
+          {
+            "name": "buildingId",
+            "required": true,
+            "in": "path",
+            "description": "Building identifier (currently E only)",
+            "schema": {
+              "example": "E",
+              "type": "string"
+            }
+          },
+          {
+            "name": "deviceId",
+            "required": true,
+            "in": "path",
+            "description": "Device EUI / ID",
+            "schema": {
+              "example": "70B3D57ED0073E9D",
+              "type": "string"
+            }
+          },
+          {
+            "name": "start",
+            "required": true,
+            "in": "query",
+            "description": "Query window start as ISO-8601 UTC string",
+            "schema": {
+              "example": "2026-09-23T12:00:00.000Z",
+              "type": "string"
+            }
+          },
+          {
+            "name": "stop",
+            "required": true,
+            "in": "query",
+            "description": "Query window stop as ISO-8601 UTC string",
+            "schema": {
+              "example": "2026-09-26T12:00:00.000Z",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Maximum readings to return (1..1000). Defaults to 1000.",
+            "schema": {
+              "default": 1000,
+              "example": 1000,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Telemetry readings returned successfully with live provenance",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardDeviceTelemetryResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid buildingId, deviceId, range duration (>7d), limit (>1000), or unsupported device type"
+          },
+          "404": {
+            "description": "Device not found"
+          },
+          "502": {
+            "description": "Upstream IoT service error, timeout, or malformed payload"
+          },
+          "503": {
+            "description": "IoT integration disabled, fixture mode, or missing credentials"
+          }
+        },
+        "summary": "Get Dashboard IoT device telemetry (read-only, live provenance)",
+        "tags": [
+          "Dashboard"
+        ]
+      }
+    },
+    "/api/v1/dashboard/buildings/{buildingId}/water/meters": {
+      "get": {
+        "description": "Returns a list of registered AVC water meters for Building E. Reuses existing catalogue service and floor mapping. Strictly read-only and in-memory.",
+        "operationId": "DashboardWaterController_getMeters",
+        "parameters": [
+          {
+            "name": "buildingId",
+            "required": true,
+            "in": "path",
+            "description": "Building identifier (currently E only)",
+            "schema": {
+              "example": "E",
+              "type": "string"
+            }
+          },
+          {
+            "name": "floorId",
+            "required": false,
+            "in": "query",
+            "description": "Application floor ID (4, 6). When omitted, returns full unfiltered catalogue of AVC meters.",
+            "schema": {
+              "example": "4",
+              "type": "string"
+            }
+          },
+          {
+            "name": "roomId",
+            "required": false,
+            "in": "query",
+            "description": "Optional exact room ID filter (e.g. E4.08). Leading and trailing spaces are trimmed, exact case preserved. Blank or duplicate roomId is rejected with 400.",
+            "schema": {
+              "example": "E4.08",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "AVC water meter list returned successfully with live provenance",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardWaterMeterListResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid buildingId, unsupported floor, or floor G"
+          },
+          "502": {
+            "description": "Upstream IoT service error, timeout, or malformed payload"
+          },
+          "503": {
+            "description": "IoT integration disabled, fixture mode, or missing credentials"
+          }
+        },
+        "summary": "Get Dashboard AVC water meter list (read-only, live provenance)",
+        "tags": [
+          "Dashboard"
+        ]
+      }
+    },
+    "/api/v1/dashboard/buildings/{buildingId}/water/meters/{deviceId}/readings": {
+      "get": {
+        "description": "Returns normalized readings, latest sample, coverage, and raw flag disclosures for a single selected AVC water meter. Enforces server-authoritative AVC type. Range duration cap 7 days, limit cap 1000.",
+        "operationId": "DashboardWaterController_getReadings",
+        "parameters": [
+          {
+            "name": "buildingId",
+            "required": true,
+            "in": "path",
+            "description": "Building identifier (currently E only)",
+            "schema": {
+              "example": "E",
+              "type": "string"
+            }
+          },
+          {
+            "name": "deviceId",
+            "required": true,
+            "in": "path",
+            "description": "Device EUI / ID of AVC water meter",
+            "schema": {
+              "example": "8cf9572000149bd3",
+              "type": "string"
+            }
+          },
+          {
+            "name": "start",
+            "required": true,
+            "in": "query",
+            "description": "Inclusive query range start in ISO-8601 UTC format. Must be strictly before stop.",
+            "schema": {
+              "example": "2026-09-25T12:00:00.000Z",
+              "type": "string"
+            }
+          },
+          {
+            "name": "stop",
+            "required": true,
+            "in": "query",
+            "description": "Inclusive query range stop in ISO-8601 UTC format. Must be strictly after start.",
+            "schema": {
+              "example": "2026-09-26T12:00:00.000Z",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Maximum number of readings to return (1..1000). Default is 1000.",
+            "schema": {
+              "default": 1000,
+              "example": 1000,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Water meter readings returned successfully with live provenance",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardWaterReadingsResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid buildingId, deviceId, range duration (>7d), limit (>1000), or device is not an AVC water meter"
+          },
+          "404": {
+            "description": "Device not found"
+          },
+          "502": {
+            "description": "Upstream IoT service error, timeout, or malformed payload"
+          },
+          "503": {
+            "description": "IoT integration disabled, fixture mode, or missing credentials"
+          }
+        },
+        "summary": "Get Dashboard selected AVC water meter readings (read-only, live provenance)",
+        "tags": [
+          "Dashboard"
+        ]
+      }
+    },
+    "/api/v1/dashboard/buildings/{buildingId}/environment/sources": {
+      "get": {
+        "description": "Returns a list of registered Solar and SB environment candidate sources for Building E. Reuses existing catalogue service, floor mapping, and room filtering. Strictly read-only and in-memory.",
+        "operationId": "DashboardEnvironmentController_getSources",
+        "parameters": [
+          {
+            "name": "buildingId",
+            "required": true,
+            "in": "path",
+            "description": "Building identifier (currently E only)",
+            "schema": {
+              "example": "E",
+              "type": "string"
+            }
+          },
+          {
+            "name": "floorId",
+            "required": false,
+            "in": "query",
+            "description": "Application floor ID (4, 6). When omitted, returns full unfiltered catalogue of candidate sources.",
+            "schema": {
+              "example": "4",
+              "type": "string"
+            }
+          },
+          {
+            "name": "roomId",
+            "required": false,
+            "in": "query",
+            "description": "Room identifier for exact room scoping. Reuses catalogue room validation.",
+            "schema": {
+              "example": "E4.08",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Environment candidate sources list returned successfully with live provenance",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardEnvironmentSourceListResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid buildingId, unsupported floor, or invalid roomId"
+          },
+          "502": {
+            "description": "Upstream IoT service error, timeout, or malformed payload"
+          },
+          "503": {
+            "description": "IoT integration disabled, fixture mode, or missing credentials"
+          }
+        },
+        "summary": "Get Dashboard Environment sources list (Solar & SB, read-only, live provenance)",
+        "tags": [
+          "Dashboard"
+        ]
+      }
+    },
+    "/api/v1/dashboard/buildings/{buildingId}/environment/summary": {
+      "get": {
+        "description": "Calculates request-scoped population summary (mean, min, max) of latest valid raw samples across candidate Solar sources within a requested window (max 24h). Max 20 sources, concurrency 2. Strictly in-memory, zero database writes.",
+        "operationId": "DashboardEnvironmentController_getSummary",
+        "parameters": [
+          {
+            "name": "buildingId",
+            "required": true,
+            "in": "path",
+            "description": "Building identifier (currently E only)",
+            "schema": {
+              "example": "E",
+              "type": "string"
+            }
+          },
+          {
+            "name": "start",
+            "required": true,
+            "in": "query",
+            "description": "Inclusive query range start in ISO-8601 UTC format. Must be strictly before stop. Max duration 24 hours.",
+            "schema": {
+              "example": "2026-09-26T12:00:00.000Z",
+              "type": "string"
+            }
+          },
+          {
+            "name": "stop",
+            "required": true,
+            "in": "query",
+            "description": "Inclusive query range stop in ISO-8601 UTC format. Must be strictly after start. Max duration 24 hours.",
+            "schema": {
+              "example": "2026-09-27T12:00:00.000Z",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Environment summary returned successfully with derived provenance",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardEnvironmentSummaryResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid buildingId, missing/invalid start/stop dates, or range duration > 24 hours"
+          },
+          "502": {
+            "description": "Upstream IoT service error, timeout, or malformed payload"
+          },
+          "503": {
+            "description": "IoT integration disabled, fixture mode, or missing credentials"
+          }
+        },
+        "summary": "Get Dashboard bounded in-memory latest summary for Solar environment sources",
+        "tags": [
+          "Dashboard"
+        ]
+      }
+    },
+    "/api/v1/dashboard/buildings/{buildingId}/environment/sources/{deviceId}/readings": {
+      "get": {
+        "description": "Returns normalized readings, latest sample, coverage, and caveats for a single selected Solar source. Enforces server-authoritative solar type. Range duration cap 7 days, limit cap 1000.",
+        "operationId": "DashboardEnvironmentController_getReadings",
+        "parameters": [
+          {
+            "name": "buildingId",
+            "required": true,
+            "in": "path",
+            "description": "Building identifier (currently E only)",
+            "schema": {
+              "example": "E",
+              "type": "string"
+            }
+          },
+          {
+            "name": "deviceId",
+            "required": true,
+            "in": "path",
+            "description": "Device EUI / ID of Solar source",
+            "schema": {
+              "example": "8cf95720000a0123",
+              "type": "string"
+            }
+          },
+          {
+            "name": "start",
+            "required": true,
+            "in": "query",
+            "description": "Inclusive query range start in ISO-8601 UTC format. Must be strictly before stop.",
+            "schema": {
+              "example": "2026-09-26T12:00:00.000Z",
+              "type": "string"
+            }
+          },
+          {
+            "name": "stop",
+            "required": true,
+            "in": "query",
+            "description": "Inclusive query range stop in ISO-8601 UTC format. Must be strictly after start.",
+            "schema": {
+              "example": "2026-09-27T12:00:00.000Z",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Maximum number of readings to return (1..1000). Default is 1000.",
+            "schema": {
+              "default": 1000,
+              "example": 1000,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Solar source environment readings returned successfully with live provenance",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardEnvironmentReadingsResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid buildingId, deviceId, range duration (>7d), limit (>1000), or device is not a Solar device"
+          },
+          "404": {
+            "description": "Device not found"
+          },
+          "502": {
+            "description": "Upstream IoT service error, timeout, or malformed payload"
+          },
+          "503": {
+            "description": "IoT integration disabled, fixture mode, or missing credentials"
+          }
+        },
+        "summary": "Get Dashboard selected Solar source raw environment readings (read-only, live provenance)",
+        "tags": [
+          "Dashboard"
+        ]
+      }
+    },
+    "/api/v1/dashboard/buildings/{buildingId}/alerts/evaluation-status": {
+      "get": {
+        "description": "Returns the current capability, blockers, and authoritative rule count of the in-memory alert evaluator boundary. Read-only, zero database persistence, zero upstream calls when registry is empty.",
+        "operationId": "DashboardAlertController_getEvaluationStatus",
+        "parameters": [
+          {
+            "name": "buildingId",
+            "required": true,
+            "in": "path",
+            "description": "Building identifier (currently E only)",
+            "schema": {
+              "example": "E",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Alert evaluation status returned successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardAlertEvaluationStatusResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid buildingId (only building E is supported)"
+          }
+        },
+        "summary": "Get Dashboard alert evaluator status and blockers (read-only)",
+        "tags": [
+          "Dashboard"
         ]
       }
     }
@@ -322,6 +943,10 @@
     },
     {
       "name": "Devices",
+      "description": ""
+    },
+    {
+      "name": "Authentication",
       "description": ""
     }
   ],
@@ -379,6 +1004,1975 @@
           "frameId",
           "frameVersion",
           "position"
+        ]
+      },
+      "LoginDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "DashboardCatalogueProvenanceDto": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "example": "live",
+            "enum": [
+              "live"
+            ]
+          },
+          "sourceId": {
+            "type": "string",
+            "example": "iot-device-catalogue"
+          },
+          "sourceType": {
+            "type": "string",
+            "example": "iot_backend"
+          },
+          "fetchedAt": {
+            "type": "string",
+            "example": "2026-09-26T02:45:00.000Z",
+            "description": "Application backend fetch timestamp (ISO-8601)"
+          },
+          "caveats": {
+            "example": [
+              "Dữ liệu development fallback được áp dụng cho tầng 4"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "mode",
+          "sourceId",
+          "sourceType",
+          "fetchedAt"
+        ]
+      },
+      "DashboardCatalogueMappingDto": {
+        "type": "object",
+        "properties": {
+          "floorMode": {
+            "type": "string",
+            "example": "TEST_CURRENT_FLOOR_4_6_V1"
+          },
+          "developmentFallbackApplied": {
+            "type": "boolean",
+            "example": false,
+            "description": "True when development fallback from floor 0 was applied"
+          },
+          "requestedUpstreamFloorLevel": {
+            "type": "number",
+            "example": 4,
+            "nullable": true,
+            "description": "Mapped upstream floor level requested, or null if full catalogue"
+          }
+        },
+        "required": [
+          "floorMode",
+          "developmentFallbackApplied",
+          "requestedUpstreamFloorLevel"
+        ]
+      },
+      "DashboardCatalogueSummaryDto": {
+        "type": "object",
+        "properties": {
+          "receivedCount": {
+            "type": "number",
+            "example": 25,
+            "description": "Raw records received from upstream"
+          },
+          "acceptedCount": {
+            "type": "number",
+            "example": 25,
+            "description": "Valid records accepted into catalogue"
+          },
+          "skippedCount": {
+            "type": "number",
+            "example": 0,
+            "description": "Malformed records skipped"
+          },
+          "duplicateCount": {
+            "type": "number",
+            "example": 0,
+            "description": "Duplicate device IDs skipped"
+          },
+          "truncated": {
+            "type": "boolean",
+            "example": false,
+            "nullable": true,
+            "description": "Upstream truncation indicator"
+          }
+        },
+        "required": [
+          "receivedCount",
+          "acceptedCount",
+          "skippedCount",
+          "duplicateCount",
+          "truncated"
+        ]
+      },
+      "DashboardDeviceSourceLocationDto": {
+        "type": "object",
+        "properties": {
+          "x": {
+            "type": "number",
+            "example": 10.5,
+            "description": "Source installation X coordinate"
+          },
+          "y": {
+            "type": "number",
+            "example": 2.1,
+            "description": "Source installation Y coordinate"
+          },
+          "z": {
+            "type": "number",
+            "example": 15.3,
+            "description": "Source installation Z coordinate"
+          },
+          "floorLevel": {
+            "type": "number",
+            "example": 4,
+            "description": "Source installation floor level integer"
+          },
+          "roomId": {
+            "type": "string",
+            "example": "E4.08",
+            "nullable": true,
+            "description": "Source room identifier, or null if unset"
+          }
+        },
+        "required": [
+          "x",
+          "y",
+          "z",
+          "floorLevel"
+        ]
+      },
+      "DashboardDeviceCatalogueItemDto": {
+        "type": "object",
+        "properties": {
+          "externalDeviceId": {
+            "type": "string",
+            "example": "70B3D57ED0073E9D",
+            "description": "Opaque upstream device identifier"
+          },
+          "sourceDeviceType": {
+            "type": "string",
+            "example": "solar",
+            "description": "Raw source device type string"
+          },
+          "category": {
+            "type": "string",
+            "example": "solar",
+            "description": "Mapped application device category"
+          },
+          "active": {
+            "type": "boolean",
+            "example": true,
+            "description": "Catalogue registration/activity metadata (NOT an online/health signal)"
+          },
+          "sourceCreatedAt": {
+            "type": "string",
+            "example": "2026-09-20T19:09:17.355Z",
+            "description": "Source record creation timestamp"
+          },
+          "sourceUpdatedAt": {
+            "type": "string",
+            "example": "2026-09-20T19:09:17.355Z",
+            "description": "Source metadata update timestamp (NOT telemetry last-seen)"
+          },
+          "sourceLocation": {
+            "$ref": "#/components/schemas/DashboardDeviceSourceLocationDto"
+          },
+          "displayFloorId": {
+            "type": "string",
+            "example": "4",
+            "nullable": true,
+            "description": "Viewer display floor ID, or null if unmapped"
+          },
+          "floorAssignment": {
+            "type": "string",
+            "example": "source",
+            "enum": [
+              "source",
+              "development-fallback",
+              "unmapped"
+            ],
+            "description": "Floor assignment provenance: source, development-fallback, or unmapped"
+          }
+        },
+        "required": [
+          "externalDeviceId",
+          "sourceDeviceType",
+          "category",
+          "active",
+          "sourceCreatedAt",
+          "sourceUpdatedAt",
+          "sourceLocation",
+          "displayFloorId",
+          "floorAssignment"
+        ]
+      },
+      "DashboardDeviceCatalogueResponseDto": {
+        "type": "object",
+        "properties": {
+          "schemaVersion": {
+            "type": "number",
+            "example": 1
+          },
+          "buildingId": {
+            "type": "string",
+            "example": "E"
+          },
+          "requestedFloorId": {
+            "type": "string",
+            "example": "4",
+            "nullable": true
+          },
+          "requestedRoomId": {
+            "type": "string",
+            "example": "E4.08",
+            "nullable": true,
+            "description": "Normalized applied room filter, or null if unfiltered"
+          },
+          "availability": {
+            "type": "string",
+            "example": "ready",
+            "enum": [
+              "ready",
+              "empty"
+            ]
+          },
+          "provenance": {
+            "$ref": "#/components/schemas/DashboardCatalogueProvenanceDto"
+          },
+          "mapping": {
+            "$ref": "#/components/schemas/DashboardCatalogueMappingDto"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/DashboardCatalogueSummaryDto"
+          },
+          "devices": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DashboardDeviceCatalogueItemDto"
+            }
+          }
+        },
+        "required": [
+          "schemaVersion",
+          "buildingId",
+          "requestedFloorId",
+          "availability",
+          "provenance",
+          "mapping",
+          "summary",
+          "devices"
+        ]
+      },
+      "DashboardTelemetryProvenanceDto": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "example": "live"
+          },
+          "sourceId": {
+            "type": "string",
+            "example": "iot_telemetry_70B3D57ED0073E9D"
+          },
+          "sourceType": {
+            "type": "string",
+            "example": "iot_backend_telemetry"
+          },
+          "observedAt": {
+            "type": "string",
+            "example": "2026-09-26T12:00:00.000Z"
+          },
+          "windowStart": {
+            "type": "string",
+            "example": "2026-09-23T12:00:00.000Z"
+          },
+          "windowEnd": {
+            "type": "string",
+            "example": "2026-09-26T12:00:00.000Z"
+          },
+          "fetchedAt": {
+            "type": "string",
+            "example": "2026-09-26T12:00:05.123Z"
+          },
+          "caveats": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "mode",
+          "sourceId",
+          "sourceType",
+          "windowStart",
+          "windowEnd",
+          "fetchedAt"
+        ]
+      },
+      "DashboardTelemetryQueryRangeDto": {
+        "type": "object",
+        "properties": {
+          "start": {
+            "type": "string",
+            "example": "2026-09-23T12:00:00.000Z"
+          },
+          "stop": {
+            "type": "string",
+            "example": "2026-09-26T12:00:00.000Z"
+          },
+          "limit": {
+            "type": "number",
+            "example": 1000
+          }
+        },
+        "required": [
+          "start",
+          "stop",
+          "limit"
+        ]
+      },
+      "DashboardTelemetryLatestSampleDto": {
+        "type": "object",
+        "properties": {
+          "observedAt": {
+            "type": "string",
+            "example": "2026-09-26T12:00:00.000Z"
+          },
+          "gatewayId": {
+            "type": "string",
+            "example": "gateway-01",
+            "nullable": true
+          },
+          "rssiDbm": {
+            "type": "number",
+            "example": -85,
+            "nullable": true
+          },
+          "snrDb": {
+            "type": "number",
+            "example": 9.5,
+            "nullable": true
+          }
+        },
+        "required": [
+          "observedAt",
+          "gatewayId",
+          "rssiDbm",
+          "snrDb"
+        ]
+      },
+      "DashboardDeviceTelemetryResponseDto": {
+        "type": "object",
+        "properties": {
+          "schemaVersion": {
+            "type": "number",
+            "example": 1
+          },
+          "buildingId": {
+            "type": "string",
+            "example": "E"
+          },
+          "deviceId": {
+            "type": "string",
+            "example": "70B3D57ED0073E9D"
+          },
+          "deviceType": {
+            "type": "string",
+            "enum": [
+              "solar",
+              "avc",
+              "sb",
+              "smoke"
+            ],
+            "example": "solar"
+          },
+          "availability": {
+            "type": "string",
+            "enum": [
+              "ready",
+              "empty"
+            ],
+            "example": "ready"
+          },
+          "provenance": {
+            "$ref": "#/components/schemas/DashboardTelemetryProvenanceDto"
+          },
+          "queryRange": {
+            "$ref": "#/components/schemas/DashboardTelemetryQueryRangeDto"
+          },
+          "coverage": {
+            "type": "object"
+          },
+          "latestSample": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DashboardTelemetryLatestSampleDto"
+              }
+            ]
+          },
+          "telemetry": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "schemaVersion",
+          "buildingId",
+          "deviceId",
+          "deviceType",
+          "availability",
+          "provenance",
+          "queryRange",
+          "coverage",
+          "latestSample",
+          "telemetry"
+        ]
+      },
+      "DashboardWaterMeterProvenanceDto": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "example": "live",
+            "enum": [
+              "live"
+            ]
+          },
+          "sourceId": {
+            "type": "string",
+            "example": "dashboard-water-meters"
+          },
+          "sourceType": {
+            "type": "string",
+            "example": "iot_backend_catalogue"
+          },
+          "fetchedAt": {
+            "type": "string",
+            "example": "2026-09-26T12:00:00.000Z",
+            "description": "Application backend fetch timestamp (ISO-8601)"
+          },
+          "caveats": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "mode",
+          "sourceId",
+          "sourceType",
+          "fetchedAt"
+        ]
+      },
+      "DashboardWaterMeterSummaryDto": {
+        "type": "object",
+        "properties": {
+          "receivedCount": {
+            "type": "number",
+            "example": 2,
+            "description": "Raw AVC records received from upstream catalogue"
+          },
+          "acceptedCount": {
+            "type": "number",
+            "example": 2,
+            "description": "Valid AVC records accepted into water meter list"
+          },
+          "skippedCount": {
+            "type": "number",
+            "example": 0,
+            "description": "Malformed records skipped"
+          },
+          "duplicateCount": {
+            "type": "number",
+            "example": 0,
+            "description": "Duplicate device IDs skipped"
+          },
+          "truncated": {
+            "type": "boolean",
+            "example": false,
+            "nullable": true,
+            "description": "Upstream truncation indicator"
+          }
+        },
+        "required": [
+          "receivedCount",
+          "acceptedCount",
+          "skippedCount",
+          "duplicateCount",
+          "truncated"
+        ]
+      },
+      "DashboardWaterMeterListItemDto": {
+        "type": "object",
+        "properties": {
+          "deviceId": {
+            "type": "string",
+            "example": "8cf9572000149bd3",
+            "description": "Opaque upstream device identifier (query parameter dev_eui)"
+          },
+          "sourceDeviceType": {
+            "type": "string",
+            "example": "avc",
+            "enum": [
+              "avc"
+            ],
+            "description": "Authoritative source device type"
+          },
+          "catalogueActive": {
+            "type": "boolean",
+            "example": true,
+            "description": "Catalogue registration/activity metadata (NOT online/offline health)"
+          },
+          "sourceCreatedAt": {
+            "type": "string",
+            "example": "2026-09-20T19:09:17.355Z",
+            "description": "Source record creation timestamp"
+          },
+          "sourceUpdatedAt": {
+            "type": "string",
+            "example": "2026-09-20T19:09:17.355Z",
+            "description": "Source metadata update timestamp (NOT latest reading)"
+          },
+          "sourceLocation": {
+            "$ref": "#/components/schemas/DashboardDeviceSourceLocationDto"
+          },
+          "displayFloorId": {
+            "type": "string",
+            "example": "4",
+            "nullable": true,
+            "description": "Viewer display floor ID, or null if unmapped"
+          },
+          "floorAssignment": {
+            "type": "string",
+            "example": "source",
+            "enum": [
+              "source",
+              "development-fallback",
+              "unmapped"
+            ],
+            "description": "Floor assignment provenance"
+          }
+        },
+        "required": [
+          "deviceId",
+          "sourceDeviceType",
+          "catalogueActive",
+          "sourceCreatedAt",
+          "sourceUpdatedAt",
+          "sourceLocation",
+          "displayFloorId",
+          "floorAssignment"
+        ]
+      },
+      "DashboardWaterMeterListResponseDto": {
+        "type": "object",
+        "properties": {
+          "schemaVersion": {
+            "type": "number",
+            "example": 1
+          },
+          "buildingId": {
+            "type": "string",
+            "example": "E"
+          },
+          "requestedFloorId": {
+            "type": "string",
+            "example": "4",
+            "nullable": true
+          },
+          "availability": {
+            "type": "string",
+            "example": "ready",
+            "enum": [
+              "ready",
+              "empty"
+            ]
+          },
+          "provenance": {
+            "$ref": "#/components/schemas/DashboardWaterMeterProvenanceDto"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/DashboardWaterMeterSummaryDto"
+          },
+          "meters": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DashboardWaterMeterListItemDto"
+            }
+          }
+        },
+        "required": [
+          "schemaVersion",
+          "buildingId",
+          "requestedFloorId",
+          "availability",
+          "provenance",
+          "summary",
+          "meters"
+        ]
+      },
+      "DashboardWaterReadingsProvenanceDto": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "example": "live"
+          },
+          "sourceId": {
+            "type": "string",
+            "example": "water_readings_8cf9572000149bd3"
+          },
+          "sourceType": {
+            "type": "string",
+            "example": "iot_backend_avc"
+          },
+          "observedAt": {
+            "type": "string",
+            "example": "2026-09-26T12:33:14.339Z"
+          },
+          "windowStart": {
+            "type": "string",
+            "example": "2026-09-25T12:00:00.000Z"
+          },
+          "windowEnd": {
+            "type": "string",
+            "example": "2026-09-26T12:00:00.000Z"
+          },
+          "fetchedAt": {
+            "type": "string",
+            "example": "2026-09-26T12:35:00.000Z"
+          },
+          "caveats": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "mode",
+          "sourceId",
+          "sourceType",
+          "windowStart",
+          "windowEnd",
+          "fetchedAt"
+        ]
+      },
+      "DashboardWaterReadingsQueryRangeDto": {
+        "type": "object",
+        "properties": {
+          "start": {
+            "type": "string",
+            "example": "2026-09-25T12:00:00.000Z"
+          },
+          "stop": {
+            "type": "string",
+            "example": "2026-09-26T12:00:00.000Z"
+          },
+          "limit": {
+            "type": "number",
+            "example": 1000
+          }
+        },
+        "required": [
+          "start",
+          "stop",
+          "limit"
+        ]
+      },
+      "DashboardWaterReadingRawFlagsDto": {
+        "type": "object",
+        "properties": {
+          "valveOpen": {
+            "type": "number",
+            "example": 1,
+            "nullable": true,
+            "description": "Valve state code (unconfirmed encoding)"
+          },
+          "pipeLeak": {
+            "type": "number",
+            "example": 0,
+            "nullable": true,
+            "description": "Leak flag code (unconfirmed encoding)"
+          },
+          "pipeBurst": {
+            "type": "number",
+            "example": 0,
+            "nullable": true,
+            "description": "Burst flag code (unconfirmed encoding)"
+          },
+          "batteryLow": {
+            "type": "number",
+            "example": 0,
+            "nullable": true,
+            "description": "Battery low flag code (unconfirmed encoding)"
+          },
+          "frozen": {
+            "type": "number",
+            "example": 0,
+            "nullable": true,
+            "description": "Frozen flag code (unconfirmed encoding)"
+          },
+          "tamper": {
+            "type": "number",
+            "example": 0,
+            "nullable": true,
+            "description": "Tamper flag code (unconfirmed encoding)"
+          },
+          "reverseFlow": {
+            "type": "number",
+            "example": 0,
+            "nullable": true,
+            "description": "Reverse flow flag code (unconfirmed encoding)"
+          }
+        },
+        "required": [
+          "valveOpen",
+          "pipeLeak",
+          "pipeBurst",
+          "batteryLow",
+          "frozen",
+          "tamper",
+          "reverseFlow"
+        ]
+      },
+      "DashboardWaterLatestSampleDto": {
+        "type": "object",
+        "properties": {
+          "observedAt": {
+            "type": "string",
+            "example": "2026-09-26T12:33:14.339Z"
+          },
+          "deviceName": {
+            "type": "string",
+            "example": "testavc2",
+            "nullable": true,
+            "description": "Friendly device name from ChirpStack"
+          },
+          "meterSerial": {
+            "type": "string",
+            "example": "00000025870203",
+            "nullable": true,
+            "description": "Physical meter serial number"
+          },
+          "gatewayId": {
+            "type": "string",
+            "example": "58bf25fffee73060",
+            "nullable": true
+          },
+          "rssiDbm": {
+            "type": "number",
+            "example": -105,
+            "nullable": true
+          },
+          "snrDb": {
+            "type": "number",
+            "example": 11.75,
+            "nullable": true
+          },
+          "instantFlowM3h": {
+            "type": "number",
+            "example": 0,
+            "nullable": true,
+            "description": "Latest instantaneous flow in m3/h"
+          },
+          "forwardVolumeM3": {
+            "type": "number",
+            "example": 16.636,
+            "nullable": true,
+            "description": "Latest forward volume counter in m3"
+          },
+          "reverseVolumeM3": {
+            "type": "number",
+            "example": 0,
+            "nullable": true,
+            "description": "Latest reverse volume counter in m3"
+          },
+          "temperatureC": {
+            "type": "number",
+            "example": 27,
+            "nullable": true,
+            "description": "Latest temperature in degrees Celsius"
+          },
+          "rawFlags": {
+            "$ref": "#/components/schemas/DashboardWaterReadingRawFlagsDto"
+          }
+        },
+        "required": [
+          "observedAt",
+          "deviceName",
+          "meterSerial",
+          "gatewayId",
+          "rssiDbm",
+          "snrDb",
+          "instantFlowM3h",
+          "forwardVolumeM3",
+          "reverseVolumeM3",
+          "temperatureC",
+          "rawFlags"
+        ]
+      },
+      "DashboardWaterRadioMetadataDto": {
+        "type": "object",
+        "properties": {
+          "devAddr": {
+            "type": "string",
+            "example": "01ca3fa4",
+            "nullable": true,
+            "description": "LoRaWAN session address (dev_addr)"
+          },
+          "fcnt": {
+            "type": "number",
+            "example": 556,
+            "nullable": true,
+            "description": "LoRaWAN uplink frame counter"
+          },
+          "region": {
+            "type": "string",
+            "example": "as923_2",
+            "nullable": true,
+            "description": "Regional frequency plan"
+          },
+          "frequencyHz": {
+            "type": "number",
+            "example": 921400000,
+            "nullable": true,
+            "description": "Radio frequency in Hz"
+          },
+          "spreadingFactor": {
+            "type": "number",
+            "example": 7,
+            "nullable": true,
+            "description": "Spreading factor"
+          },
+          "dr": {
+            "type": "number",
+            "example": 5,
+            "nullable": true,
+            "description": "Data rate"
+          }
+        }
+      },
+      "DashboardWaterReadingItemDto": {
+        "type": "object",
+        "properties": {
+          "observedAt": {
+            "type": "string",
+            "example": "2026-09-26T12:33:14.339Z",
+            "description": "Sample observation timestamp"
+          },
+          "instantFlowM3h": {
+            "type": "number",
+            "example": 0,
+            "nullable": true,
+            "description": "Instantaneous flow rate in m3/h"
+          },
+          "forwardVolumeM3": {
+            "type": "number",
+            "example": 16.636,
+            "nullable": true,
+            "description": "Forward cumulative volume in m3"
+          },
+          "reverseVolumeM3": {
+            "type": "number",
+            "example": 0,
+            "nullable": true,
+            "description": "Reverse cumulative volume in m3"
+          },
+          "temperatureC": {
+            "type": "number",
+            "example": 27,
+            "nullable": true,
+            "description": "Measured temperature in degrees Celsius"
+          },
+          "rssiDbm": {
+            "type": "number",
+            "example": -105,
+            "nullable": true,
+            "description": "LoRa RSSI in dBm"
+          },
+          "snrDb": {
+            "type": "number",
+            "example": 11.75,
+            "nullable": true,
+            "description": "LoRa SNR in dB"
+          },
+          "gatewayId": {
+            "type": "string",
+            "example": "58bf25fffee73060",
+            "nullable": true,
+            "description": "Receiving gateway ID"
+          },
+          "rawFlags": {
+            "$ref": "#/components/schemas/DashboardWaterReadingRawFlagsDto"
+          },
+          "radioMetadata": {
+            "$ref": "#/components/schemas/DashboardWaterRadioMetadataDto"
+          }
+        },
+        "required": [
+          "observedAt",
+          "instantFlowM3h",
+          "forwardVolumeM3",
+          "reverseVolumeM3",
+          "temperatureC",
+          "rssiDbm",
+          "snrDb",
+          "gatewayId",
+          "rawFlags"
+        ]
+      },
+      "DashboardWaterReadingsResponseDto": {
+        "type": "object",
+        "properties": {
+          "schemaVersion": {
+            "type": "number",
+            "example": 1
+          },
+          "buildingId": {
+            "type": "string",
+            "example": "E"
+          },
+          "meterId": {
+            "type": "string",
+            "example": "8cf9572000149bd3"
+          },
+          "availability": {
+            "type": "string",
+            "enum": [
+              "ready",
+              "empty"
+            ],
+            "example": "ready"
+          },
+          "provenance": {
+            "$ref": "#/components/schemas/DashboardWaterReadingsProvenanceDto"
+          },
+          "queryRange": {
+            "$ref": "#/components/schemas/DashboardWaterReadingsQueryRangeDto"
+          },
+          "coverage": {
+            "type": "object"
+          },
+          "latestSample": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DashboardWaterLatestSampleDto"
+              }
+            ]
+          },
+          "readings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DashboardWaterReadingItemDto"
+            }
+          }
+        },
+        "required": [
+          "schemaVersion",
+          "buildingId",
+          "meterId",
+          "availability",
+          "provenance",
+          "queryRange",
+          "coverage",
+          "latestSample",
+          "readings"
+        ]
+      },
+      "DashboardEnvironmentProvenanceDto": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "example": "live",
+            "enum": [
+              "live"
+            ]
+          },
+          "sourceType": {
+            "type": "string",
+            "example": "iot_backend_catalogue"
+          },
+          "fetchedAt": {
+            "type": "string",
+            "example": "2026-09-27T12:00:00.000Z",
+            "description": "Application backend fetch timestamp (ISO-8601)"
+          },
+          "caveats": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "mode",
+          "sourceType",
+          "fetchedAt"
+        ]
+      },
+      "DashboardEnvironmentSourceSummaryDto": {
+        "type": "object",
+        "properties": {
+          "receivedCount": {
+            "type": "number",
+            "example": 4,
+            "description": "Raw candidate records received from upstream catalogue"
+          },
+          "acceptedSolarCount": {
+            "type": "number",
+            "example": 4,
+            "description": "Valid solar records accepted into environment source list"
+          },
+          "acceptedSbCount": {
+            "type": "number",
+            "example": 1,
+            "description": "Valid SB records accepted into environment source list"
+          },
+          "skippedCount": {
+            "type": "number",
+            "example": 0,
+            "description": "Malformed records skipped"
+          },
+          "duplicateCount": {
+            "type": "number",
+            "example": 0,
+            "description": "Duplicate device IDs skipped"
+          },
+          "truncated": {
+            "type": "boolean",
+            "example": false,
+            "nullable": true,
+            "description": "Upstream truncation indicator"
+          }
+        },
+        "required": [
+          "receivedCount",
+          "acceptedSolarCount",
+          "acceptedSbCount",
+          "skippedCount",
+          "duplicateCount",
+          "truncated"
+        ]
+      },
+      "DashboardEnvironmentSourceItemDto": {
+        "type": "object",
+        "properties": {
+          "deviceId": {
+            "type": "string",
+            "example": "8cf95720000a0123",
+            "description": "Opaque upstream device identifier"
+          },
+          "sourceDeviceType": {
+            "type": "string",
+            "example": "solar",
+            "enum": [
+              "solar",
+              "sb"
+            ],
+            "description": "Authoritative source device type"
+          },
+          "catalogueActive": {
+            "type": "boolean",
+            "example": true,
+            "description": "Catalogue registration/activity metadata (NOT online/offline health)"
+          },
+          "sourceCreatedAt": {
+            "type": "string",
+            "example": "2026-09-20T19:09:17.355Z",
+            "description": "Source record creation timestamp"
+          },
+          "sourceUpdatedAt": {
+            "type": "string",
+            "example": "2026-09-20T19:09:17.355Z",
+            "description": "Source metadata update timestamp"
+          },
+          "sourceLocation": {
+            "$ref": "#/components/schemas/DashboardDeviceSourceLocationDto"
+          },
+          "displayFloorId": {
+            "type": "string",
+            "example": "4",
+            "nullable": true,
+            "description": "Viewer display floor ID, or null if unmapped"
+          },
+          "floorAssignment": {
+            "type": "string",
+            "example": "source",
+            "enum": [
+              "source",
+              "development-fallback",
+              "unmapped"
+            ],
+            "description": "Floor assignment provenance"
+          },
+          "semanticStatus": {
+            "type": "string",
+            "example": "unconfirmed_environment_candidate",
+            "enum": [
+              "unconfirmed_environment_candidate"
+            ],
+            "description": "Environmental semantic confirmation status"
+          },
+          "supportedMetrics": {
+            "example": [
+              "temperature",
+              "humidity",
+              "lux"
+            ],
+            "description": "Supported environmental metrics by source device type",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "deviceId",
+          "sourceDeviceType",
+          "catalogueActive",
+          "sourceLocation",
+          "displayFloorId",
+          "floorAssignment",
+          "semanticStatus"
+        ]
+      },
+      "DashboardEnvironmentSourceListResponseDto": {
+        "type": "object",
+        "properties": {
+          "schemaVersion": {
+            "type": "number",
+            "example": 1
+          },
+          "buildingId": {
+            "type": "string",
+            "example": "E"
+          },
+          "requestedFloorId": {
+            "type": "string",
+            "example": "4",
+            "nullable": true
+          },
+          "availability": {
+            "type": "string",
+            "example": "ready",
+            "enum": [
+              "ready",
+              "empty"
+            ]
+          },
+          "provenance": {
+            "$ref": "#/components/schemas/DashboardEnvironmentProvenanceDto"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/DashboardEnvironmentSourceSummaryDto"
+          },
+          "sources": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DashboardEnvironmentSourceItemDto"
+            }
+          }
+        },
+        "required": [
+          "schemaVersion",
+          "buildingId",
+          "requestedFloorId",
+          "availability",
+          "provenance",
+          "summary",
+          "sources"
+        ]
+      },
+      "DashboardEnvironmentSummaryQueryRangeDto": {
+        "type": "object",
+        "properties": {
+          "start": {
+            "type": "string",
+            "example": "2026-09-26T12:00:00.000Z"
+          },
+          "stop": {
+            "type": "string",
+            "example": "2026-09-27T12:00:00.000Z"
+          },
+          "limitPerSource": {
+            "type": "number",
+            "example": 1,
+            "default": 1
+          }
+        },
+        "required": [
+          "start",
+          "stop",
+          "limitPerSource"
+        ]
+      },
+      "DashboardEnvironmentSummaryProvenanceDto": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "example": "derived",
+            "enum": [
+              "derived"
+            ]
+          },
+          "sourceType": {
+            "type": "string",
+            "example": "iot_backend_solar"
+          },
+          "calculation": {
+            "type": "string",
+            "example": "latest_sample_population_summary_v1"
+          },
+          "fetchedAt": {
+            "type": "string",
+            "example": "2026-09-27T12:00:00.000Z",
+            "description": "Upstream fetch timestamp"
+          },
+          "calculatedAt": {
+            "type": "string",
+            "example": "2026-09-27T12:00:00.050Z",
+            "description": "Summary calculation timestamp"
+          },
+          "caveats": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "mode",
+          "sourceType",
+          "calculation",
+          "fetchedAt",
+          "calculatedAt",
+          "caveats"
+        ]
+      },
+      "DashboardEnvironmentSummaryCoverageDto": {
+        "type": "object",
+        "properties": {
+          "catalogueSolarCount": {
+            "type": "number",
+            "example": 4,
+            "description": "Total Solar devices found in catalogue"
+          },
+          "catalogueSbCount": {
+            "type": "number",
+            "example": 1,
+            "description": "Total SB devices found in catalogue"
+          },
+          "attemptedSourceCount": {
+            "type": "number",
+            "example": 4,
+            "description": "Number of devices attempted for history fetch (capped at 20)"
+          },
+          "attemptedSolarCount": {
+            "type": "number",
+            "example": 3,
+            "description": "Number of Solar devices attempted for history fetch"
+          },
+          "attemptedSbCount": {
+            "type": "number",
+            "example": 1,
+            "description": "Number of SB devices attempted for history fetch"
+          },
+          "successfulSourceCount": {
+            "type": "number",
+            "example": 4,
+            "description": "Sources that returned at least one valid reading in the window"
+          },
+          "emptySourceCount": {
+            "type": "number",
+            "example": 0,
+            "description": "Sources that had zero readings in the window"
+          },
+          "failedSourceCount": {
+            "type": "number",
+            "example": 0,
+            "description": "Sources that failed with an error or timeout"
+          },
+          "sourcesTruncated": {
+            "type": "boolean",
+            "example": false,
+            "description": "True if catalogue had more than 20 candidate sources"
+          },
+          "selectionPolicy": {
+            "type": "string",
+            "example": "type_interleaving_v1",
+            "description": "Fair interleaving selection policy version"
+          }
+        },
+        "required": [
+          "catalogueSolarCount",
+          "attemptedSourceCount",
+          "successfulSourceCount",
+          "emptySourceCount",
+          "failedSourceCount",
+          "sourcesTruncated"
+        ]
+      },
+      "DashboardEnvironmentMetricSummaryDto": {
+        "type": "object",
+        "properties": {
+          "mean": {
+            "type": "number",
+            "example": 25.8,
+            "nullable": true
+          },
+          "min": {
+            "type": "number",
+            "example": 24.1,
+            "nullable": true
+          },
+          "max": {
+            "type": "number",
+            "example": 27.5,
+            "nullable": true
+          },
+          "contributingSourceCount": {
+            "type": "number",
+            "example": 4,
+            "description": "Number of distinct sources contributing to this metric"
+          },
+          "unit": {
+            "type": "string",
+            "example": null,
+            "nullable": true
+          },
+          "semanticStatus": {
+            "type": "string",
+            "example": "documented_contract"
+          },
+          "observedAt": {
+            "type": "string",
+            "example": "2026-09-27T11:58:30.000Z",
+            "nullable": true,
+            "description": "Latest observed timestamp for this specific metric"
+          }
+        },
+        "required": [
+          "mean",
+          "min",
+          "max",
+          "contributingSourceCount"
+        ]
+      },
+      "DashboardEnvironmentSummaryMetricsDto": {
+        "type": "object",
+        "properties": {
+          "rawTemperature": {
+            "$ref": "#/components/schemas/DashboardEnvironmentMetricSummaryDto"
+          },
+          "rawHumidity": {
+            "$ref": "#/components/schemas/DashboardEnvironmentMetricSummaryDto"
+          },
+          "lux": {
+            "$ref": "#/components/schemas/DashboardEnvironmentMetricSummaryDto"
+          },
+          "co2": {
+            "$ref": "#/components/schemas/DashboardEnvironmentMetricSummaryDto"
+          }
+        },
+        "required": [
+          "rawTemperature",
+          "rawHumidity",
+          "lux"
+        ]
+      },
+      "DashboardEnvironmentSourceResultDto": {
+        "type": "object",
+        "properties": {
+          "deviceId": {
+            "type": "string",
+            "example": "8cf95720000a0123"
+          },
+          "sourceDeviceType": {
+            "type": "string",
+            "example": "solar",
+            "enum": [
+              "solar",
+              "sb"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "example": "ready",
+            "enum": [
+              "ready",
+              "empty",
+              "error"
+            ]
+          },
+          "observedAt": {
+            "type": "string",
+            "example": "2026-09-27T11:58:30.000Z",
+            "nullable": true
+          },
+          "co2": {
+            "type": "number",
+            "example": 596,
+            "nullable": true,
+            "description": "Latest finite CO2 sample if source is SB"
+          }
+        },
+        "required": [
+          "deviceId",
+          "status",
+          "observedAt"
+        ]
+      },
+      "DashboardEnvironmentSummaryResponseDto": {
+        "type": "object",
+        "properties": {
+          "schemaVersion": {
+            "type": "number",
+            "example": 1
+          },
+          "buildingId": {
+            "type": "string",
+            "example": "E"
+          },
+          "availability": {
+            "type": "string",
+            "example": "ready",
+            "enum": [
+              "ready",
+              "partial",
+              "empty"
+            ]
+          },
+          "queryRange": {
+            "$ref": "#/components/schemas/DashboardEnvironmentSummaryQueryRangeDto"
+          },
+          "provenance": {
+            "$ref": "#/components/schemas/DashboardEnvironmentSummaryProvenanceDto"
+          },
+          "coverage": {
+            "$ref": "#/components/schemas/DashboardEnvironmentSummaryCoverageDto"
+          },
+          "metrics": {
+            "$ref": "#/components/schemas/DashboardEnvironmentSummaryMetricsDto"
+          },
+          "latestObservedAt": {
+            "type": "string",
+            "example": "2026-09-27T11:58:30.000Z",
+            "nullable": true
+          },
+          "sourceResults": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DashboardEnvironmentSourceResultDto"
+            }
+          }
+        },
+        "required": [
+          "schemaVersion",
+          "buildingId",
+          "availability",
+          "queryRange",
+          "provenance",
+          "coverage",
+          "metrics",
+          "latestObservedAt",
+          "sourceResults"
+        ]
+      },
+      "DashboardEnvironmentReadingsProvenanceDto": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "example": "live",
+            "enum": [
+              "live"
+            ]
+          },
+          "sourceId": {
+            "type": "string",
+            "example": "environment_readings_8cf95720000a0123"
+          },
+          "sourceType": {
+            "type": "string",
+            "example": "iot_backend_solar"
+          },
+          "observedAt": {
+            "type": "string",
+            "example": "2026-09-27T11:58:30.000Z",
+            "nullable": true
+          },
+          "windowStart": {
+            "type": "string",
+            "example": "2026-09-26T12:00:00.000Z"
+          },
+          "windowEnd": {
+            "type": "string",
+            "example": "2026-09-27T12:00:00.000Z"
+          },
+          "fetchedAt": {
+            "type": "string",
+            "example": "2026-09-27T12:00:00.000Z"
+          },
+          "caveats": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "mode",
+          "sourceId",
+          "sourceType",
+          "windowStart",
+          "windowEnd",
+          "fetchedAt",
+          "caveats"
+        ]
+      },
+      "DashboardEnvironmentLatestSampleDto": {
+        "type": "object",
+        "properties": {
+          "observedAt": {
+            "type": "string",
+            "example": "2026-09-27T11:58:30.000Z"
+          },
+          "rawTemperature": {
+            "type": "number",
+            "example": 25.8,
+            "nullable": true
+          },
+          "rawHumidity": {
+            "type": "number",
+            "example": 64.2,
+            "nullable": true
+          },
+          "lux": {
+            "type": "number",
+            "example": 450,
+            "nullable": true
+          },
+          "currentUa": {
+            "type": "number",
+            "example": 1200,
+            "nullable": true
+          },
+          "rawVoltage": {
+            "type": "number",
+            "example": 3300,
+            "nullable": true
+          },
+          "rawState": {
+            "type": "number",
+            "example": 1,
+            "nullable": true
+          },
+          "gatewayId": {
+            "type": "string",
+            "example": "gw-01",
+            "nullable": true
+          },
+          "rssiDbm": {
+            "type": "number",
+            "example": -85,
+            "nullable": true
+          },
+          "snrDb": {
+            "type": "number",
+            "example": 8.5,
+            "nullable": true
+          },
+          "rawCo2": {
+            "type": "number",
+            "example": 596,
+            "nullable": true,
+            "description": "CO2 in ppm (assumed standard identity)"
+          },
+          "rawVoc": {
+            "type": "number",
+            "example": 94,
+            "nullable": true,
+            "description": "VOC index (dimensionless)"
+          },
+          "rawVisible": {
+            "type": "number",
+            "example": 32,
+            "nullable": true,
+            "description": "Visible channel sensor count"
+          },
+          "rawIr": {
+            "type": "number",
+            "example": 17,
+            "nullable": true,
+            "description": "Infrared channel sensor count"
+          },
+          "networkDeviceName": {
+            "type": "string",
+            "example": "sb-dev2",
+            "nullable": true
+          },
+          "applicationId": {
+            "type": "string",
+            "example": "app-01",
+            "nullable": true
+          },
+          "fCnt": {
+            "type": "number",
+            "example": 120,
+            "nullable": true
+          }
+        },
+        "required": [
+          "observedAt"
+        ]
+      },
+      "DashboardEnvironmentReadingItemDto": {
+        "type": "object",
+        "properties": {
+          "observedAt": {
+            "type": "string",
+            "example": "2026-09-27T11:58:30.000Z"
+          },
+          "rawTemperature": {
+            "type": "number",
+            "example": 25.8,
+            "nullable": true
+          },
+          "rawHumidity": {
+            "type": "number",
+            "example": 64.2,
+            "nullable": true
+          },
+          "lux": {
+            "type": "number",
+            "example": 450,
+            "nullable": true
+          },
+          "currentUa": {
+            "type": "number",
+            "example": 1200,
+            "nullable": true
+          },
+          "rawVoltage": {
+            "type": "number",
+            "example": 3300,
+            "nullable": true
+          },
+          "rawState": {
+            "type": "number",
+            "example": 1,
+            "nullable": true
+          },
+          "gatewayId": {
+            "type": "string",
+            "example": "gw-01",
+            "nullable": true
+          },
+          "rssiDbm": {
+            "type": "number",
+            "example": -85,
+            "nullable": true
+          },
+          "snrDb": {
+            "type": "number",
+            "example": 8.5,
+            "nullable": true
+          },
+          "fCnt": {
+            "type": "number",
+            "example": 120,
+            "nullable": true
+          },
+          "rawCo2": {
+            "type": "number",
+            "example": 596,
+            "nullable": true,
+            "description": "CO2 in ppm (assumed standard identity)"
+          },
+          "rawVoc": {
+            "type": "number",
+            "example": 94,
+            "nullable": true,
+            "description": "VOC index (dimensionless)"
+          },
+          "rawVisible": {
+            "type": "number",
+            "example": 32,
+            "nullable": true,
+            "description": "Visible channel sensor count"
+          },
+          "rawIr": {
+            "type": "number",
+            "example": 17,
+            "nullable": true,
+            "description": "Infrared channel sensor count"
+          },
+          "networkDeviceName": {
+            "type": "string",
+            "example": "sb-dev2",
+            "nullable": true
+          },
+          "applicationId": {
+            "type": "string",
+            "example": "app-01",
+            "nullable": true
+          }
+        },
+        "required": [
+          "observedAt"
+        ]
+      },
+      "DashboardEnvironmentReadingsResponseDto": {
+        "type": "object",
+        "properties": {
+          "schemaVersion": {
+            "type": "number",
+            "example": 1
+          },
+          "buildingId": {
+            "type": "string",
+            "example": "E"
+          },
+          "sourceId": {
+            "type": "string",
+            "example": "8cf95720000a0123"
+          },
+          "sourceDeviceType": {
+            "type": "string",
+            "example": "solar",
+            "enum": [
+              "solar",
+              "sb"
+            ]
+          },
+          "availability": {
+            "type": "string",
+            "example": "ready",
+            "enum": [
+              "ready",
+              "empty"
+            ]
+          },
+          "queryRange": {
+            "type": "object",
+            "example": {
+              "start": "2026-09-26T12:00:00.000Z",
+              "stop": "2026-09-27T12:00:00.000Z",
+              "limit": 1000
+            }
+          },
+          "provenance": {
+            "$ref": "#/components/schemas/DashboardEnvironmentReadingsProvenanceDto"
+          },
+          "coverage": {
+            "type": "object"
+          },
+          "latestSample": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DashboardEnvironmentLatestSampleDto"
+              }
+            ]
+          },
+          "readings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DashboardEnvironmentReadingItemDto"
+            }
+          }
+        },
+        "required": [
+          "schemaVersion",
+          "buildingId",
+          "sourceId",
+          "sourceDeviceType",
+          "availability",
+          "queryRange",
+          "provenance",
+          "coverage",
+          "latestSample",
+          "readings"
+        ]
+      },
+      "AlertEvaluationStatusProvenanceDto": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "example": "derived",
+            "enum": [
+              "derived"
+            ]
+          },
+          "sourceType": {
+            "type": "string",
+            "example": "application_alert_evaluator"
+          },
+          "evaluatedAt": {
+            "type": "string",
+            "example": "2026-09-29T12:00:00.000Z"
+          },
+          "caveats": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "mode",
+          "sourceType",
+          "evaluatedAt",
+          "caveats"
+        ]
+      },
+      "AlertEvaluationStatusCapabilitiesDto": {
+        "type": "object",
+        "properties": {
+          "evaluatorAvailable": {
+            "type": "boolean",
+            "example": true
+          },
+          "authoritativeRuleCount": {
+            "type": "number",
+            "example": 0
+          },
+          "eventPersistenceAvailable": {
+            "type": "boolean",
+            "example": false
+          },
+          "lifecycleActionsAvailable": {
+            "type": "boolean",
+            "example": false
+          },
+          "notificationDeliveryAvailable": {
+            "type": "boolean",
+            "example": false
+          },
+          "authorizationAvailable": {
+            "type": "boolean",
+            "example": false
+          },
+          "spatialNavigationAvailable": {
+            "type": "boolean",
+            "example": false
+          }
+        },
+        "required": [
+          "evaluatorAvailable",
+          "authoritativeRuleCount",
+          "eventPersistenceAvailable",
+          "lifecycleActionsAvailable",
+          "notificationDeliveryAvailable",
+          "authorizationAvailable",
+          "spatialNavigationAvailable"
+        ]
+      },
+      "AlertEvaluationStatusBlockerDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "example": "ALERT_RULES_NOT_CONFIRMED"
+          },
+          "message": {
+            "type": "string",
+            "example": "Chưa có quy tắc authoritative do semantics, baseline, cadence và duration policy chưa được xác nhận."
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ]
+      },
+      "AlertEvaluationCurrentStateDto": {
+        "type": "object",
+        "properties": {
+          "distinctWarningDeviceCount": {
+            "type": "number",
+            "example": null,
+            "nullable": true
+          },
+          "distinctDangerDeviceCount": {
+            "type": "number",
+            "example": null,
+            "nullable": true
+          },
+          "notificationBadgeCount": {
+            "type": "number",
+            "example": null,
+            "nullable": true
+          }
+        },
+        "required": [
+          "distinctWarningDeviceCount",
+          "distinctDangerDeviceCount",
+          "notificationBadgeCount"
+        ]
+      },
+      "DashboardAlertEvaluationStatusResponseDto": {
+        "type": "object",
+        "properties": {
+          "schemaVersion": {
+            "type": "number",
+            "example": 1
+          },
+          "buildingId": {
+            "type": "string",
+            "example": "E"
+          },
+          "availability": {
+            "type": "string",
+            "example": "no_active_rules",
+            "enum": [
+              "no_active_rules",
+              "ready",
+              "partial"
+            ]
+          },
+          "provenance": {
+            "$ref": "#/components/schemas/AlertEvaluationStatusProvenanceDto"
+          },
+          "capabilities": {
+            "$ref": "#/components/schemas/AlertEvaluationStatusCapabilitiesDto"
+          },
+          "blockers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AlertEvaluationStatusBlockerDto"
+            }
+          },
+          "currentState": {
+            "$ref": "#/components/schemas/AlertEvaluationCurrentStateDto"
+          }
+        },
+        "required": [
+          "schemaVersion",
+          "buildingId",
+          "availability",
+          "provenance",
+          "capabilities",
+          "blockers",
+          "currentState"
         ]
       }
     }

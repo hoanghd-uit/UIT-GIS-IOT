@@ -38,7 +38,6 @@ export async function fetchDeviceTelemetry(
     start: string;
     stop: string;
     limit?: number;
-    deviceType?: string;
   },
   signal?: AbortSignal,
 ): Promise<DeviceTelemetryResponseDto> {
@@ -48,9 +47,6 @@ export async function fetchDeviceTelemetry(
   });
   if (query.limit !== undefined) {
     params.set('limit', String(query.limit));
-  }
-  if (query.deviceType) {
-    params.set('deviceType', query.deviceType);
   }
 
   const encodedId = encodeURIComponent(deviceId);

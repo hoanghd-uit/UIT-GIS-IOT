@@ -9,6 +9,7 @@ import {
   Header,
   Query,
   BadRequestException,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -17,6 +18,10 @@ import {
   ApiHeader,
   ApiParam,
 } from '@nestjs/swagger';
+import { CsrfGuard } from '../auth/csrf.guard';
+import { SessionAuthGuard } from '../auth/session-auth.guard';
+import { PoliciesGuard } from '../authorization/policies.guard';
+import { RequireAbility } from '../authorization/require-ability.decorator';
 import { DevicesService } from './devices.service';
 import { UpdateDisplayPositionDto } from './dto/update-display-position.dto';
 import { FloorDevicesResponseDto, DeviceDto } from './dto/device-response.dto';
@@ -67,14 +72,12 @@ export class DevicesController {
     @Query('start') start: string,
     @Query('stop') stop: string,
     @Query('limit') limit?: string,
-    @Query('deviceType') deviceType?: string,
   ): Promise<DeviceTelemetryResponseDto> {
     const parsedLimit = limit !== undefined ? parseInt(limit, 10) : undefined;
     return this.devicesService.getDeviceTelemetry(deviceId, {
       start,
       stop,
       limit: parsedLimit,
-      deviceTypeHint: deviceType,
     });
   }
 
@@ -89,6 +92,8 @@ export class DevicesController {
   }
 
   @Put('devices/:deviceId/display-position')
+  @UseGuards(CsrfGuard, SessionAuthGuard, PoliciesGuard)
+  @RequireAbility('update', 'DeviceDisplayPosition')
   @ApiOperation({ summary: 'Create or update display position override' })
   @ApiParam({ name: 'deviceId' })
   @ApiHeader({
@@ -97,6 +102,8 @@ export class DevicesController {
     required: true,
   })
   @ApiResponse({ status: 200, description: 'Position override saved successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden: device display positions cannot be modified' })
   @ApiResponse({ status: 409, description: 'Revision conflict or floor context changed' })
   async updateDisplayPosition(
     @Param('deviceId') deviceId: string,
@@ -115,6 +122,8 @@ export class DevicesController {
   }
 
   @Delete('devices/:deviceId/display-position')
+  @UseGuards(CsrfGuard, SessionAuthGuard, PoliciesGuard)
+  @RequireAbility('delete', 'DeviceDisplayPosition')
   @ApiOperation({ summary: 'Reset display position override back to original' })
   @ApiParam({ name: 'deviceId' })
   @ApiHeader({
@@ -123,6 +132,8 @@ export class DevicesController {
     required: true,
   })
   @ApiResponse({ status: 200, description: 'Position override reset successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden: device display positions cannot be modified' })
   @ApiResponse({ status: 409, description: 'Revision conflict' })
   async resetDisplayPosition(
     @Param('deviceId') deviceId: string,

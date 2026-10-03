@@ -324,4 +324,206 @@ describe('IotClientService & IotService (Small Phase 08 Contract Adaptation)', (
       expect(calledUrl).toBe(`${mockBaseUrl}/api/v1/devices`);
     });
   });
+
+  describe('BP2-SP23: Device catalogue room filter and compatibility', () => {
+    it('serializes room_id query parameter when roomId is provided', async () => {
+      globalFetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ data: [], meta: { count: 0 } }),
+      });
+
+      await client.fetchRawDevices({ roomId: 'E4.08' });
+
+      expect(globalFetchMock).toHaveBeenCalledTimes(1);
+      const [calledUrl] = globalFetchMock.mock.calls[0];
+      expect(calledUrl).toBe(`${mockBaseUrl}/api/v1/devices?room_id=E4.08`);
+    });
+
+    it('serializes both floor_level and room_id when both are provided', async () => {
+      globalFetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ data: [], meta: { count: 0 } }),
+      });
+
+      await client.fetchRawDevices({ floorLevel: 4, roomId: 'E4.08' });
+
+      expect(globalFetchMock).toHaveBeenCalledTimes(1);
+      const [calledUrl] = globalFetchMock.mock.calls[0];
+      expect(calledUrl).toBe(`${mockBaseUrl}/api/v1/devices?floor_level=4&room_id=E4.08`);
+    });
+
+    it('preserves exact room case and encodes special characters safely', async () => {
+      globalFetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ data: [], meta: { count: 0 } }),
+      });
+
+      await client.fetchRawDevices({ roomId: 'Room & Lab + 1/Phòng_Thí_Nghiệm' });
+
+      expect(globalFetchMock).toHaveBeenCalledTimes(1);
+      const [calledUrl] = globalFetchMock.mock.calls[0];
+      expect(calledUrl).toBe(
+        `${mockBaseUrl}/api/v1/devices?room_id=${encodeURIComponent('Room & Lab + 1/Phòng_Thí_Nghiệm')}`,
+      );
+    });
+
+    it('rejects empty or whitespace-only roomId locally', async () => {
+      await expect(client.fetchRawDevices({ roomId: '' })).rejects.toThrow(BadRequestException);
+      await expect(client.fetchRawDevices({ roomId: '   ' })).rejects.toThrow(BadRequestException);
+      expect(globalFetchMock).not.toHaveBeenCalled();
+    });
+
+    it('supports detail lookup with install_room_id present (string or null)', async () => {
+      const detailWithRoom = {
+        data: {
+          device_id: '70B3D57ED0073E9D',
+          device_type: 'solar',
+          install_location: {
+            install_x: 10.5,
+            install_y: 2.1,
+            install_z: 15.3,
+            install_floor_level: 4,
+            install_room_id: 'E4.08',
+          },
+        },
+      };
+
+      globalFetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: async () => detailWithRoom,
+      });
+
+      const res = await client.fetchDeviceDetail('70B3D57ED0073E9D');
+      expect(res.data.install_location?.install_room_id).toBe('E4.08');
+    });
+
+    it('supports historical detail with install_room_id absent without fabricating defaults', async () => {
+      const historicalDetail = {
+        data: {
+          device_id: '70B3D57ED0073E9D',
+          device_type: 'solar',
+          install_location: {
+            install_x: 10.5,
+            install_y: 2.1,
+            install_floor_level: 4,
+          },
+        },
+      };
+
+      globalFetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: async () => historicalDetail,
+      });
+
+      const res = await client.fetchDeviceDetail('70B3D57ED0073E9D');
+      expect(res.data.install_location?.install_room_id).toBeUndefined();
+      expect(res.data.install_location?.install_z).toBeUndefined();
+    });
+  });
+
+  describe('fetchSmartBuildingReadings (Small Phase 24)', () => {
+    it('validates devEui, range and limit parameters', async () => {
+      await expect(
+        client.fetchSmartBuildingReadings('', '2026-09-20T00:00:00Z', '2026-09-23T00:00:00Z'),
+      ).rejects.toThrow('must be a non-empty string');
+
+      await expect(
+        client.fetchSmartBuildingReadings('dev-sb-1', 'invalid', '2026-09-23T00:00:00Z'),
+      ).rejects.toThrow('Invalid start or stop date format');
+
+      await expect(
+        client.fetchSmartBuildingReadings('dev-sb-1', '2026-09-24T00:00:00Z', '2026-09-23T00:00:00Z'),
+      ).rejects.toThrow('start must be strictly before stop');
+
+      await expect(
+        client.fetchSmartBuildingReadings('dev-sb-1', '2026-09-20T00:00:00Z', '2026-09-23T00:00:00Z', 0),
+      ).rejects.toThrow('must be an integer between 1 and 10000');
+    });
+
+    it('queries /api/v1/sb with encoded query parameters', async () => {
+      const mockResponse = {
+        data: [
+          {
+            dev_eui: 'dev-sb-1',
+            timestamp: '2026-09-22T10:00:00Z',
+            co2: 450,
+            voc: 120,
+            voltage: 3.3,
+            visible: 200,
+            ir: 150,
+            f_cnt: 10,
+          },
+        ],
+        meta: { count: 1, truncated: false },
+      };
+
+      globalFetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResponse,
+      });
+
+      const res = await client.fetchSmartBuildingReadings(
+        'dev-sb-1',
+        '2026-09-20T00:00:00Z',
+        '2026-09-23T00:00:00Z',
+        500,
+      );
+
+      expect(res.data).toHaveLength(1);
+      expect(globalFetchMock).toHaveBeenCalledWith(
+        expect.stringContaining('/api/v1/sb?dev_eui=dev-sb-1&start='),
+        expect.any(Object),
+      );
+    });
+  });
+
+  describe('fetchSmokeReadings (Small Phase 24)', () => {
+    it('validates devEui, range and limit parameters', async () => {
+      await expect(
+        client.fetchSmokeReadings('', '2026-09-20T00:00:00Z', '2026-09-23T00:00:00Z'),
+      ).rejects.toThrow('must be a non-empty string');
+
+      await expect(
+        client.fetchSmokeReadings('dev-smoke-1', 'invalid', '2026-09-23T00:00:00Z'),
+      ).rejects.toThrow('Invalid start or stop date format');
+
+      await expect(
+        client.fetchSmokeReadings('dev-smoke-1', '2026-09-24T00:00:00Z', '2026-09-23T00:00:00Z'),
+      ).rejects.toThrow('start must be strictly before stop');
+    });
+
+    it('queries /api/v1/smoke with encoded query parameters', async () => {
+      const mockResponse = {
+        data: [
+          {
+            dev_eui: 'dev-smoke-1',
+            timestamp: '2026-09-22T10:00:00Z',
+            status: 0,
+            state: 1,
+            rssi: -75,
+            snr: 9.2,
+          },
+        ],
+        meta: { count: 1, truncated: false },
+      };
+
+      globalFetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResponse,
+      });
+
+      const res = await client.fetchSmokeReadings(
+        'dev-smoke-1',
+        '2026-09-20T00:00:00Z',
+        '2026-09-23T00:00:00Z',
+        100,
+      );
+
+      expect(res.data).toHaveLength(1);
+      expect(globalFetchMock).toHaveBeenCalledWith(
+        expect.stringContaining('/api/v1/smoke?dev_eui=dev-smoke-1&start='),
+        expect.any(Object),
+      );
+    });
+  });
 });
